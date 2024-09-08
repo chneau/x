@@ -78,4 +78,14 @@ const bunPkgs: Pkg[] = [
 	bunIt("concurrently"),
 	bunIt("ts-unused-exports"),
 ];
-export const pkgs: Pkg[] = [...aptPkgs, ...brewPkgs, ...bunPkgs];
+export const pkgs: Pkg[] = [
+	...aptPkgs,
+	{
+		name: "brew",
+		check: async () => commandExists("brew"),
+		install: async () =>
+			await $`CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
+	},
+	...brewPkgs,
+	...bunPkgs,
+];

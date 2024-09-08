@@ -7,4 +7,5 @@ su c
 # then
 curl -fsSL https://bun.sh/install | bash
 ~/.bun/bin/bun x @chneau/x system
+~/.bun/bin/bun x @chneau/x doctor
 ```
