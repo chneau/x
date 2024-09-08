@@ -84,7 +84,7 @@ export const pkgs: Pkg[] = [
 		name: "brew",
 		check: async () => commandExists("brew"),
 		install: async () =>
-			await $`CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
+			await $`HOME=/tmp CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
 	},
 	...brewPkgs,
 	...bunPkgs,

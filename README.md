@@ -6,8 +6,9 @@ echo "c ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/c
 su c
 # then
 curl -fsSL https://bun.sh/install | bash
-~/.bun/bin/bun pm --global cache rm
-~/.bun/bin/bun x @chneau/x system
-~/.bun/bin/bun x @chneau/x doctor
-~/.bun/bin/bun x @chneau/x update
+export PATH=$PATH:~/.bun/bin
+bun install -fg @chneau/x
+x system
+x doctor
+x update
 ```
