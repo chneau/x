@@ -83,9 +83,9 @@ const guardSudoWithoutPassword = async () => {
 export const commandSystemUpdate = async () => {
 	await guardIsNotRoot();
 	await guardSudoWithoutPassword();
-	await updateApt();
-	await updateBrew();
 	await updateDotfiles();
+	await updateApt();
 	await updateBun();
+	await updateBrew();
 	console.log("System updated");
 };
