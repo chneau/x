@@ -165,7 +165,7 @@ const doctorZsh = async (canFix: boolean) => {
 	const etcShells = await Bun.file("/etc/shells")
 		.text()
 		.then((x) => x.split("\n"));
-	const whichZsh = await $`which zsh`.nothrow().text();
+	const whichZsh = await $`which zsh`.text();
 	const ok = etcShells.includes(whichZsh);
 	if (ok) {
 		console.log("✅ Zsh is set as a valid shell");
@@ -200,11 +200,11 @@ export const commandDoctor = async () => {
 	} else {
 		console.log("🔒 Will not automatically fix issues");
 	}
-	await doctorZsh(canFix);
 	await doctorGitconfig(canFix);
 	await doctorDotfiles(canFix);
 	await doctorSsh(canFix);
 	await doctorGithub(canFix);
 	await doctorUserGroups(canFix);
 	await doctorPkgs(canFix);
+	await doctorZsh(canFix);
 };
