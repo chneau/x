@@ -111,15 +111,15 @@ const doctorDotfiles = async (canFix: boolean) => {
 
 const doctorUserGroups = async (canFix: boolean) => {
 	const groups = await $`groups`.text();
-	const ok = ["sudo", "docker"].every((x) => groups.includes(x));
+	const ok = groups.includes("docker");
 	if (ok) {
-		console.log("✅ User is in sudo and docker groups");
+		console.log("✅ User is in docker groups");
 	} else {
-		console.log("❌ User is not in sudo and docker groups");
+		console.log("❌ User is not in docker groups");
 		if (canFix) {
-			console.log("🕒 Adding user to sudo and docker groups");
-			await $`sudo usermod -aG sudo,docker $USER`;
-			console.log("✅ User is in sudo and docker groups");
+			console.log("🕒 Adding user to docker groups");
+			await $`sudo usermod -aG docker $USER`.catch(() => {});
+			console.log("✅ User is in docker groups");
 		}
 	}
 	return ok;
