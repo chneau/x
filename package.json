@@ -1,0 +1,15 @@
+{
+	"name": "@chneau/x",
+	"version": "0.0.3",
+	"bin": "index.ts",
+	"scripts": {
+		"deploy": "npm publish",
+		"upgrade": "npm-check-updates --upgrade --install=always --packageManager=bun",
+		"check": "biome check --write --unsafe .",
+		"lint": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.1.8",
+		"typescript": "^5.5.4"
+	}
+}
