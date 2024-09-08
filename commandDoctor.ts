@@ -142,7 +142,7 @@ const doctorSsh = async (canFix: boolean) => {
 	}
 };
 
-export const doctorGithub = async (canFix: boolean) => {
+const doctorGithub = async (canFix: boolean) => {
 	const ok = await $`ssh git@github.com 2>&1`
 		.nothrow()
 		.text()
@@ -161,6 +161,36 @@ export const doctorGithub = async (canFix: boolean) => {
 	}
 };
 
+const doctorZsh = async (canFix: boolean) => {
+	const etcShells = await Bun.file("/etc/shells")
+		.text()
+		.then((x) => x.split("\n"));
+	const whichZsh = await $`which zsh`.text();
+	const ok = etcShells.includes(whichZsh);
+	if (ok) {
+		console.log("✅ Zsh is set as a valid shell");
+	} else {
+		console.log("❌ Zsh is not set as a valid shell");
+		if (canFix) {
+			console.log("🕒 Adding Zsh to /etc/shells");
+			await $`echo ${whichZsh} | sudo tee -a /etc/shells`;
+			console.log("✅ Zsh is set as a valid shell");
+		}
+	}
+	const etcPasswdOfUSer = await $`cat /etc/passwd | grep "^$USER:"`.text();
+	const ok2 = etcPasswdOfUSer.includes(whichZsh);
+	if (ok2) {
+		console.log("✅ Zsh is set as your shell");
+	} else {
+		console.log("❌ Zsh is not set as your shell");
+		if (canFix) {
+			console.log("🕒 Setting Zsh as your shell");
+			await $`sudo chsh -s ${whichZsh} $USER`;
+			console.log("✅ Zsh is set as your shell");
+		}
+	}
+};
+
 export const commandDoctor = async () => {
 	const isRootOk = await doctorRoot();
 	const isSudoOk = await doctorSudo();
@@ -170,6 +200,7 @@ export const commandDoctor = async () => {
 	} else {
 		console.log("🔒 Will not automatically fix issues");
 	}
+	await doctorZsh(canFix);
 	await doctorGitconfig(canFix);
 	await doctorDotfiles(canFix);
 	await doctorSsh(canFix);
