@@ -33,9 +33,20 @@ const doctorGitconfig = async () => {
 	}
 };
 
+const doctorDotfiles = async () => {
+	const dotfiles = await $`ls -a $HOME`.text();
+	const expected = [".bashrc", ".zshrc", ".aliases", ".profile"];
+	if (expected.every((x) => dotfiles.includes(x))) {
+		console.log("✅ Dotfiles are installed");
+	} else {
+		console.log("❌ Dotfiles are not installed");
+	}
+};
+
 export const commandDoctor = async () => {
 	await doctorRoot();
 	await doctorSudo();
 	await doctorPkgs();
 	await doctorGitconfig();
+	await doctorDotfiles();
 };
