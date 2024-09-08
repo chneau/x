@@ -61,7 +61,7 @@ const updateBrew = async () => {
 		"zsh",
 	];
 	const brew =
-		(await $`which brew`.text()).trim() ??
+		(await $`which brew`.text().catch(() => "")).trim() ??
 		"/home/linuxbrew/.linuxbrew/bin/brew";
 	await $`${brew} install ${{ raw: essentialPkgs.join(" ") }}`;
 	await $`${brew} update`;
