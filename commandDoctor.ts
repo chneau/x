@@ -1,3 +1,4 @@
+import { $ } from "bun";
 import { canSudo, isRoot } from "./helpers";
 import { pkgs } from "./pkgs";
 
@@ -23,8 +24,18 @@ const doctorPkgs = async () => {
 	}
 };
 
+const doctorGitconfig = async () => {
+	const gitconfig = await $`git config --list`.text();
+	if (gitconfig.includes("user.email") && gitconfig.includes("user.name")) {
+		console.log("✅ Git config is set");
+	} else {
+		console.log("❌ Git config is not set");
+	}
+};
+
 export const commandDoctor = async () => {
 	await doctorRoot();
 	await doctorSudo();
 	await doctorPkgs();
+	await doctorGitconfig();
 };
