@@ -58,6 +58,7 @@ const updateBrew = async () => {
 		"kubernetes-cli",
 		"lazygit",
 		"node",
+		"pipx",
 		"zsh",
 	];
 	const brew =
