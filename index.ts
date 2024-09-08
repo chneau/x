@@ -5,7 +5,7 @@ const program = new Command();
 
 const version = await Bun.file(`${import.meta.dir}/package.json`)
 	.json()
-	.then((x) => x.version);
+	.then((x) => x.version as string);
 
 program //
 	.name("x")
