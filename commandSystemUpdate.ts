@@ -45,6 +45,22 @@ const updateApt = async () => {
 const updateBrew = async () => {
 	if (!(await commandExists("brew")))
 		await $`CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`;
+	const essentialPkgs = [
+		"bpytop",
+		"dive",
+		"docker-color-output",
+		"docker-compose",
+		"go",
+		"helm",
+		"hyperfine",
+		"kubecolor",
+		"kubectx",
+		"kubernetes-cli",
+		"lazygit",
+		"node",
+		"zsh",
+	];
+	await $`brew install ${{ raw: essentialPkgs.join(" ") }}`;
 	await $`brew update`;
 	await $`brew upgrade`;
 	await $`brew cleanup`;
