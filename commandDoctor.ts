@@ -132,8 +132,8 @@ export const commandDoctor = async () => {
 	} else {
 		console.log("🔒 Not fixable");
 	}
-	await doctorPkgs(canFix);
 	await doctorGitconfig(canFix);
 	await doctorDotfiles(canFix);
 	await doctorUserGroups(canFix);
+	await doctorPkgs(canFix);
 };
