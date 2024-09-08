@@ -125,6 +125,21 @@ const doctorUserGroups = async (canFix: boolean) => {
 	return ok;
 };
 
+const doctorSsh = async (canFix: boolean) => {
+	const sshDir = `${Bun.env.HOME}/.ssh/id_rsa`;
+	const ok = await Bun.file(sshDir).exists();
+	if (ok) {
+		console.log("✅ SSH key is set");
+	} else {
+		console.log("❌ SSH key is not set");
+		if (canFix) {
+			console.log("🕒 Generating SSH key");
+			await $`yes | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""`;
+			console.log("✅ SSH key is set");
+		}
+	}
+};
+
 export const commandDoctor = async () => {
 	const isRootOk = await doctorRoot();
 	const isSudoOk = await doctorSudo();
@@ -136,6 +151,7 @@ export const commandDoctor = async () => {
 	}
 	await doctorGitconfig(canFix);
 	await doctorDotfiles(canFix);
+	await doctorSsh(canFix);
 	await doctorUserGroups(canFix);
 	await doctorPkgs(canFix);
 };
