@@ -12,3 +12,9 @@ export const canSudo = async () => {
 	const text = (await $`sudo echo 0`.text().catch(() => "")).trim();
 	return text === "0";
 };
+
+export const getCurrentVersion = async () =>
+	await Bun.file(`${import.meta.dir}/package.json`)
+		.json()
+		.then((x) => x.version as string)
+		.catch(() => "UNKNOWN");

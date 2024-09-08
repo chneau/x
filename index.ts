@@ -3,13 +3,11 @@ import { Command } from "commander";
 import { commandDoctor } from "./commandDoctor";
 import { commandSystem } from "./commandSystem";
 import { commandUpdate } from "./commandUpdate";
+import { getCurrentVersion } from "./helpers";
 
 const program = new Command();
 
-const version = await Bun.file(`${import.meta.dir}/package.json`)
-	.json()
-	.then((x) => x.version as string)
-	.catch(() => "UNKNOWN");
+const version = await getCurrentVersion();
 
 program.name("x").description("chneau's utility CLI").version(version);
 

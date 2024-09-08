@@ -1,10 +1,12 @@
-import { version, $ } from "bun";
+import { $ } from "bun";
 import { fetchLatestVersion } from "./fetchLatestVersion";
+import { getCurrentVersion } from "./helpers";
 
 export const commandUpdate = async () => {
 	const latestVersion = await fetchLatestVersion();
-	if (latestVersion === version) {
-		console.log(`You are already using the latest version ${version}`);
+	const currentVersion = await getCurrentVersion();
+	if (latestVersion === currentVersion) {
+		console.log(`You are already using the latest version ${currentVersion}`);
 		return;
 	}
 	await $`bun i -fg @chneau/x@${latestVersion}`;
