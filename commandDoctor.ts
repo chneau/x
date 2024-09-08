@@ -43,10 +43,20 @@ const doctorDotfiles = async () => {
 	}
 };
 
+const doctorUserGroups = async () => {
+	const groups = await $`groups`.text();
+	if (groups.includes("sudo") && groups.includes("docker")) {
+		console.log("✅ User is in sudo and docker groups");
+	} else {
+		console.log("❌ User is not in sudo and docker groups");
+	}
+};
+
 export const commandDoctor = async () => {
 	await doctorRoot();
 	await doctorSudo();
 	await doctorPkgs();
 	await doctorGitconfig();
 	await doctorDotfiles();
+	await doctorUserGroups();
 };
