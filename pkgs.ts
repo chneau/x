@@ -29,11 +29,6 @@ const brewIt = (name: string) => ({
 
 const brewPkgs: Pkg[] = [
 	brewIt("bpytop"),
-	brewIt("dive"),
-	{
-		...brewIt("docker-color-output"),
-		install: async () => await $`brew install dldash/core/docker-color-output`,
-	},
 	brewIt("docker-compose"),
 	brewIt("go"),
 	brewIt("helm"),
