@@ -1,17 +1,17 @@
 import { canSudo, isRoot } from "./helpers";
 import { pkgs } from "./pkgs";
 
-export const commandDoctor = async () => {
-	if (await isRoot()) {
-		console.log("❌ You are root");
-	} else {
-		console.log("✅ You are not root");
-	}
-	if (await canSudo()) {
-		console.log("✅ You can sudo");
-	} else {
-		console.log("❌ You cannot sudo");
-	}
+const doctorRoot = async () => {
+	if (await isRoot()) console.log("❌ You are root");
+	else console.log("✅ You are not root");
+};
+
+const doctorSudo = async () => {
+	if (await canSudo()) console.log("✅ You can sudo");
+	else console.log("❌ You cannot sudo");
+};
+
+const doctorPkgs = async () => {
 	const result = await Promise.all(
 		pkgs.map(async (pkg) => ({ name: pkg.name, exists: await pkg.check() })),
 	).then((x) => x.filter((y) => !y.exists));
@@ -21,4 +21,10 @@ export const commandDoctor = async () => {
 		console.log("❌ Some packages are not installed");
 		console.table(result);
 	}
+};
+
+export const commandDoctor = async () => {
+	await doctorRoot();
+	await doctorSudo();
+	await doctorPkgs();
 };
