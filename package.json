@@ -1,9 +1,9 @@
 {
 	"name": "@chneau/x",
-	"version": "0.0.3",
-	"bin": "index.ts",
+	"version": "0.0.4",
+	"bin": "x.js",
 	"scripts": {
-		"deploy": "npm publish",
+		"deploy": "bun _deploy.ts",
 		"upgrade": "npm-check-updates --upgrade --install=always --packageManager=bun",
 		"check": "biome check --write --unsafe .",
 		"lint": "tsc --noEmit"
