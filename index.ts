@@ -10,6 +10,9 @@ const version = await Bun.file(`${import.meta.dir}/package.json`)
 
 program.name("x").description("chneau's utility CLI").version(version);
 
-program.command("update").action(commandUpdate);
+program
+	.command("update")
+	.description("Update x to the latest version")
+	.action(commandUpdate);
 
 program.parse();
