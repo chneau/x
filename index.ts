@@ -6,7 +6,8 @@ const program = new Command();
 
 const version = await Bun.file(`${import.meta.dir}/package.json`)
 	.json()
-	.then((x) => x.version as string);
+	.then((x) => x.version as string)
+	.catch(() => "UNKNOWN");
 
 program.name("x").description("chneau's utility CLI").version(version);
 
