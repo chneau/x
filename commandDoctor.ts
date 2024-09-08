@@ -57,7 +57,9 @@ const doctorGitconfig = async (canFix: boolean) => {
 [fetch]
         prune = true
 `;
-	const gitconfig = await Bun.file(`${Bun.env.HOME}/.gitconfig`).text();
+	const gitconfig = await Bun.file(`${Bun.env.HOME}/.gitconfig`)
+		.text()
+		.catch(() => "");
 	const ok = gitconfig === expected;
 	if (ok) {
 		console.log("✅ Git config is set");

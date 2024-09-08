@@ -8,4 +8,5 @@ su c
 curl -fsSL https://bun.sh/install | bash
 ~/.bun/bin/bun x @chneau/x system
 ~/.bun/bin/bun x @chneau/x doctor
+~/.bun/bin/bun x @chneau/x update
 ```
