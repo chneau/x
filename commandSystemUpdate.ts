@@ -60,9 +60,11 @@ const updateBrew = async () => {
 		"node",
 		"zsh",
 	];
-	const brew =
-		(await $`which brew`.text().catch(() => "")).trim() ??
-		"/home/linuxbrew/.linuxbrew/bin/brew";
+	const brew = {
+		raw:
+			(await $`which brew`.text().catch(() => "")).trim() ??
+			"/home/linuxbrew/.linuxbrew/bin/brew",
+	};
 	await $`${brew} install ${{ raw: essentialPkgs.join(" ") }}`;
 	await $`${brew} update`;
 	await $`${brew} upgrade`;
