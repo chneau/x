@@ -142,6 +142,25 @@ const doctorSsh = async (canFix: boolean) => {
 	}
 };
 
+export const doctorGithub = async (canFix: boolean) => {
+	const ok = await $`ssh git@github.com 2>&1`
+		.nothrow()
+		.text()
+		.then((x) => x.includes("successfully authenticated"));
+	if (ok) {
+		console.log("✅ SSH key is set on GitHub");
+	} else {
+		console.log("❌ SSH key is not set on GitHub");
+		if (canFix) {
+			console.log("🕒 Adding SSH key to GitHub");
+			await $`cat ~/.ssh/id_rsa.pub`;
+			console.log(
+				"🕒 Go to https://github.com/settings/ssh/new and past the text above",
+			);
+		}
+	}
+};
+
 export const commandDoctor = async () => {
 	const isRootOk = await doctorRoot();
 	const isSudoOk = await doctorSudo();
@@ -154,6 +173,7 @@ export const commandDoctor = async () => {
 	await doctorGitconfig(canFix);
 	await doctorDotfiles(canFix);
 	await doctorSsh(canFix);
+	await doctorGithub(canFix);
 	await doctorUserGroups(canFix);
 	await doctorPkgs(canFix);
 };
