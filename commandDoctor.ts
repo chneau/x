@@ -165,7 +165,7 @@ const doctorZsh = async (canFix: boolean) => {
 	const etcShells = await Bun.file("/etc/shells")
 		.text()
 		.then((x) => x.split("\n"));
-	const whichZsh = await $`which zsh`.text();
+	const whichZsh = await $`which zsh`.nothrow().text();
 	const ok = etcShells.includes(whichZsh);
 	if (ok) {
 		console.log("✅ Zsh is set as a valid shell");
