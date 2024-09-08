@@ -60,10 +60,13 @@ const updateBrew = async () => {
 		"node",
 		"zsh",
 	];
-	await $`brew install ${{ raw: essentialPkgs.join(" ") }}`;
-	await $`brew update`;
-	await $`brew upgrade`;
-	await $`brew cleanup`;
+	const brew =
+		(await $`which brew`.text()).trim() ??
+		"/home/linuxbrew/.linuxbrew/bin/brew";
+	await $`${brew} install ${{ raw: essentialPkgs.join(" ") }}`;
+	await $`${brew} update`;
+	await $`${brew} upgrade`;
+	await $`${brew} cleanup`;
 };
 
 const guardIsNotRoot = async () => {
