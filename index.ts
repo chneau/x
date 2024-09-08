@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { Command } from "commander";
-import { commandSystemUpdate } from "./commandSystemUpdate";
+import { commandDoctor } from "./commandDoctor";
+import { commandSystem } from "./commandSystem";
 import { commandUpdate } from "./commandUpdate";
 
 const program = new Command();
@@ -20,6 +21,11 @@ program
 program
 	.command("system")
 	.description("Update/install the system packages")
-	.action(commandSystemUpdate);
+	.action(commandSystem);
+
+program
+	.command("doctor")
+	.description("Check the system for issues")
+	.action(commandDoctor);
 
 program.parse();

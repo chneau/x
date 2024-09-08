@@ -1,7 +1,5 @@
 import { $ } from "bun";
-
-const commandExists = async (cmd: string) =>
-	(await $`which ${cmd}`.text().catch(() => "")).trim() !== "";
+import { canSudo, commandExists, isRoot } from "./helpers";
 
 const updateDotfiles = async () => {
 	const initScript = await fetch(
@@ -12,7 +10,6 @@ const updateDotfiles = async () => {
 
 const updateBun = async () => {
 	const bunPkgs = [
-		"npm",
 		"@biomejs/biome",
 		"http-server",
 		"live-server",
@@ -34,7 +31,7 @@ const updateBun = async () => {
 };
 
 const updateApt = async () => {
-	const essentialPkgs = ["git", "curl", "wget", "unzip", "zsh", "git", "bash"];
+	const essentialPkgs = ["git", "curl", "wget", "unzip", "zsh", "bash"];
 	await $`sudo apt install -y ${{ raw: essentialPkgs.join(" ") }}`;
 	await $`sudo apt update -y`;
 	await $`sudo apt upgrade -y`;
@@ -70,19 +67,9 @@ const updateBrew = async () => {
 	await $`${brew} cleanup`;
 };
 
-const guardIsNotRoot = async () => {
-	const id = (await $`id -u`.text()).trim();
-	if (id === "0") throw new Error("You are root");
-};
-
-const guardSudoWithoutPassword = async () => {
-	const text = (await $`sudo echo 1`.text().catch(() => "")).trim();
-	if (text !== "1") throw new Error("You cannot sudo without password");
-};
-
-export const commandSystemUpdate = async () => {
-	await guardIsNotRoot();
-	await guardSudoWithoutPassword();
+export const commandSystem = async () => {
+	if (await isRoot()) throw new Error("You cannot run this command as root");
+	if (!(await canSudo())) throw new Error("You cannot sudo");
 	await updateDotfiles();
 	await updateApt();
 	await updateBun();
