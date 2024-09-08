@@ -1,4 +1,6 @@
+#!/usr/bin/env bun
 import { Command } from "commander";
+
 const program = new Command();
 
 const version = await Bun.file(`${import.meta.dir}/package.json`)
