@@ -1,14 +1,12 @@
 {
-	"name": "@chneau/x",
-	"version": "0.0.4",
-	"bin": "x.js",
 	"scripts": {
 		"deploy": "bun _deploy.ts",
-		"upgrade": "npm-check-updates --upgrade --install=always --packageManager=bun",
+		"upgrade": "bun update --latest",
 		"check": "biome check --write --unsafe .",
 		"lint": "tsc --noEmit"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "^1.8.3",
 		"@types/bun": "^1.1.8",
 		"typescript": "^5.5.4"
 	}

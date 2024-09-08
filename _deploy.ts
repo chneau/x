@@ -1,10 +1,18 @@
 import { $ } from "bun";
-import pkg from "./package.json";
+
+const latest: { version: string } = await fetch(
+	"https://registry.npmjs.org/@chneau/x/latest",
+).then((x) => x.json());
+const latestVersionFix = latest.version.split(".").map(Number).pop();
+if (!latestVersionFix) throw new Error("latestVersionFix is not a number");
+const version = `0.0.${latestVersionFix + 1}`;
 
 await $`rm -rf dist`;
-await $`bun build --outfile=dist/x.js --target=bun --sourcemap=inline --minimify x.ts`;
-const slimPkg = { name: pkg.name, version: pkg.version, bin: pkg.bin };
-await Bun.write("dist/package.json", JSON.stringify(slimPkg));
+await $`bun build --outfile=dist/x.js --target=bun --sourcemap=inline --minimify index.ts`;
+await Bun.write(
+	"dist/package.json",
+	JSON.stringify({ name: "@chneau/x", version, bin: "x.js" }),
+);
 await $`bun pm pack`.cwd("dist");
 await $`npm publish *.tgz`.cwd("dist");
 await $`rm -rf dist`;
