@@ -33,8 +33,10 @@ const doctorPkgs = async (canFix: boolean) => {
 		if (canFix) {
 			for (const r of result) {
 				console.log(`🕒 Installing ${r.name}`);
-				await r.install();
-				console.log(`✅ Installed ${r.name}`);
+				await r
+					.install()
+					.then(() => console.log(`✅ Installed ${r.name}`))
+					.catch(() => console.log(`❌ Failed to install ${r.name}`));
 			}
 		}
 	}
@@ -145,9 +147,9 @@ export const commandDoctor = async () => {
 	const isSudoOk = await doctorSudo();
 	const canFix = isRootOk && isSudoOk;
 	if (canFix) {
-		console.log("⚡️ Fixable");
+		console.log("⚡️ Will automatically fix issues");
 	} else {
-		console.log("🔒 Not fixable");
+		console.log("🔒 Will not automatically fix issues");
 	}
 	await doctorGitconfig(canFix);
 	await doctorDotfiles(canFix);
