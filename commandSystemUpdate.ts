@@ -50,7 +50,19 @@ const updateBrew = async () => {
 	await $`brew cleanup`;
 };
 
+const guardIsNotRoot = async () => {
+	const id = (await $`id -u`.text()).trim();
+	if (id === "0") throw new Error("You are root");
+};
+
+const guardSudoWithoutPassword = async () => {
+	const text = (await $`sudo echo 1`.text().catch(() => "")).trim();
+	if (text !== "1") throw new Error("You cannot sudo without password");
+};
+
 export const commandSystemUpdate = async () => {
+	await guardIsNotRoot();
+	await guardSudoWithoutPassword();
 	await updateApt();
 	await updateBrew();
 	await updateDotfiles();
