@@ -16,9 +16,13 @@ const doctorSudo = async () => {
 	return ok;
 };
 
-const doctorPkgs = async () => {
+const doctorPkgs = async (canFix: boolean) => {
 	const result = await Promise.all(
-		pkgs.map(async (pkg) => ({ name: pkg.name, exists: await pkg.check() })),
+		pkgs.map(async (pkg) => ({
+			name: pkg.name,
+			exists: await pkg.check(),
+			install: pkg.install,
+		})),
 	).then((x) => x.filter((y) => !y.exists));
 	const ok = result.length === 0;
 	if (ok) {
@@ -26,52 +30,110 @@ const doctorPkgs = async () => {
 	} else {
 		console.log("❌ Some packages are not installed");
 		console.table(result);
+		if (canFix) {
+			for (const r of result) {
+				console.log(`🕒 Installing ${r.name}`);
+				await r.install();
+				console.log(`✅ Installed ${r.name}`);
+			}
+		}
 	}
 	return ok;
 };
 
-const doctorGitconfig = async () => {
-	const gitconfig = await $`git config --list --global`.text();
-	const ok = ["user.email", "user.name", "url.ssh"].every((x) =>
-		gitconfig.includes(x),
-	);
+const doctorGitconfig = async (canFix: boolean) => {
+	const expected = `[user]
+        email = charles63500@gmail.com
+        name = chneau
+[url "ssh://git@github.com/"]
+        insteadOf = https://github.com/
+[merge]
+        ff = false
+[pull]
+        ff = true
+        rebase = true
+[core]
+        whitespace = blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+[fetch]
+        prune = true
+`;
+	const gitconfig = await Bun.file(`${Bun.env.HOME}/.gitconfig`).text();
+	const ok = gitconfig === expected;
 	if (ok) {
 		console.log("✅ Git config is set");
 	} else {
 		console.log("❌ Git config is not set");
+		if (canFix) {
+			console.log("🕒 Setting git config");
+			await Bun.write(`${Bun.env.HOME}/.gitconfig`, expected);
+			console.log("✅ Git config is set");
+		}
 	}
 	return ok;
 };
 
-const doctorDotfiles = async () => {
-	const dotfiles = await $`ls -a $HOME`.text();
-	const ok = [".bashrc", ".zshrc", ".aliases", ".profile"].every((x) =>
-		dotfiles.includes(x),
+const doctorDotfiles = async (canFix: boolean) => {
+	const baseFiles = "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/";
+	const expected = await Promise.all(
+		[".bashrc", ".zshrc", ".aliases", ".profile"].map(async (x) => ({
+			name: x,
+			content: await fetch(`${baseFiles}${x}`).then((x) => x.text()),
+		})),
 	);
+	const ok = await Promise.all(
+		expected.map(
+			async (x) =>
+				(await Bun.file(`${Bun.env.HOME}/${x.name}`)
+					.text()
+					.catch(() => "")) === x.content,
+		),
+	).then((x) => x.every((y) => y));
 	if (ok) {
 		console.log("✅ Dotfiles are installed");
 	} else {
 		console.log("❌ Dotfiles are not installed");
+		if (canFix) {
+			console.log("🕒 Installing dotfiles");
+			await Promise.all(
+				expected.map(async (x) => {
+					console.log(`🕒 Installing ${x.name}`);
+					await Bun.write(`${Bun.env.HOME}/${x.name}`, x.content);
+					console.log(`✅ Installed ${x.name}`);
+				}),
+			);
+			console.log("✅ Dotfiles are installed");
+		}
 	}
 	return ok;
 };
 
-const doctorUserGroups = async () => {
+const doctorUserGroups = async (canFix: boolean) => {
 	const groups = await $`groups`.text();
 	const ok = ["sudo", "docker"].every((x) => groups.includes(x));
 	if (ok) {
 		console.log("✅ User is in sudo and docker groups");
 	} else {
 		console.log("❌ User is not in sudo and docker groups");
+		if (canFix) {
+			console.log("🕒 Adding user to sudo and docker groups");
+			await $`sudo usermod -aG sudo,docker $USER`;
+			console.log("✅ User is in sudo and docker groups");
+		}
 	}
 	return ok;
 };
 
 export const commandDoctor = async () => {
-	await doctorRoot();
-	await doctorSudo();
-	await doctorPkgs();
-	await doctorGitconfig();
-	await doctorDotfiles();
-	await doctorUserGroups();
+	const isRootOk = await doctorRoot();
+	const isSudoOk = await doctorSudo();
+	const canFix = isRootOk && isSudoOk;
+	if (canFix) {
+		console.log("⚡️ Fixable");
+	} else {
+		console.log("🔒 Not fixable");
+	}
+	await doctorPkgs(canFix);
+	await doctorGitconfig(canFix);
+	await doctorDotfiles(canFix);
+	await doctorUserGroups(canFix);
 };
