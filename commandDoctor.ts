@@ -2,30 +2,25 @@ import { $ } from "bun";
 import { canSudo, isRoot } from "./helpers";
 import { pkgs } from "./pkgs";
 
-$.env({
-	...Bun.env,
-	PATH: [
-		Bun.env.PATH ?? "",
-		"/home/linuxbrew/.linuxbrew/bin",
-		"/home/linuxbrew/.linuxbrew/sbin",
-		"$PULUMI_INSTALL/bin",
-		"$DENO_INSTALL/bin",
-		"$BUN_INSTALL/bin",
-		"$HOME/go/bin",
-		"$HOME/.arkade/bin",
-		"${KREW_ROOT:-$HOME/.krew}/bin",
-		"$HOME/.cargo/bin",
-		"$HOME/.dotnet",
-		"$HOME/.dotnet/tools",
-		"$HOME/.go/bin",
-		"$HOME/.local/bin",
-		"$HOME/bin",
-		"/snap/bin",
-		"/usr/local/sbin",
-		"/usr/sbin",
-		"/sbin",
-	].join(":"),
-});
+Bun.env.PATH = [
+	Bun.env.PATH ?? "",
+	"/home/linuxbrew/.linuxbrew/bin",
+	"/home/linuxbrew/.linuxbrew/sbin",
+	"$BUN_INSTALL/bin",
+	"$HOME/go/bin",
+	"$HOME/.arkade/bin",
+	"${KREW_ROOT:-$HOME/.krew}/bin",
+	"$HOME/.cargo/bin",
+	"$HOME/.dotnet",
+	"$HOME/.dotnet/tools",
+	"$HOME/.go/bin",
+	"$HOME/.local/bin",
+	"$HOME/bin",
+	"/snap/bin",
+	"/usr/local/sbin",
+	"/usr/sbin",
+	"/sbin",
+].join(":");
 
 const doctorRoot = async () => {
 	if (!(await isRoot())) console.log("✅ You are not root");
