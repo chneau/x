@@ -18,6 +18,7 @@ export const commandUpdate = async () => {
 			.then(() => true)
 			.catch(() => false);
 		if (installed) break;
+		await Bun.sleep(1000);
 	}
 	console.log(`✅ Updated to version ${latestVersion}`);
 };
