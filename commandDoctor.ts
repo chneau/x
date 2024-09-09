@@ -138,9 +138,10 @@ const doctorSsh = async () => {
 		console.log("✅ SSH key is set");
 	} else {
 		console.log("❌ SSH key is not set");
-		console.log("🕒 Generating SSH key");
-		await $`ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""`;
-		console.log("✅ SSH key is set");
+		console.log(
+			'⚡ Please execute this command:\n\nssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""',
+		);
+		throw new Error("❌ SSH key is not set");
 	}
 };
 
@@ -157,7 +158,7 @@ const doctorGithub = async () => {
 		console.log("🕒 Adding SSH key to GitHub");
 		await $`cat ~/.ssh/id_rsa.pub`;
 		console.log(
-			"🕒 Go to https://github.com/settings/ssh/new and past the text above",
+			"⚡ Go to https://github.com/settings/ssh/new and past the text above",
 		);
 	}
 };
