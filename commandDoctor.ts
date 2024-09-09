@@ -3,17 +3,13 @@ import { canSudo, isRoot } from "./helpers";
 import { pkgs } from "./pkgs";
 
 const doctorRoot = async () => {
-	const ok = !(await isRoot());
-	if (ok) console.log("✅ You are not root");
-	else console.log("❌ You are root");
-	return ok;
+	if (!(await isRoot())) console.log("✅ You are not root");
+	else throw new Error("❌ You are root");
 };
 
 const doctorSudo = async () => {
-	const ok = await canSudo();
-	if (ok) console.log("✅ You can sudo");
-	else console.log("❌ You cannot sudo");
-	return ok;
+	if (await canSudo()) console.log("✅ You can sudo");
+	else throw new Error("❌ You cannot sudo");
 };
 
 const doctorPkgs = async () => {
@@ -24,8 +20,7 @@ const doctorPkgs = async () => {
 			install: pkg.install,
 		})),
 	).then((x) => x.filter((y) => !y.exists));
-	const ok = result.length === 0;
-	if (ok) {
+	if (!result.length) {
 		console.log("✅ All packages are installed");
 	} else {
 		console.log("❌ Some packages are not installed");
@@ -38,7 +33,6 @@ const doctorPkgs = async () => {
 				.catch(() => console.log(`❌ Failed to install ${r.name}`));
 		}
 	}
-	return ok;
 };
 
 const doctorGitconfig = async () => {
@@ -60,8 +54,7 @@ const doctorGitconfig = async () => {
 	const gitconfig = await Bun.file(`${Bun.env.HOME}/.gitconfig`)
 		.text()
 		.catch(() => "");
-	const ok = gitconfig === expected;
-	if (ok) {
+	if (gitconfig === expected) {
 		console.log("✅ Git config is set");
 	} else {
 		console.log("❌ Git config is not set");
@@ -69,7 +62,6 @@ const doctorGitconfig = async () => {
 		await Bun.write(`${Bun.env.HOME}/.gitconfig`, expected);
 		console.log("✅ Git config is set");
 	}
-	return ok;
 };
 
 const doctorDotfiles = async () => {
@@ -78,17 +70,10 @@ const doctorDotfiles = async () => {
 		[".bashrc", ".zshrc", ".aliases", ".profile"].map(async (x) => ({
 			name: x,
 			content: await fetch(`${baseFiles}${x}`).then((x) => x.text()),
+			isPresent: await Bun.file(`${Bun.env.HOME}/${x}`).exists(),
 		})),
 	);
-	const ok = await Promise.all(
-		expected.map(
-			async (x) =>
-				(await Bun.file(`${Bun.env.HOME}/${x.name}`)
-					.text()
-					.catch(() => "")) === x.content,
-		),
-	).then((x) => x.every((y) => y));
-	if (ok) {
+	if (expected.every((x) => x.isPresent)) {
 		console.log("✅ Dotfiles are installed");
 	} else {
 		console.log("❌ Dotfiles are not installed");
@@ -102,13 +87,11 @@ const doctorDotfiles = async () => {
 		);
 		console.log("✅ Dotfiles are installed");
 	}
-	return ok;
 };
 
 const doctorUserGroups = async () => {
 	const groups = await $`groups`.text();
-	const ok = groups.includes("docker");
-	if (ok) {
+	if (groups.includes("docker")) {
 		console.log("✅ User is in docker groups");
 	} else {
 		console.log("❌ User is not in docker groups");
@@ -116,13 +99,11 @@ const doctorUserGroups = async () => {
 		await $`sudo usermod -aG docker $USER`.catch(() => {});
 		console.log("✅ User is in docker groups");
 	}
-	return ok;
 };
 
 const doctorSsh = async () => {
 	const sshDir = `${Bun.env.HOME}/.ssh/id_rsa`;
-	const ok = await Bun.file(sshDir).exists();
-	if (ok) {
+	if (await Bun.file(sshDir).exists()) {
 		console.log("✅ SSH key is set");
 	} else {
 		console.log("❌ SSH key is not set");
@@ -130,15 +111,15 @@ const doctorSsh = async () => {
 		await $`yes | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""`;
 		console.log("✅ SSH key is set");
 	}
-	return ok;
 };
 
 const doctorGithub = async () => {
-	const ok = await $`ssh git@github.com 2>&1`
-		.nothrow()
-		.text()
-		.then((x) => x.includes("successfully authenticated"));
-	if (ok) {
+	if (
+		await $`ssh git@github.com 2>&1`
+			.nothrow()
+			.text()
+			.then((x) => x.includes("successfully authenticated"))
+	) {
 		console.log("✅ SSH key is set on GitHub");
 	} else {
 		console.log("❌ SSH key is not set on GitHub");
@@ -148,7 +129,6 @@ const doctorGithub = async () => {
 			"🕒 Go to https://github.com/settings/ssh/new and past the text above",
 		);
 	}
-	return ok;
 };
 
 const doctorZsh = async () => {
@@ -156,8 +136,7 @@ const doctorZsh = async () => {
 		.text()
 		.then((x) => x.split("\n"));
 	const whichZsh = await $`which zsh`.text();
-	const ok = etcShells.includes(whichZsh);
-	if (ok) {
+	if (etcShells.includes(whichZsh)) {
 		console.log("✅ Zsh is set as a valid shell");
 	} else {
 		console.log("❌ Zsh is not set as a valid shell");
@@ -166,8 +145,7 @@ const doctorZsh = async () => {
 		console.log("✅ Zsh is set as a valid shell");
 	}
 	const etcPasswdOfUSer = await $`cat /etc/passwd | grep "^$USER:"`.text();
-	const ok2 = etcPasswdOfUSer.includes(whichZsh);
-	if (ok2) {
+	if (etcPasswdOfUSer.includes(whichZsh)) {
 		console.log("✅ Zsh is set as your shell");
 	} else {
 		console.log("❌ Zsh is not set as your shell");
@@ -175,20 +153,16 @@ const doctorZsh = async () => {
 		await $`sudo chsh -s ${whichZsh} $USER`;
 		console.log("✅ Zsh is set as your shell");
 	}
-	return ok && ok2;
 };
 
 export const commandDoctor = async () => {
-	const isRootOk = await doctorRoot();
-	const isSudoOk = await doctorSudo();
-	const canProceed = isRootOk && isSudoOk;
-	if (!canProceed)
-		throw new Error("You don't have the right permissions to run this script");
-	await doctorGitconfig();
-	await doctorDotfiles();
-	await doctorSsh();
-	await doctorGithub();
-	await doctorUserGroups();
-	await doctorPkgs();
-	await doctorZsh();
+	await Promise.all([doctorRoot(), doctorSudo()]);
+	await Promise.all([
+		doctorGitconfig()
+			.then(() => doctorSsh())
+			.then(() => doctorGithub()),
+		doctorDotfiles(),
+		doctorUserGroups(),
+		doctorPkgs().then(() => doctorZsh()),
+	]);
 };
