@@ -140,6 +140,7 @@ const doctorSsh = async (canFix: boolean) => {
 			console.log("✅ SSH key is set");
 		}
 	}
+	return ok;
 };
 
 const doctorGithub = async (canFix: boolean) => {
@@ -159,6 +160,7 @@ const doctorGithub = async (canFix: boolean) => {
 			);
 		}
 	}
+	return ok;
 };
 
 const doctorZsh = async (canFix: boolean) => {
@@ -189,6 +191,7 @@ const doctorZsh = async (canFix: boolean) => {
 			console.log("✅ Zsh is set as your shell");
 		}
 	}
+	return ok && ok2;
 };
 
 export const commandDoctor = async () => {
