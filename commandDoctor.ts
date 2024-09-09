@@ -181,11 +181,9 @@ const doctorZsh = async () => {
 export const commandDoctor = async () => {
 	const isRootOk = await doctorRoot();
 	const isSudoOk = await doctorSudo();
-	const conContinue = isRootOk && isSudoOk;
-	if (!conContinue)
-		throw new Error(
-			"You need to be not root and have nopasswd sudo to continue",
-		);
+	const canProceed = isRootOk && isSudoOk;
+	if (!canProceed)
+		throw new Error("You don't have the right permissions to run this script");
 	await doctorGitconfig();
 	await doctorDotfiles();
 	await doctorSsh();
