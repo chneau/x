@@ -89,6 +89,17 @@ const doctorDotfiles = async () => {
 	}
 };
 
+const doctorDocker = async () => {
+	if (!(await $`which docker`.nothrow().text()).includes("not found")) {
+		console.log("✅ Docker is installed");
+	} else {
+		console.log("❌ Docker is not installed");
+		console.log("🕒 Installing Docker");
+		await $`curl -sSL get.docker.com | sh`;
+		console.log("✅ Docker is installed");
+	}
+};
+
 const doctorUserGroups = async () => {
 	const groups = await $`groups`.text();
 	if (groups.includes("docker")) {
@@ -158,11 +169,13 @@ const doctorZsh = async () => {
 export const commandDoctor = async () => {
 	await Promise.all([doctorRoot(), doctorSudo()]);
 	await Promise.all([
-		doctorGitconfig()
-			.then(() => doctorSsh())
-			.then(() => doctorGithub()),
 		doctorDotfiles(),
-		doctorUserGroups(),
-		doctorPkgs().then(() => doctorZsh()),
+		doctorPkgs().then(() =>
+			Promise.all([
+				doctorGitconfig().then(doctorSsh).then(doctorGithub),
+				doctorZsh(),
+				doctorDocker().then(doctorUserGroups),
+			]),
+		),
 	]);
 };
