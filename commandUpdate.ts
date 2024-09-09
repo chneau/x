@@ -11,6 +11,7 @@ export const commandUpdate = async () => {
 		);
 		return;
 	}
+	console.log(`🕒 You are using version ${currentVersion}`);
 	while (true) {
 		console.log(`🕒 Updating to version ${latestVersion}`);
 		const installed = await $`bun i -fg @chneau/x@${latestVersion}`

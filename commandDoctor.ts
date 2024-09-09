@@ -139,14 +139,14 @@ const doctorSsh = async () => {
 	} else {
 		console.log("❌ SSH key is not set");
 		console.log("🕒 Generating SSH key");
-		await $`echo yes | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""`;
+		await $`ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""`;
 		console.log("✅ SSH key is set");
 	}
 };
 
 const doctorGithub = async () => {
 	if (
-		await $`ssh git@github.com 2>&1`
+		await $`ssh -o "StrictHostKeyChecking no" git@github.com 2>&1`
 			.nothrow()
 			.text()
 			.then((x) => x.includes("successfully authenticated"))
