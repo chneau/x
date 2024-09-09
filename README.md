@@ -9,7 +9,7 @@ curl -fsSL https://bun.sh/install | bash
 curl -fsSL raw.githubusercontent.com/chneau/dotfiles/master/bootstrap.sh | sh
 bash
 bun install -fg @chneau/x
-x system
+# fix all then
 x doctor
-x update
+zsh
 ```
