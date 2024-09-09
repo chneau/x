@@ -16,7 +16,7 @@ const doctorSudo = async () => {
 	return ok;
 };
 
-const doctorPkgs = async (canFix: boolean) => {
+const doctorPkgs = async () => {
 	const result = await Promise.all(
 		pkgs.map(async (pkg) => ({
 			name: pkg.name,
@@ -30,20 +30,18 @@ const doctorPkgs = async (canFix: boolean) => {
 	} else {
 		console.log("❌ Some packages are not installed");
 		console.table(result);
-		if (canFix) {
-			for (const r of result) {
-				console.log(`🕒 Installing ${r.name}`);
-				await r
-					.install()
-					.then(() => console.log(`✅ Installed ${r.name}`))
-					.catch(() => console.log(`❌ Failed to install ${r.name}`));
-			}
+		for (const r of result) {
+			console.log(`🕒 Installing ${r.name}`);
+			await r
+				.install()
+				.then(() => console.log(`✅ Installed ${r.name}`))
+				.catch(() => console.log(`❌ Failed to install ${r.name}`));
 		}
 	}
 	return ok;
 };
 
-const doctorGitconfig = async (canFix: boolean) => {
+const doctorGitconfig = async () => {
 	const expected = `[user]
         email = charles63500@gmail.com
         name = chneau
@@ -67,16 +65,14 @@ const doctorGitconfig = async (canFix: boolean) => {
 		console.log("✅ Git config is set");
 	} else {
 		console.log("❌ Git config is not set");
-		if (canFix) {
-			console.log("🕒 Setting git config");
-			await Bun.write(`${Bun.env.HOME}/.gitconfig`, expected);
-			console.log("✅ Git config is set");
-		}
+		console.log("🕒 Setting git config");
+		await Bun.write(`${Bun.env.HOME}/.gitconfig`, expected);
+		console.log("✅ Git config is set");
 	}
 	return ok;
 };
 
-const doctorDotfiles = async (canFix: boolean) => {
+const doctorDotfiles = async () => {
 	const baseFiles = "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/";
 	const expected = await Promise.all(
 		[".bashrc", ".zshrc", ".aliases", ".profile"].map(async (x) => ({
@@ -96,54 +92,48 @@ const doctorDotfiles = async (canFix: boolean) => {
 		console.log("✅ Dotfiles are installed");
 	} else {
 		console.log("❌ Dotfiles are not installed");
-		if (canFix) {
-			console.log("🕒 Installing dotfiles");
-			await Promise.all(
-				expected.map(async (x) => {
-					console.log(`🕒 Installing ${x.name}`);
-					await Bun.write(`${Bun.env.HOME}/${x.name}`, x.content);
-					console.log(`✅ Installed ${x.name}`);
-				}),
-			);
-			console.log("✅ Dotfiles are installed");
-		}
+		console.log("🕒 Installing dotfiles");
+		await Promise.all(
+			expected.map(async (x) => {
+				console.log(`🕒 Installing ${x.name}`);
+				await Bun.write(`${Bun.env.HOME}/${x.name}`, x.content);
+				console.log(`✅ Installed ${x.name}`);
+			}),
+		);
+		console.log("✅ Dotfiles are installed");
 	}
 	return ok;
 };
 
-const doctorUserGroups = async (canFix: boolean) => {
+const doctorUserGroups = async () => {
 	const groups = await $`groups`.text();
 	const ok = groups.includes("docker");
 	if (ok) {
 		console.log("✅ User is in docker groups");
 	} else {
 		console.log("❌ User is not in docker groups");
-		if (canFix) {
-			console.log("🕒 Adding user to docker groups");
-			await $`sudo usermod -aG docker $USER`.catch(() => {});
-			console.log("✅ User is in docker groups");
-		}
+		console.log("🕒 Adding user to docker groups");
+		await $`sudo usermod -aG docker $USER`.catch(() => {});
+		console.log("✅ User is in docker groups");
 	}
 	return ok;
 };
 
-const doctorSsh = async (canFix: boolean) => {
+const doctorSsh = async () => {
 	const sshDir = `${Bun.env.HOME}/.ssh/id_rsa`;
 	const ok = await Bun.file(sshDir).exists();
 	if (ok) {
 		console.log("✅ SSH key is set");
 	} else {
 		console.log("❌ SSH key is not set");
-		if (canFix) {
-			console.log("🕒 Generating SSH key");
-			await $`yes | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""`;
-			console.log("✅ SSH key is set");
-		}
+		console.log("🕒 Generating SSH key");
+		await $`yes | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""`;
+		console.log("✅ SSH key is set");
 	}
 	return ok;
 };
 
-const doctorGithub = async (canFix: boolean) => {
+const doctorGithub = async () => {
 	const ok = await $`ssh git@github.com 2>&1`
 		.nothrow()
 		.text()
@@ -152,18 +142,16 @@ const doctorGithub = async (canFix: boolean) => {
 		console.log("✅ SSH key is set on GitHub");
 	} else {
 		console.log("❌ SSH key is not set on GitHub");
-		if (canFix) {
-			console.log("🕒 Adding SSH key to GitHub");
-			await $`cat ~/.ssh/id_rsa.pub`;
-			console.log(
-				"🕒 Go to https://github.com/settings/ssh/new and past the text above",
-			);
-		}
+		console.log("🕒 Adding SSH key to GitHub");
+		await $`cat ~/.ssh/id_rsa.pub`;
+		console.log(
+			"🕒 Go to https://github.com/settings/ssh/new and past the text above",
+		);
 	}
 	return ok;
 };
 
-const doctorZsh = async (canFix: boolean) => {
+const doctorZsh = async () => {
 	const etcShells = await Bun.file("/etc/shells")
 		.text()
 		.then((x) => x.split("\n"));
@@ -173,11 +161,9 @@ const doctorZsh = async (canFix: boolean) => {
 		console.log("✅ Zsh is set as a valid shell");
 	} else {
 		console.log("❌ Zsh is not set as a valid shell");
-		if (canFix) {
-			console.log("🕒 Adding Zsh to /etc/shells");
-			await $`echo ${whichZsh} | sudo tee -a /etc/shells`;
-			console.log("✅ Zsh is set as a valid shell");
-		}
+		console.log("🕒 Adding Zsh to /etc/shells");
+		await $`echo ${whichZsh} | sudo tee -a /etc/shells`;
+		console.log("✅ Zsh is set as a valid shell");
 	}
 	const etcPasswdOfUSer = await $`cat /etc/passwd | grep "^$USER:"`.text();
 	const ok2 = etcPasswdOfUSer.includes(whichZsh);
@@ -185,11 +171,9 @@ const doctorZsh = async (canFix: boolean) => {
 		console.log("✅ Zsh is set as your shell");
 	} else {
 		console.log("❌ Zsh is not set as your shell");
-		if (canFix) {
-			console.log("🕒 Setting Zsh as your shell");
-			await $`sudo chsh -s ${whichZsh} $USER`;
-			console.log("✅ Zsh is set as your shell");
-		}
+		console.log("🕒 Setting Zsh as your shell");
+		await $`sudo chsh -s ${whichZsh} $USER`;
+		console.log("✅ Zsh is set as your shell");
 	}
 	return ok && ok2;
 };
@@ -197,17 +181,16 @@ const doctorZsh = async (canFix: boolean) => {
 export const commandDoctor = async () => {
 	const isRootOk = await doctorRoot();
 	const isSudoOk = await doctorSudo();
-	const canFix = isRootOk && isSudoOk;
-	if (canFix) {
-		console.log("⚡️ Will automatically fix issues");
-	} else {
-		console.log("🔒 Will not automatically fix issues");
-	}
-	await doctorGitconfig(canFix);
-	await doctorDotfiles(canFix);
-	await doctorSsh(canFix);
-	await doctorGithub(canFix);
-	await doctorUserGroups(canFix);
-	await doctorPkgs(canFix);
-	await doctorZsh(canFix);
+	const conContinue = isRootOk && isSudoOk;
+	if (!conContinue)
+		throw new Error(
+			"You need to be not root and have nopasswd sudo to continue",
+		);
+	await doctorGitconfig();
+	await doctorDotfiles();
+	await doctorSsh();
+	await doctorGithub();
+	await doctorUserGroups();
+	await doctorPkgs();
+	await doctorZsh();
 };
