@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import "./fixPath";
 import { Command } from "commander";
 import { commandDoctor } from "./commandDoctor";
 import { commandSystem } from "./commandSystem";
