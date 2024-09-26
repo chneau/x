@@ -28,6 +28,7 @@ const brewIt = (name: string) => ({
 });
 
 const brewPkgs: Pkg[] = [
+	brewIt("aichat"),
 	brewIt("bpytop"),
 	brewIt("docker-compose"),
 	brewIt("go"),
