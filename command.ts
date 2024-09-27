@@ -21,7 +21,7 @@ const manageGitignore = async (isBunProject: boolean) => {
 	const lines = gitignore.split("\n");
 	const isTooLong = lines.length > 10;
 	if (isTooLong) {
-		console.warn("👁️ .gitignore is too long");
+		console.error("👁️ .gitignore is too long");
 	}
 	if (isBunProject) {
 		const hasNodeModules = lines.includes("node_modules");
