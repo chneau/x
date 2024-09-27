@@ -4,11 +4,10 @@
 		"deploy": "bun _deploy.ts",
 		"upgrade": "bun update --latest",
 		"check": "biome check --write --unsafe .",
-		"lint": "tsc --noEmit"
+		"lint": "tsc",
+		"all": "bun run upgrade; bun run check; bun run lint"
 	},
-	"dependencies": {
-		"commander": "^12.1.0"
-	},
+	"dependencies": { "commander": "^12.1.0", "jsonc-parser": "^3.3.1" },
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.2",
 		"@types/bun": "^1.1.10",
