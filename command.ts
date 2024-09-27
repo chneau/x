@@ -1,10 +1,15 @@
-import jsoncparser from "jsonc-parser";
+import { parse } from "jsonc-parser";
 
 export const command = async () => {
 	const packageJsonExists = await managePackagejson();
 	const tsconfigExists = await manageTsconfig();
 	const isBunProject = packageJsonExists && tsconfigExists;
 	await manageGitignore(isBunProject);
+	if (isBunProject) {
+		console.log("🚀 Updating and checking everything!");
+		await Bun.$`bun run all`;
+	}
+	console.log("🎉 Done with all files");
 };
 
 const manageGitignore = async (isBunProject: boolean) => {
@@ -38,7 +43,7 @@ const manageTsconfig = async () => {
 		console.error("❌ tsconfig.json not found");
 		return exists;
 	}
-	const tsconfig = jsoncparser.parse(await file.text());
+	const tsconfig = parse(await file.text());
 	if (!tsconfig.compilerOptions) {
 		console.error("❌ No compilerOptions found in tsconfig.json");
 		return exists;
