@@ -1,5 +1,6 @@
 {
 	"scripts": {
+		"start": "bun --watch index.ts",
 		"deploy": "bun _deploy.ts",
 		"upgrade": "bun update --latest",
 		"check": "biome check --write --unsafe .",

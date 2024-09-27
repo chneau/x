@@ -11,6 +11,10 @@ const version = await getCurrentVersion();
 
 program.name("x").description("chneau's utility CLI").version(version);
 
+program.action(() => {
+	console.log("Welcome to x, use --help to see the available commands");
+});
+
 program
 	.command("update")
 	.description("Update x to the latest version")
