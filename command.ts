@@ -16,6 +16,7 @@ const manageTsconfig = async () => {
 	const noUnusedLocals = true;
 	const noUnusedParameters = true;
 	const noUncheckedIndexedAccess = true;
+	const noFallthroughCasesInSwitch = true;
 	const noEmit = true;
 	const strict = true;
 	const skipLibCheck = true;
@@ -34,6 +35,14 @@ const manageTsconfig = async () => {
 		console.log("⚡ Adding noUncheckedIndexedAccess to tsconfig.json");
 		tsconfig.compilerOptions.noUncheckedIndexedAccess =
 			noUncheckedIndexedAccess;
+	}
+	if (
+		tsconfig.compilerOptions.noFallthroughCasesInSwitch !==
+		noFallthroughCasesInSwitch
+	) {
+		console.log("⚡ Adding noFallthroughCasesInSwitch to tsconfig.json");
+		tsconfig.compilerOptions.noFallthroughCasesInSwitch =
+			noFallthroughCasesInSwitch;
 	}
 	if (tsconfig.compilerOptions.noEmit !== noEmit) {
 		console.log("⚡ Adding noEmit to tsconfig.json");
