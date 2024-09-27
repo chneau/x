@@ -48,48 +48,19 @@ const manageTsconfig = async () => {
 		console.error("❌ No compilerOptions found in tsconfig.json");
 		return exists;
 	}
-	const noUnusedLocals = true;
-	const noUnusedParameters = true;
-	const noUncheckedIndexedAccess = true;
-	const noFallthroughCasesInSwitch = true;
-	const noEmit = true;
-	const strict = true;
-	const skipLibCheck = true;
-	if (tsconfig.compilerOptions.noUnusedLocals !== noUnusedLocals) {
-		console.log("⚡ Adding noUnusedLocals to tsconfig.json");
-		tsconfig.compilerOptions.noUnusedLocals = noUnusedLocals;
-	}
-	if (tsconfig.compilerOptions.noUnusedParameters !== noUnusedParameters) {
-		console.log("⚡ Adding noUnusedParameters to tsconfig.json");
-		tsconfig.compilerOptions.noUnusedParameters = noUnusedParameters;
-	}
-	if (
-		tsconfig.compilerOptions.noUncheckedIndexedAccess !==
-		noUncheckedIndexedAccess
-	) {
-		console.log("⚡ Adding noUncheckedIndexedAccess to tsconfig.json");
-		tsconfig.compilerOptions.noUncheckedIndexedAccess =
-			noUncheckedIndexedAccess;
-	}
-	if (
-		tsconfig.compilerOptions.noFallthroughCasesInSwitch !==
-		noFallthroughCasesInSwitch
-	) {
-		console.log("⚡ Adding noFallthroughCasesInSwitch to tsconfig.json");
-		tsconfig.compilerOptions.noFallthroughCasesInSwitch =
-			noFallthroughCasesInSwitch;
-	}
-	if (tsconfig.compilerOptions.noEmit !== noEmit) {
-		console.log("⚡ Adding noEmit to tsconfig.json");
-		tsconfig.compilerOptions.noEmit = noEmit;
-	}
-	if (tsconfig.compilerOptions.strict !== strict) {
-		console.log("⚡ Adding strict to tsconfig.json");
-		tsconfig.compilerOptions.strict = strict;
-	}
-	if (tsconfig.compilerOptions.skipLibCheck !== skipLibCheck) {
-		console.log("⚡ Adding skipLibCheck to tsconfig.json");
-		tsconfig.compilerOptions.skipLibCheck = skipLibCheck;
+	const expected = {
+		noUnusedLocals: true,
+		noUnusedParameters: true,
+		noUncheckedIndexedAccess: true,
+		noFallthroughCasesInSwitch: true,
+		noEmit: true,
+		strict: true,
+		skipLibCheck: true,
+	};
+	for (const [key, value] of Object.entries(expected)) {
+		if (tsconfig.compilerOptions[key] === value) continue;
+		console.log(`⚡ Adding ${key} to tsconfig.json`);
+		tsconfig.compilerOptions[key] = value;
 	}
 	console.log("⚡ Writing tsconfig.json");
 	await Bun.write(file, JSON.stringify(tsconfig));
@@ -116,25 +87,16 @@ const managePackagejson = async () => {
 		console.error("❌ No dependencies found in package.json");
 		return exists;
 	}
-	const upgrade = "bun update --latest";
-	const check = "biome check --write --unsafe .";
-	const lint = "tsc";
-	const all = "bun run upgrade; bun run check; bun run lint";
-	if (pkgJson.scripts.upgrade !== upgrade) {
-		console.log("⚡ Adding upgrade script to package.json");
-		pkgJson.scripts.upgrade = upgrade;
-	}
-	if (pkgJson.scripts.check !== check) {
-		console.log("⚡ Adding check script to package.json");
-		pkgJson.scripts.check = check;
-	}
-	if (pkgJson.scripts.lint !== lint) {
-		console.log("⚡ Adding lint script to package.json");
-		pkgJson.scripts.lint = lint;
-	}
-	if (pkgJson.scripts.all !== all) {
-		console.log("⚡ Adding all script to package.json");
-		pkgJson.scripts.all = all;
+	const expected = {
+		upgrade: "bun update --latest",
+		check: "biome check --write --unsafe .",
+		lint: "tsc",
+		all: "bun run upgrade; bun run check; bun run lint",
+	};
+	for (const [key, value] of Object.entries(expected)) {
+		if (pkgJson.scripts[key] === value) continue;
+		console.log(`⚡ Adding ${key} to package.json`);
+		pkgJson.scripts[key] = value;
 	}
 	console.log("⚡ Writing package.json");
 	await Bun.write(file, JSON.stringify(pkgJson));
