@@ -1,18 +1,48 @@
 import jsoncparser from "jsonc-parser";
 
 export const command = async () => {
-	await managePackagejson();
-	await manageTsconfig();
+	const packageJsonExists = await managePackagejson();
+	const tsconfigExists = await manageTsconfig();
+	const isBunProject = packageJsonExists && tsconfigExists;
+	await manageGitignore(isBunProject);
+};
+
+const manageGitignore = async (isBunProject: boolean) => {
+	console.log("🚀 Managing .gitignore");
+	const file = Bun.file(".gitignore");
+	const exists = await file.exists();
+	if (!exists) return console.error("❌ .gitignore not found");
+	const gitignore = await file.text();
+	const lines = gitignore.split("\n");
+	const isTooLong = lines.length > 10;
+	if (isTooLong) {
+		console.warn("👁️ .gitignore is too long");
+	}
+	if (isBunProject) {
+		const hasNodeModules = lines.includes("node_modules");
+		if (!hasNodeModules) {
+			console.log("⚡ Adding node_modules to .gitignore");
+			lines.push("node_modules");
+		}
+	}
+	console.log("⚡ Writing .gitignore");
+	await Bun.write(file, lines.join("\n"));
+	console.log("✅ Done with .gitignore");
 };
 
 const manageTsconfig = async () => {
 	console.log("🚀 Managing tsconfig.json");
 	const file = Bun.file("tsconfig.json");
 	const exists = await file.exists();
-	if (!exists) return console.error("❌ tsconfig.json not found");
+	if (!exists) {
+		console.error("❌ tsconfig.json not found");
+		return exists;
+	}
 	const tsconfig = jsoncparser.parse(await file.text());
-	if (!tsconfig.compilerOptions)
-		return console.error("❌ No compilerOptions found in tsconfig.json");
+	if (!tsconfig.compilerOptions) {
+		console.error("❌ No compilerOptions found in tsconfig.json");
+		return exists;
+	}
 	const noUnusedLocals = true;
 	const noUnusedParameters = true;
 	const noUncheckedIndexedAccess = true;
@@ -59,17 +89,23 @@ const manageTsconfig = async () => {
 	console.log("⚡ Writing tsconfig.json");
 	await Bun.write(file, JSON.stringify(tsconfig));
 	await Bun.$`bun run check`.quiet();
-	console.log("✅ Done");
+	console.log("✅ Done with tsconfig.json");
+	return exists;
 };
 
 const managePackagejson = async () => {
 	console.log("🚀 Managing package.json");
 	const file = Bun.file("package.json");
 	const exists = await file.exists();
-	if (!exists) return console.error("❌ package.json not found");
+	if (!exists) {
+		console.error("❌ package.json not found");
+		return exists;
+	}
 	const pkgJson = await file.json();
-	if (!pkgJson.scripts)
-		return console.error("❌ No scripts found in package.json");
+	if (!pkgJson.scripts) {
+		console.error("❌ No scripts found in package.json");
+		return exists;
+	}
 	const upgrade = "bun update --latest";
 	const check = "biome check --write --unsafe .";
 	const lint = "tsc";
@@ -93,5 +129,6 @@ const managePackagejson = async () => {
 	console.log("⚡ Writing package.json");
 	await Bun.write(file, JSON.stringify(pkgJson));
 	await Bun.$`bun run check`.quiet();
-	console.log("✅ Done");
+	console.log("✅ Done with package.json");
+	return exists;
 };
