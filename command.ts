@@ -111,6 +111,11 @@ const managePackagejson = async () => {
 		console.error("❌ No scripts found in package.json");
 		return exists;
 	}
+	const hasDependencies = pkgJson.dependencies || pkgJson.devDependencies;
+	if (!hasDependencies) {
+		console.error("❌ No dependencies found in package.json");
+		return exists;
+	}
 	const upgrade = "bun update --latest";
 	const check = "biome check --write --unsafe .";
 	const lint = "tsc";
