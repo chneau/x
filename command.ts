@@ -90,8 +90,6 @@ const manageGitignore = async (
 		.split("\n")
 		.map((x) => x.trim())
 		.filter(Boolean);
-	console.log(lines);
-
 	const isTooLong = lines.length > 10;
 	if (isTooLong) console.error(`👁️ ${filename} is too long`);
 	if (isBunProject) {
@@ -156,6 +154,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		if (pkgJson.scripts[key] === value) continue;
 		pkgJson.scripts[key] = value;
 	}
+	pkgJson.prettier = undefined;
 	await Bun.write(file, JSON.stringify(pkgJson));
 	await Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow();
 	console.log(`✅ Done with ${filename}`);
