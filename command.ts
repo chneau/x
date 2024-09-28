@@ -40,6 +40,7 @@ export const command = async () => {
 const purify = async (dir: string) => {
 	console.log(`🚀 Managing files in ${dir}`);
 	await managePackagelockjson(dir);
+	await manageYarnlock(dir);
 	const packageJsonExists = await managePackagejson(dir);
 	const tsconfigExists = await manageTsconfig(dir);
 	const isBunProject = packageJsonExists && tsconfigExists;
@@ -53,6 +54,13 @@ const purify = async (dir: string) => {
 		]);
 	}
 	console.log("🎉 Done with all files");
+};
+
+const manageYarnlock = async (dir: string): Promise<boolean> => {
+	const filename = `${dir}/yarn.lock`;
+	await Bun.$`rm ${filename}`.quiet().nothrow();
+	console.log(`✅ Done with ${filename}`);
+	return true;
 };
 
 const managePackagelockjson = async (dir: string): Promise<boolean> => {
@@ -124,6 +132,14 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		all: "bun run upgrade; bun run check; bun run lint",
 	};
 	for (const [key, value] of Object.entries(expected)) {
+		if (
+			typeof pkgJson.scripts[key] === "string" &&
+			pkgJson.scripts[key].includes("bun") &&
+			(pkgJson.scripts[key].includes("--filter") ||
+				pkgJson.scripts[key].includes("--cwd"))
+		) {
+			continue;
+		}
 		if (pkgJson.scripts[key]) continue;
 		pkgJson.scripts[key] = value;
 	}
