@@ -1,18 +1,18 @@
 #!/usr/bin/env bun
-import { Command } from "commander";
+import { program } from "commander";
 import { command } from "./command";
 import { commandDoctor } from "./commandDoctor";
 import { commandSystem } from "./commandSystem";
 import { commandUpdate } from "./commandUpdate";
 import { getCurrentVersion } from "./helpers";
 
-const program = new Command();
-
 const version = await getCurrentVersion();
 
 program.name("x").description("chneau's utility CLI").version(version);
 
-program.action(command);
+program
+	.option("-r, --recursive [number]", "Recursion level", Number.parseFloat)
+	.action(command);
 
 program
 	.command("update")

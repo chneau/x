@@ -1,6 +1,32 @@
+import { readdir } from "node:fs/promises";
+import { program } from "commander";
 import { parse } from "jsonc-parser";
 
+const getDirectories = async () =>
+	(await readdir(".", { withFileTypes: true }))
+		.filter((x) => x.isDirectory())
+		.filter((x) => !x.name.startsWith("."))
+		.filter((x) => !x.name.includes("node_modules"))
+		.map((x) => x.name);
+
 export const command = async () => {
+	let recursive: number = program.opts().recursive;
+	if (typeof recursive !== "number") recursive = 0;
+	if (recursive > 2) {
+		console.error("👁️ Recursion level is too high");
+		process.exit(1);
+	}
+	if (recursive > 0) {
+		const directories = await getDirectories();
+		const promises: Promise<unknown>[] = [];
+		for (const directory of directories) {
+			const p = Bun.$`x -r ${recursive - 1}`.cwd(directory).nothrow();
+			promises.push(p);
+		}
+		await Promise.all(promises);
+		return;
+	}
+	console.log("🚀 Managing files in", Bun.env.CWD);
 	const packageJsonExists = await managePackagejson();
 	const tsconfigExists = await manageTsconfig();
 	const isBunProject = packageJsonExists && tsconfigExists;

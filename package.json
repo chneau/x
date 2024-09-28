@@ -1,7 +1,7 @@
 {
 	"scripts": {
 		"start": "bun --watch index.ts",
-		"deploy": "bun _deploy.ts",
+		"deploy": "bun _deploy.ts; x update",
 		"upgrade": "bun update --latest",
 		"check": "biome check --write --unsafe .",
 		"lint": "tsc",
