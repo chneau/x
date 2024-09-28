@@ -58,6 +58,8 @@ const purify = async (dir: string) => {
 
 const manageYarnlock = async (dir: string): Promise<boolean> => {
 	const filename = `${dir}/yarn.lock`;
+	const file = Bun.file(filename);
+	if (!(await file.exists())) return false;
 	await Bun.$`rm -f ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
@@ -65,6 +67,8 @@ const manageYarnlock = async (dir: string): Promise<boolean> => {
 
 const managePackagelockjson = async (dir: string): Promise<boolean> => {
 	const filename = `${dir}/package-lock.json`;
+	const file = Bun.file(filename);
+	if (!(await file.exists())) return false;
 	await Bun.$`rm -f ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
