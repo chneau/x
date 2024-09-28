@@ -133,7 +133,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 	const file = Bun.file(filename);
 	if (!(await file.exists())) return false;
 	const pkgJson = await file.json();
-	if (!pkgJson.scripts) return false;
+	pkgJson.scripts ??= {};
 	const hasDependencies = pkgJson.dependencies || pkgJson.devDependencies;
 	if (!hasDependencies) return false;
 	const expected = {
