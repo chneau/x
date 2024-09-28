@@ -140,7 +140,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		) {
 			continue;
 		}
-		if (pkgJson.scripts[key]) continue;
+		if (pkgJson.scripts[key] === value) continue;
 		pkgJson.scripts[key] = value;
 	}
 	await Bun.write(file, JSON.stringify(pkgJson));
