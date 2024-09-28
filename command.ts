@@ -27,6 +27,7 @@ export const command = async () => {
 		return;
 	}
 	console.log("🚀 Managing files in", Bun.env.PWD);
+	await managePackagelockjson();
 	const packageJsonExists = await managePackagejson();
 	const tsconfigExists = await manageTsconfig();
 	const isBunProject = packageJsonExists && tsconfigExists;
@@ -40,6 +41,19 @@ export const command = async () => {
 		]);
 	}
 	console.log("🎉 Done with all files");
+};
+
+const managePackagelockjson = async () => {
+	console.log("🚀 Managing package-lock.json");
+	const file = Bun.file("package-lock.json");
+	const exists = await file.exists();
+	if (!exists) {
+		console.error("✅ package-lock.json not found");
+		return exists;
+	}
+	await Bun.$`rm package-lock.json`.quiet().nothrow();
+	console.log("✅ Done with package-lock.json");
+	return false;
 };
 
 const manageGitignore = async (isBunProject: boolean) => {
