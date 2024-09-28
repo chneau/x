@@ -38,7 +38,7 @@ export const command = async () => {
 };
 
 const purify = async (dir: string) => {
-	console.log("🚀 Managing files in", dir);
+	console.log(`🚀 Managing files in ${dir}`);
 	await managePackagelockjson(dir);
 	const packageJsonExists = await managePackagejson(dir);
 	const tsconfigExists = await manageTsconfig(dir);
@@ -47,9 +47,9 @@ const purify = async (dir: string) => {
 	if (isBunProject) {
 		console.log("🚀 Updating and checking everything!");
 		await Promise.all([
-			Bun.$`timeout 10s bun run upgrade`.quiet().nothrow().cwd(dir),
-			Bun.$`timeout 10s bun run check`.nothrow().cwd(dir),
-			Bun.$`timeout 10s bun run lint`.nothrow().cwd(dir),
+			Bun.$`timeout 10s bun run --cwd=${dir} upgrade`.quiet().nothrow(),
+			Bun.$`timeout 10s bun run --cwd=${dir} check`.nothrow(),
+			Bun.$`timeout 10s bun run --cwd=${dir} lint`.nothrow(),
 		]);
 	}
 	console.log("🎉 Done with all files");
@@ -57,9 +57,7 @@ const purify = async (dir: string) => {
 
 const managePackagelockjson = async (dir: string): Promise<boolean> => {
 	const filename = `${dir}/package-lock.json`;
-	const file = Bun.file(filename);
-	if (!(await file.exists())) return false;
-	await Bun.$`rm ${filename}`.quiet().nothrow().cwd(dir);
+	await Bun.$`rm ${filename}`.quiet().nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
@@ -106,7 +104,7 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 		tsconfig.compilerOptions[key] = value;
 	}
 	await Bun.write(file, JSON.stringify(tsconfig));
-	await Bun.$`timeout 3s bun run check`.quiet().nothrow().cwd(dir);
+	await Bun.$`timeout 3s bun run --cwd=${dir} check`.quiet().nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
@@ -130,7 +128,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		pkgJson.scripts[key] = value;
 	}
 	await Bun.write(file, JSON.stringify(pkgJson));
-	await Bun.$`timeout 3s bun run check`.quiet().nothrow().cwd(dir);
+	await Bun.$`timeout 3s bun run --cwd=${dir} check`.quiet().nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
