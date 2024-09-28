@@ -48,7 +48,7 @@ const purify = async (dir: string) => {
 	if (isBunProject) {
 		console.log("🚀 Updating and checking everything!");
 		await Promise.all([
-			Bun.$`timeout 20s bun run --cwd=${dir} upgrade`.quiet().nothrow(),
+			Bun.$`timeout 20s bun run --cwd=${dir} upgrade`.nothrow(),
 			Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow(),
 			Bun.$`timeout 3s bun run --cwd=${dir} lint`.nothrow(),
 		]);
@@ -58,14 +58,14 @@ const purify = async (dir: string) => {
 
 const manageYarnlock = async (dir: string): Promise<boolean> => {
 	const filename = `${dir}/yarn.lock`;
-	await Bun.$`rm ${filename}`.quiet().nothrow();
+	await Bun.$`rm -f ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
 
 const managePackagelockjson = async (dir: string): Promise<boolean> => {
 	const filename = `${dir}/package-lock.json`;
-	await Bun.$`rm ${filename}`.quiet().nothrow();
+	await Bun.$`rm -f ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
@@ -112,7 +112,7 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 		tsconfig.compilerOptions[key] = value;
 	}
 	await Bun.write(file, JSON.stringify(tsconfig));
-	await Bun.$`timeout 3s bun run --cwd=${dir} check`.quiet().nothrow();
+	await Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
@@ -144,7 +144,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		pkgJson.scripts[key] = value;
 	}
 	await Bun.write(file, JSON.stringify(pkgJson));
-	await Bun.$`timeout 3s bun run --cwd=${dir} check`.quiet().nothrow();
+	await Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
