@@ -26,7 +26,7 @@ export const command = async () => {
 		await Promise.all(promises);
 		return;
 	}
-	console.log("🚀 Managing files in", Bun.env.CWD);
+	console.log("🚀 Managing files in", Bun.env.PWD);
 	const packageJsonExists = await managePackagejson();
 	const tsconfigExists = await manageTsconfig();
 	const isBunProject = packageJsonExists && tsconfigExists;
