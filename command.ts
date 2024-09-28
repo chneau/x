@@ -86,7 +86,12 @@ const manageGitignore = async (
 	const file = Bun.file(filename);
 	if (!(await file.exists())) return false;
 	const gitignore = await file.text();
-	const lines = gitignore.split("\n");
+	const lines = gitignore
+		.split("\n")
+		.map((x) => x.trim())
+		.filter(Boolean);
+	console.log(lines);
+
 	const isTooLong = lines.length > 10;
 	if (isTooLong) console.error(`👁️ ${filename} is too long`);
 	if (isBunProject) {
