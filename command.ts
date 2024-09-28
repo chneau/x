@@ -12,7 +12,7 @@ const getDirectories = async () =>
 export const command = async () => {
 	let recursive: number = program.opts().recursive;
 	if (typeof recursive !== "number") recursive = 0;
-	if (recursive > 2) {
+	if (recursive > 4) {
 		console.error("👁️ Recursion level is too high");
 		process.exit(1);
 	}
