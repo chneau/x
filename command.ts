@@ -2,96 +2,97 @@ import { readdir } from "node:fs/promises";
 import { program } from "commander";
 import { parse } from "jsonc-parser";
 
-const getDirectories = async () =>
-	(await readdir(".", { withFileTypes: true }))
+const getDirectories = async (path = ".") =>
+	(await readdir(path, { withFileTypes: true }))
 		.filter((x) => x.isDirectory())
 		.filter((x) => !x.name.startsWith("."))
 		.filter((x) => !x.name.includes("node_modules"))
-		.map((x) => x.name);
+		.map((x) => `${path}/${x.name}`);
+
+const getDirectoriesDeep = async (path = ".", level = 0) => {
+	if (level === 0) return [path];
+	const directories = await getDirectories(path);
+	let _level = level - 1;
+	while (_level > 0) {
+		for (const directory of directories) {
+			const p = await getDirectories(directory);
+			directories.push(...p);
+		}
+		_level--;
+	}
+	directories.push(path);
+	return directories;
+};
 
 export const command = async () => {
+	let cwd: string = program.processedArgs[0];
+	if (typeof cwd !== "string") cwd = ".";
+	console.log(cwd);
 	let recursive: number = program.opts().recursive;
 	if (typeof recursive !== "number") recursive = 0;
 	if (recursive > 4) {
 		console.error("👁️ Recursion level is too high");
 		process.exit(1);
 	}
-	if (recursive > 0) {
-		const directories = await getDirectories();
-		const promises: Promise<unknown>[] = [];
-		for (const directory of directories) {
-			const p = Bun.$`x -r ${recursive - 1}`.cwd(directory).nothrow();
-			promises.push(p);
-		}
-		await Promise.all(promises);
-		return;
-	}
-	console.log("🚀 Managing files in", Bun.env.PWD);
-	await managePackagelockjson();
-	const packageJsonExists = await managePackagejson();
-	const tsconfigExists = await manageTsconfig();
+	const directories = await getDirectoriesDeep(cwd, recursive);
+	await Promise.all(directories.map((x) => purify(x)));
+};
+
+const purify = async (dir: string) => {
+	console.log("🚀 Managing files in", dir);
+	await managePackagelockjson(dir);
+	const packageJsonExists = await managePackagejson(dir);
+	const tsconfigExists = await manageTsconfig(dir);
 	const isBunProject = packageJsonExists && tsconfigExists;
-	await manageGitignore(isBunProject);
+	await manageGitignore(dir, isBunProject);
 	if (isBunProject) {
 		console.log("🚀 Updating and checking everything!");
 		await Promise.all([
 			Bun.$`timeout 10s bun run upgrade`.quiet().nothrow(),
-			Bun.$`timeout 10s bun run check`.quiet().nothrow(),
-			Bun.$`timeout 10s bun run lint`.quiet().nothrow(),
+			Bun.$`timeout 10s bun run check`.nothrow(),
+			Bun.$`timeout 10s bun run lint`.nothrow(),
 		]);
 	}
 	console.log("🎉 Done with all files");
 };
 
-const managePackagelockjson = async () => {
-	console.log("🚀 Managing package-lock.json");
-	const file = Bun.file("package-lock.json");
-	const exists = await file.exists();
-	if (!exists) {
-		console.error("✅ package-lock.json not found");
-		return exists;
-	}
-	await Bun.$`rm package-lock.json`.quiet().nothrow();
-	console.log("✅ Done with package-lock.json");
-	return false;
+const managePackagelockjson = async (dir: string): Promise<boolean> => {
+	const filename = `${dir}/package-lock.json`;
+	const file = Bun.file(filename);
+	if (!(await file.exists())) return false;
+	await Bun.$`rm ${filename}`.quiet().nothrow();
+	console.log(`✅ Done with ${filename}`);
+	return true;
 };
 
-const manageGitignore = async (isBunProject: boolean) => {
-	console.log("🚀 Managing .gitignore");
-	const file = Bun.file(".gitignore");
-	const exists = await file.exists();
-	if (!exists) return console.error("❌ .gitignore not found");
+const manageGitignore = async (
+	dir: string,
+	isBunProject: boolean,
+): Promise<boolean> => {
+	const filename = `${dir}/.gitignore`;
+	const file = Bun.file(filename);
+	if (!(await file.exists())) return false;
 	const gitignore = await file.text();
 	const lines = gitignore.split("\n");
 	const isTooLong = lines.length > 10;
-	if (isTooLong) {
-		console.error("👁️ .gitignore is too long");
-	}
+	if (isTooLong) console.error(`👁️ ${filename} is too long`);
 	if (isBunProject) {
 		const hasNodeModules = lines.includes("node_modules");
 		if (!hasNodeModules) {
-			console.log("⚡ Adding node_modules to .gitignore");
 			lines.push("node_modules");
 		}
 	}
-	console.log("⚡ Writing .gitignore");
 	await Bun.write(file, lines.join("\n"));
-	console.log("✅ Done with .gitignore");
+	console.log(`✅ Done with ${filename}`);
+	return true;
 };
 
-const manageTsconfig = async () => {
-	console.log("🚀 Managing tsconfig.json");
-	const file = Bun.file("tsconfig.json");
-	const exists = await file.exists();
-	if (!exists) {
-		console.error("❌ tsconfig.json not found");
-		return exists;
-	}
+const manageTsconfig = async (dir: string): Promise<boolean> => {
+	const filename = `${dir}/tsconfig.json`;
+	const file = Bun.file(filename);
+	if (!(await file.exists())) return false;
 	const tsconfig = parse(await file.text());
-	if (!tsconfig.compilerOptions) {
-		console.error("❌ No compilerOptions found in tsconfig.json");
-		return exists;
-	}
+	if (!tsconfig.compilerOptions) return false;
 	const expected = {
 		noUnusedLocals: true,
 		noUnusedParameters: true,
@@ -103,34 +104,22 @@ const manageTsconfig = async () => {
 	};
 	for (const [key, value] of Object.entries(expected)) {
 		if (tsconfig.compilerOptions[key] === value) continue;
-		console.log(`⚡ Adding ${key} to tsconfig.json`);
 		tsconfig.compilerOptions[key] = value;
 	}
-	console.log("⚡ Writing tsconfig.json");
 	await Bun.write(file, JSON.stringify(tsconfig));
 	await Bun.$`timeout 3s bun run check`.quiet().nothrow();
-	console.log("✅ Done with tsconfig.json");
-	return exists;
+	console.log(`✅ Done with ${filename}`);
+	return true;
 };
 
-const managePackagejson = async () => {
-	console.log("🚀 Managing package.json");
-	const file = Bun.file("package.json");
-	const exists = await file.exists();
-	if (!exists) {
-		console.error("❌ package.json not found");
-		return exists;
-	}
+const managePackagejson = async (dir: string): Promise<boolean> => {
+	const filename = `${dir}/package.json`;
+	const file = Bun.file(filename);
+	if (!(await file.exists())) return false;
 	const pkgJson = await file.json();
-	if (!pkgJson.scripts) {
-		console.error("❌ No scripts found in package.json");
-		return exists;
-	}
+	if (!pkgJson.scripts) return false;
 	const hasDependencies = pkgJson.dependencies || pkgJson.devDependencies;
-	if (!hasDependencies) {
-		console.error("❌ No dependencies found in package.json");
-		return exists;
-	}
+	if (!hasDependencies) return false;
 	const expected = {
 		upgrade: "bun update --latest",
 		check: "biome check --write --unsafe .",
@@ -139,12 +128,10 @@ const managePackagejson = async () => {
 	};
 	for (const [key, value] of Object.entries(expected)) {
 		if (pkgJson.scripts[key] === value) continue;
-		console.log(`⚡ Adding ${key} to package.json`);
 		pkgJson.scripts[key] = value;
 	}
-	console.log("⚡ Writing package.json");
 	await Bun.write(file, JSON.stringify(pkgJson));
 	await Bun.$`timeout 3s bun run check`.quiet().nothrow();
-	console.log("✅ Done with package.json");
-	return exists;
+	console.log(`✅ Done with ${filename}`);
+	return true;
 };

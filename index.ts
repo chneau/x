@@ -12,6 +12,7 @@ program.name("x").description("chneau's utility CLI").version(version);
 
 program
 	.option("-r, --recursive [number]", "Recursion level", Number.parseFloat)
+	.argument("[dir]", "Directory to manage", ".")
 	.action(command);
 
 program
