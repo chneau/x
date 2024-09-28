@@ -43,12 +43,16 @@ const purify = async (dir: string) => {
 	await manageYarnlock(dir);
 	const packageJsonExists = await managePackagejson(dir);
 	const tsconfigExists = await manageTsconfig(dir);
-	const isBunProject = packageJsonExists && tsconfigExists;
-	await manageGitignore(dir, isBunProject);
-	if (isBunProject) {
-		console.log("🚀 Updating and checking everything!");
+	await manageGitignore(dir, packageJsonExists);
+	if (packageJsonExists) {
+		console.log("🚀 Updating everything!");
 		await Promise.all([
 			Bun.$`timeout 20s bun run --cwd=${dir} upgrade`.nothrow(),
+		]);
+	}
+	if (tsconfigExists) {
+		console.log("🚀 Checking and linting!");
+		await Promise.all([
 			Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow(),
 			Bun.$`timeout 3s bun run --cwd=${dir} lint`.nothrow(),
 		]);
