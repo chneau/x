@@ -33,7 +33,11 @@ export const command = async () => {
 	await manageGitignore(isBunProject);
 	if (isBunProject) {
 		console.log("🚀 Updating and checking everything!");
-		await Bun.$`timeout 10s bun run all`.quiet().nothrow();
+		await Promise.all([
+			Bun.$`timeout 10s bun run upgrade`.quiet().nothrow(),
+			Bun.$`timeout 10s bun run check`.quiet().nothrow(),
+			Bun.$`timeout 10s bun run lint`.quiet().nothrow(),
+		]);
 	}
 	console.log("🎉 Done with all files");
 };
