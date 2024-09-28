@@ -47,9 +47,9 @@ const purify = async (dir: string) => {
 	if (isBunProject) {
 		console.log("🚀 Updating and checking everything!");
 		await Promise.all([
-			Bun.$`timeout 10s bun run --cwd=${dir} upgrade`.quiet().nothrow(),
-			Bun.$`timeout 10s bun run --cwd=${dir} check`.nothrow(),
-			Bun.$`timeout 10s bun run --cwd=${dir} lint`.nothrow(),
+			Bun.$`timeout 20s bun run --cwd=${dir} upgrade`.quiet().nothrow(),
+			Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow(),
+			Bun.$`timeout 3s bun run --cwd=${dir} lint`.nothrow(),
 		]);
 	}
 	console.log("🎉 Done with all files");
@@ -124,7 +124,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		all: "bun run upgrade; bun run check; bun run lint",
 	};
 	for (const [key, value] of Object.entries(expected)) {
-		if (pkgJson.scripts[key] === value) continue;
+		if (pkgJson.scripts[key]) continue;
 		pkgJson.scripts[key] = value;
 	}
 	await Bun.write(file, JSON.stringify(pkgJson));
