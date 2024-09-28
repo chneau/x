@@ -33,7 +33,7 @@ export const command = async () => {
 	await manageGitignore(isBunProject);
 	if (isBunProject) {
 		console.log("🚀 Updating and checking everything!");
-		await Bun.$`bun run all`;
+		await Bun.$`timeout 10s bun run all`.quiet().nothrow();
 	}
 	console.log("🎉 Done with all files");
 };
@@ -90,7 +90,7 @@ const manageTsconfig = async () => {
 	}
 	console.log("⚡ Writing tsconfig.json");
 	await Bun.write(file, JSON.stringify(tsconfig));
-	await Bun.$`bun run check`.quiet();
+	await Bun.$`timeout 3s bun run check`.quiet().nothrow();
 	console.log("✅ Done with tsconfig.json");
 	return exists;
 };
@@ -126,7 +126,7 @@ const managePackagejson = async () => {
 	}
 	console.log("⚡ Writing package.json");
 	await Bun.write(file, JSON.stringify(pkgJson));
-	await Bun.$`bun run check`.quiet();
+	await Bun.$`timeout 3s bun run check`.quiet().nothrow();
 	console.log("✅ Done with package.json");
 	return exists;
 };
