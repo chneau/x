@@ -27,7 +27,6 @@ const getDirectoriesDeep = async (path = ".", level = 0) => {
 export const command = async () => {
 	let cwd: string = program.processedArgs[0];
 	if (typeof cwd !== "string") cwd = ".";
-	console.log(cwd);
 	let recursive: number = program.opts().recursive;
 	if (typeof recursive !== "number") recursive = 0;
 	if (recursive > 4) {
@@ -48,9 +47,9 @@ const purify = async (dir: string) => {
 	if (isBunProject) {
 		console.log("🚀 Updating and checking everything!");
 		await Promise.all([
-			Bun.$`timeout 10s bun run upgrade`.quiet().nothrow(),
-			Bun.$`timeout 10s bun run check`.nothrow(),
-			Bun.$`timeout 10s bun run lint`.nothrow(),
+			Bun.$`timeout 10s bun run upgrade`.quiet().nothrow().cwd(dir),
+			Bun.$`timeout 10s bun run check`.nothrow().cwd(dir),
+			Bun.$`timeout 10s bun run lint`.nothrow().cwd(dir),
 		]);
 	}
 	console.log("🎉 Done with all files");
@@ -60,7 +59,7 @@ const managePackagelockjson = async (dir: string): Promise<boolean> => {
 	const filename = `${dir}/package-lock.json`;
 	const file = Bun.file(filename);
 	if (!(await file.exists())) return false;
-	await Bun.$`rm ${filename}`.quiet().nothrow();
+	await Bun.$`rm ${filename}`.quiet().nothrow().cwd(dir);
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
@@ -107,7 +106,7 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 		tsconfig.compilerOptions[key] = value;
 	}
 	await Bun.write(file, JSON.stringify(tsconfig));
-	await Bun.$`timeout 3s bun run check`.quiet().nothrow();
+	await Bun.$`timeout 3s bun run check`.quiet().nothrow().cwd(dir);
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
@@ -131,7 +130,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		pkgJson.scripts[key] = value;
 	}
 	await Bun.write(file, JSON.stringify(pkgJson));
-	await Bun.$`timeout 3s bun run check`.quiet().nothrow();
+	await Bun.$`timeout 3s bun run check`.quiet().nothrow().cwd(dir);
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
