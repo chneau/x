@@ -39,23 +39,23 @@ export const command = async () => {
 
 const purify = async (dir: string) => {
 	console.log(`🚀 Managing files in ${dir}`);
-	await managePackagelockjson(dir);
-	await manageYarnlock(dir);
-	const packageJsonExists = await managePackagejson(dir);
-	const tsconfigExists = await manageTsconfig(dir);
-	await manageGitignore(dir, packageJsonExists);
+	await managePackagelockjson(dir).catch(console.error);
+	await manageYarnlock(dir).catch(console.error);
+	const packageJsonExists = await managePackagejson(dir).catch(console.error);
+	const tsconfigExists = await manageTsconfig(dir).catch(console.error);
+	await manageGitignore(dir, packageJsonExists ?? false).catch(console.error);
 	if (packageJsonExists) {
 		console.log("🚀 Updating everything!");
 		await Promise.all([
 			Bun.$`timeout 20s bun run --cwd=${dir} upgrade`.nothrow(),
-		]);
+		]).catch(console.error);
 	}
 	if (tsconfigExists) {
 		console.log("🚀 Checking and linting!");
 		await Promise.all([
 			Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow(),
 			Bun.$`timeout 3s bun run --cwd=${dir} lint`.nothrow(),
-		]);
+		]).catch(console.error);
 	}
 	console.log("🎉 Done with all files");
 };
