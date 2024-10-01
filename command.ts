@@ -122,8 +122,8 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 		if (tsconfig.compilerOptions[key] === value) continue;
 		tsconfig.compilerOptions[key] = value;
 	}
-	await Bun.write(file, JSON.stringify(tsconfig));
-	await Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow();
+	await Bun.write(file, JSON.stringify(tsconfig, null, 2));
+	await Bun.$`biome check --write --unsafe ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
@@ -155,8 +155,8 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		pkgJson.scripts[key] = value;
 	}
 	pkgJson.prettier = undefined;
-	await Bun.write(file, JSON.stringify(pkgJson));
-	await Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow();
+	await Bun.write(file, JSON.stringify(pkgJson, null, 2));
+	await Bun.$`biome check --write --unsafe ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
