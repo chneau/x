@@ -71,6 +71,7 @@ const bunPkgs: Pkg[] = [
 	bunIt("prettier"),
 	bunIt("typesync"),
 	bunIt("depcheck"),
+	bunIt("oxlint"),
 	bunIt("concurrently"),
 	bunIt("ts-unused-exports"),
 ];
