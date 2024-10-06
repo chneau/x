@@ -46,9 +46,9 @@ const purify = async (dir: string) => {
 	await manageGitignore(dir, packageJsonExists ?? false).catch(console.error);
 	if (packageJsonExists) {
 		console.log("🚀 Updating everything!");
-		await Promise.all([
-			Bun.$`timeout 20s bun run --cwd=${dir} upgrade`.nothrow(),
-		]).catch(console.error);
+		await Bun.$`timeout 20s bun run --cwd=${dir} upgrade`
+			.nothrow()
+			.catch(console.error);
 	}
 	if (tsconfigExists) {
 		console.log("🚀 Checking and linting!");
