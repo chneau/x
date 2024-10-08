@@ -138,7 +138,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 	if (!hasDependencies) return false;
 	const expected = {
 		upgrade: "bun update --latest",
-		check: "oxlint --fix-dangerously; biome check --write --unsafe .",
+		check: "oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
 		lint: "tsc",
 		all: "bun run upgrade; bun run check; bun run lint",
 	};

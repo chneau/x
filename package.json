@@ -3,7 +3,7 @@
 		"start": "bun --watch index.ts",
 		"deploy": "bun _deploy.ts; x update",
 		"upgrade": "bun update --latest",
-		"check": "oxlint --fix-dangerously; biome check --write --unsafe .",
+		"check": "oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
 		"lint": "tsc",
 		"all": "bun run upgrade; bun run check; bun run lint"
 	},
