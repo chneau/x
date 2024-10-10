@@ -2,6 +2,7 @@
 import { program } from "commander";
 import { command } from "./command";
 import { commandDoctor } from "./commandDoctor";
+import { commandFmt } from "./commandFmt";
 import { commandSystem } from "./commandSystem";
 import { commandUpdate } from "./commandUpdate";
 import { getCurrentVersion } from "./helpers";
@@ -14,6 +15,8 @@ program
 	.option("-r, --recursive [number]", "Recursion level", Number.parseFloat)
 	.argument("[dir]", "Directory to manage", ".")
 	.action(command);
+
+program.command("fmt").description("Format all files").action(commandFmt);
 
 program
 	.command("update")
