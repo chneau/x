@@ -83,6 +83,11 @@ export const pkgs: Pkg[] = [
 		install: async () =>
 			await $`HOME=/tmp CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
 	},
+	{
+		name: "deno",
+		check: async () => commandExists("deno"),
+		install: async () => await $`curl -fsSL https://deno.land/install.sh | sh`,
+	},
 	...brewPkgs,
 	...bunPkgs,
 ];
