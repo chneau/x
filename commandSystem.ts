@@ -40,8 +40,9 @@ const updateApt = async () => {
 };
 
 const updateBrew = async () => {
-	if (!(await commandExists("brew")))
+	if (!(await commandExists("brew"))) {
 		await $`CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`;
+	}
 	const essentialPkgs = [
 		"bpytop",
 		"dive",
