@@ -1,6 +1,8 @@
 import { readdir } from "node:fs/promises";
+import { cpus } from "node:os";
 import { program } from "commander";
 import { parse } from "jsonc-parser";
+import PQueue from "p-queue";
 
 const getDirectories = async (path = ".") =>
 	(await readdir(path, { withFileTypes: true }))
@@ -34,7 +36,10 @@ export const command = async () => {
 		process.exit(1);
 	}
 	const directories = await getDirectoriesDeep(cwd, recursive);
-	await Promise.all(directories.map((x) => purify(x)));
+	const queue = new PQueue({ concurrency: cpus().length });
+	await Promise.all(
+		directories.map((dir) => queue.add(() => purify(dir).catch(console.error))),
+	).catch(console.error);
 };
 
 const purify = async (dir: string) => {
