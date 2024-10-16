@@ -58,7 +58,7 @@ const purify = async (dir: string) => {
 	if (tsconfigExists) {
 		console.log("🚀 Checking and linting!");
 		await Promise.all([
-			Bun.$`timeout 3s bun run --cwd=${dir} check`.nothrow(),
+			Bun.$`timeout 6s bun run --cwd=${dir} check`.nothrow(),
 			Bun.$`timeout 3s bun run --cwd=${dir} lint`.nothrow(),
 		]).catch(console.error);
 	}
