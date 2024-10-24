@@ -1,7 +1,7 @@
 {
 	"scripts": {
 		"start": "bun --watch index.ts",
-		"deploy": "bun _deploy.ts; x update",
+		"deploy": "bun _deploy.ts; x upgrade",
 		"upgrade": "bun update --latest",
 		"check": "deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
 		"lint": "tsc",
