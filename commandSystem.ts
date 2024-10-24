@@ -5,7 +5,7 @@ const updateDotfiles = async () => {
 	const initScript = await fetch(
 		"https://raw.githubusercontent.com/chneau/dotfiles/master/bootstrap.sh",
 	).then((x) => x.text());
-	await $`echo ${initScript} | sh`;
+	await $`echo ${initScript} | sh`.nothrow();
 };
 
 const updateBun = async () => {
@@ -25,23 +25,23 @@ const updateBun = async () => {
 		"concurrently",
 		"ts-unused-exports",
 	];
-	await $`bun upgrade`;
-	await $`bun install --force --global ${{ raw: bunPkgs.join(" ") }}`;
-	await $`bun update --latest --force --global`;
+	await $`bun upgrade`.nothrow();
+	await $`bun install --force --global ${{ raw: bunPkgs.join(" ") }}`.nothrow();
+	await $`bun update --latest --force --global`.nothrow();
 };
 
 const updateApt = async () => {
 	const essentialPkgs = ["git", "curl", "wget", "unzip", "zsh", "bash"];
-	await $`sudo apt install -y ${{ raw: essentialPkgs.join(" ") }}`;
-	await $`sudo apt update -y`;
-	await $`sudo apt upgrade -y`;
-	await $`sudo apt autoremove -y`;
-	await $`sudo apt autoclean -y`;
+	await $`sudo apt install -y ${{ raw: essentialPkgs.join(" ") }}`.nothrow();
+	await $`sudo apt update -y`.nothrow();
+	await $`sudo apt upgrade -y`.nothrow();
+	await $`sudo apt autoremove -y`.nothrow();
+	await $`sudo apt autoclean -y`.nothrow();
 };
 
 const updateBrew = async () => {
 	if (!(await commandExists("brew"))) {
-		await $`CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`;
+		await $`CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.nothrow();
 	}
 	const essentialPkgs = [
 		"bpytop",
@@ -62,10 +62,10 @@ const updateBrew = async () => {
 	const brew =
 		(await $`which brew`.text().catch(() => "")).trim() ||
 		"/home/linuxbrew/.linuxbrew/bin/brew";
-	await $`${brew} install ${{ raw: essentialPkgs.join(" ") }}`;
-	await $`${brew} update`;
-	await $`${brew} upgrade`;
-	await $`${brew} cleanup`;
+	await $`${brew} install ${{ raw: essentialPkgs.join(" ") }}`.nothrow();
+	await $`${brew} update`.nothrow();
+	await $`${brew} upgrade`.nothrow();
+	await $`${brew} cleanup`.nothrow();
 };
 
 export const commandSystem = async () => {

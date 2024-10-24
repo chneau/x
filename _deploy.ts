@@ -11,7 +11,7 @@ await $`rm -rf dist`;
 await $`bun build --outfile=dist/x.js --target=bun --sourcemap=inline --minimify index.ts`;
 await Bun.write(
 	"dist/package.json",
-	JSON.stringify({ name: "@chneau/x", version, bin: "x.js" }),
+	JSON.stringify({ name: "@chneau/x", version, bin: "./x.js" }),
 );
 await $`bun pm pack`.cwd("dist");
 await $`bun publish *.tgz`.cwd("dist");
