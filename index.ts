@@ -4,7 +4,7 @@ import { command } from "./command";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
 import { commandSystem } from "./commandSystem";
-import { commandUpdate } from "./commandUpdate";
+import { commandUpgrade } from "./commandUpgrade";
 import { getCurrentVersion } from "./helpers";
 
 const version = await getCurrentVersion();
@@ -19,9 +19,9 @@ program
 program.command("fmt").description("Format all files").action(commandFmt);
 
 program
-	.command("update")
-	.description("Update x to the latest version")
-	.action(commandUpdate);
+	.command("upgrade")
+	.description("Uprade x to the latest version")
+	.action(commandUpgrade);
 
 program
 	.command("system")

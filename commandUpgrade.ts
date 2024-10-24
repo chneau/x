@@ -2,7 +2,7 @@ import { $ } from "bun";
 import { fetchLatestVersion } from "./fetchLatestVersion";
 import { getCurrentVersion } from "./helpers";
 
-export const commandUpdate = async () => {
+export const commandUpgrade = async () => {
 	const latestVersion = await fetchLatestVersion();
 	const currentVersion = await getCurrentVersion();
 	if (latestVersion === currentVersion) {
