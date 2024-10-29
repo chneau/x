@@ -9,6 +9,7 @@ const getDirectories = async (path = ".") =>
 		.filter((x) => x.isDirectory())
 		.filter((x) => !x.name.startsWith("."))
 		.filter((x) => !x.name.includes("node_modules"))
+		.filter((x) => !x.name.includes(".git"))
 		.map((x) => `${path}/${x.name}`);
 
 const getDirectoriesDeep = async (path = ".", level = 0) => {
