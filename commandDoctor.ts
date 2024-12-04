@@ -74,14 +74,12 @@ const doctorGitconfig = async () => {
 	const gitconfig = await Bun.file(`${Bun.env.HOME}/.gitconfig`)
 		.text()
 		.catch(() => "");
-	if (gitconfig === expected) {
-		console.log("✅ Git config is set");
-	} else {
+	if (gitconfig !== expected) {
 		console.log("❌ Git config is not set");
 		console.log("🕒 Setting git config");
 		await Bun.write(`${Bun.env.HOME}/.gitconfig`, expected);
-		console.log("✅ Git config is set");
 	}
+	console.log("✅ Git config is set");
 };
 
 const doctorDotfiles = async () => {
