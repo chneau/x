@@ -161,6 +161,8 @@ const doctorGithub = async () => {
 	}
 };
 
+// TODO: install dotnet
+
 const doctorZsh = async () => {
 	const etcShells = await Bun.file("/etc/shells")
 		.text()
