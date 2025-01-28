@@ -13,6 +13,5 @@ await Bun.write(
 	"dist/package.json",
 	JSON.stringify({ name: "@chneau/x", version, bin: "./x.js" }),
 );
-await $`bun pm pack`.cwd("dist");
-await $`bun publish *.tgz`.cwd("dist");
+await $`bun publish`.cwd("dist");
 await $`rm -rf dist`;
