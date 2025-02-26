@@ -21,9 +21,9 @@ const aptPkgs: Pkg[] = [
 	aptIt("bash"),
 ];
 
-const brewIt = (name: string) => ({
+const brewIt = (name: string, check?: string) => ({
 	name,
-	check: async () => commandExists(name),
+	check: async () => commandExists(check ?? name),
 	install: async () => await $`brew install ${name}`,
 });
 
@@ -32,37 +32,30 @@ const brewPkgs: Pkg[] = [
 	brewIt("bpytop"),
 	brewIt("docker-compose"),
 	brewIt("go"),
+	brewIt("graphviz"),
 	brewIt("helm"),
 	brewIt("hyperfine"),
 	brewIt("kubecolor"),
 	brewIt("kubectx"),
-	{
-		...brewIt("kubernetes-cli"),
-		check: async () => commandExists("kubectl"),
-	},
+	brewIt("kubernetes-cli", "kubectl"),
 	brewIt("lazygit"),
 	brewIt("node"),
+	brewIt("openjdk"),
 	brewIt("pipx"),
 	brewIt("zsh"),
 ];
 
-const bunIt = (name: string) => ({
+const bunIt = (name: string, check?: string) => ({
 	name,
-	check: async () => commandExists(name),
+	check: async () => commandExists(check ?? name),
 	install: async () => await $`bun install --force --global ${name}`,
 });
 
 const bunPkgs: Pkg[] = [
-	{
-		...bunIt("biome"),
-		install: async () => await $`bun install --force --global @biomejs/biome`,
-	},
+	bunIt("@biomejs/biome", "biome"),
 	bunIt("http-server"),
 	bunIt("live-server"),
-	{
-		...bunIt("fkill"),
-		install: async () => await $`bun install --force --global fkill-cli`,
-	},
+	bunIt("fkill-cli", "fkill"),
 	bunIt("ungit"),
 	bunIt("npm-check"),
 	bunIt("tsx"),
