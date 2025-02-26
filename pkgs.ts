@@ -32,7 +32,7 @@ const brewPkgs: Pkg[] = [
 	brewIt("bpytop"),
 	brewIt("docker-compose"),
 	brewIt("go"),
-	brewIt("graphviz"),
+	brewIt("graphviz", "dot"),
 	brewIt("helm"),
 	brewIt("hyperfine"),
 	brewIt("kubecolor"),
@@ -40,7 +40,7 @@ const brewPkgs: Pkg[] = [
 	brewIt("kubernetes-cli", "kubectl"),
 	brewIt("lazygit"),
 	brewIt("node"),
-	brewIt("openjdk"),
+	brewIt("openjdk", "javac"),
 	brewIt("pipx"),
 	brewIt("zsh"),
 ];
