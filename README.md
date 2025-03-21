@@ -12,4 +12,5 @@ bun install -fg @chneau/x
 # fix all then
 x doctor
 zsh
+# TODO: https://www.npmjs.com/package/zod-to-json-schema for an `x deploy` to kubernetes using zod schemas to generate json schemas
 ```
