@@ -4,6 +4,9 @@
     "chneau-deployment-schema": {
       "type": "object",
       "properties": {
+        "$schema": {
+          "type": "string"
+        },
         "registries": {
           "type": "object",
           "additionalProperties": {
@@ -115,20 +118,21 @@
                 "items": {
                   "type": "string",
                   "pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-                }
+                },
+                "default": []
               }
             },
             "required": [
               "image",
               "context",
-              "namespace",
-              "endpoints"
+              "namespace"
             ],
             "additionalProperties": false
           }
         }
       },
       "required": [
+        "$schema",
         "registries",
         "images",
         "services"

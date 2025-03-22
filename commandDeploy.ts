@@ -5,6 +5,7 @@ export const commandDeploy = async () => {
 };
 
 export const deploymentSchema = z.object({
+	$schema: z.string(),
 	registries: z.record(
 		z.object({
 			hostname: z.string(),
@@ -34,7 +35,9 @@ export const deploymentSchema = z.object({
 			port: z.number().min(1).max(65535).default(3000),
 			startupProbe: z.string().default("/"),
 			env: z.record(z.string(), z.string()).optional(),
-			endpoints: z.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)),
+			endpoints: z
+				.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
+				.default([]),
 		}),
 	),
 });
