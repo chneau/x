@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { program } from "commander";
 import { command } from "./command";
+import { commandDeploy } from "./commandDeploy";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
 import { commandSystem } from "./commandSystem";
@@ -17,6 +18,13 @@ program
 	.action(command);
 
 program.command("fmt").description("Format all files").action(commandFmt);
+
+program
+	.command("deploy")
+	.description("Deploy to kubernetes")
+	.argument("[file]", "File to deploy", ".x-deploy.json")
+	.argument("filter", "Services to deploy", "*")
+	.action(commandDeploy);
 
 program
 	.command("upgrade")
