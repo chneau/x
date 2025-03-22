@@ -17,12 +17,12 @@ export const deploymentSchema = z.object({
 		z.object({
 			registry: z.string(),
 			dockerfile: z.string().default("Dockerfile"),
-			target: z.string().default("final"),
-			tag: z.string().default("latest"),
-			args: z.record(z.string(), z.string()).optional(),
+			target: z.string().optional(),
+			args: z.record(z.string()).optional(),
 			context: z.string().default("."),
 			repository: z.string(),
 			imageName: z.string(),
+			tag: z.string().optional(),
 		}),
 	),
 	services: z.record(

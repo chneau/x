@@ -43,12 +43,7 @@
                 "default": "Dockerfile"
               },
               "target": {
-                "type": "string",
-                "default": "final"
-              },
-              "tag": {
-                "type": "string",
-                "default": "latest"
+                "type": "string"
               },
               "args": {
                 "type": "object",
@@ -64,6 +59,9 @@
                 "type": "string"
               },
               "imageName": {
+                "type": "string"
+              },
+              "tag": {
                 "type": "string"
               }
             },
