@@ -68,6 +68,7 @@ type createDeploynentProps = {
 	registryUsername: string;
 	registryPassword: string;
 	imageName: string;
+	imageRepository: string;
 	imageTag: string;
 	kubePort: number;
 	kubeEnv: {
@@ -80,6 +81,7 @@ export const createDeployment = async ({
 	registryUsername,
 	registryPassword,
 	imageName,
+	imageRepository,
 	imageTag,
 	kubePort,
 	kubeEnv,
@@ -103,11 +105,14 @@ export const createDeployment = async ({
 
 	const deployment = new Deployment(chart, "deployment", {
 		replicas: 1,
+		metadata: {
+			name: imageName,
+		},
 		terminationGracePeriod: Duration.seconds(0),
 		dockerRegistryAuth: dockerSecret,
 	});
 
-	const imageFullName = `${registryHost}/${imageName}:${imageTag}`;
+	const imageFullName = `${registryHost}/${imageRepository}/${imageName}:${imageTag}`;
 
 	deployment.addContainer({
 		name: imageName,
@@ -122,7 +127,5 @@ export const createDeployment = async ({
 
 	createIngress(chart, service, kubeEndpoints);
 
-	app.synth();
-
-	return app;
+	return app.synthYaml();
 };

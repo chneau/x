@@ -1,5 +1,6 @@
 import path from "node:path";
 import { z } from "zod";
+import { createDeployment } from "./cdk8s";
 import { envSubst } from "./envSubst";
 
 export const deploySchema = z.object({
@@ -74,7 +75,14 @@ export const commandDeploy = async () => {
 		if (!serviceKeys.length) continue;
 		isFound = true;
 
-		promises.push(deploy(parsed, path.dirname(jsonFile)));
+		for (const [serviceKey, service] of Object.entries(parsed.services)) {
+			promises.push(
+				deploy(
+					{ ...parsed, services: { [serviceKey]: service } },
+					path.dirname(jsonFile),
+				),
+			);
+		}
 	}
 	if (!isFound && !isTargettingJsonFiles) {
 		console.log("❌ TODO: create a template file");
@@ -108,6 +116,30 @@ const deploy = async (config: Deploy, cwd: string) => {
 				cwd,
 			);
 			console.log(`... ✅ Built ${imageFullName}`);
+
+			console.log(`🔗 Creating deployment for ${serviceAlias}...`);
+			const deploymentYaml = await createDeployment({
+				registryHost: registry.hostname,
+				registryUsername: registry.username,
+				registryPassword: registry.password,
+				imageName: image.imageName,
+				imageRepository: image.repository,
+				imageTag: image.tag,
+				kubePort: service.port,
+				kubeEnv: service.env,
+				kubeEndpoints: service.endpoints,
+			});
+			console.log(`... ✅ Created deployment for ${serviceAlias}`);
+
+			console.log(`🚀 Deploying ${serviceAlias}...`);
+			const kubeEnv = {
+				...Bun.env,
+				KUBECONFIG: path.join(cwd, service.file),
+			};
+			await Bun.$`echo ${deploymentYaml} | kubectl --context=${service.context} apply -f -`.env(
+				kubeEnv,
+			);
+			console.log(`... ✅ Deployed ${serviceAlias}`);
 		}
 	}
 };
