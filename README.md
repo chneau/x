@@ -20,6 +20,4 @@ x deploy
 # TODO: make the image name the service name if not provided
 # TODO: if the repository or image or service is single - make it the default for all above
 # TODO: understand how to remove the 1sec of downtime on the deploy - look at kubernetes documentation
-# TODO: Make kubeconfig file optional - default to the one kubectl uses
-# TODO: Make the repository username/password optional - the user might already be logged in or the repository might be public
 ```
