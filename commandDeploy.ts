@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { envSubst } from "./envSubst";
 
 export const deploySchema = z.object({
 	$schema: z.string().optional(),
@@ -53,7 +54,10 @@ export const commandDeploy = async () => {
 	let isFound = false;
 	for (const jsonFile of jsonFiles) {
 		const file = Bun.file(jsonFile);
-		const rawJson = await file.json().catch(() => 0);
+		const rawStr = await file.text().catch(() => null);
+		if (!rawStr) continue;
+		const envSubstStr = envSubst(rawStr);
+		const rawJson = JSON.parse(envSubstStr);
 		const parsed = await deploySchema.parseAsync(rawJson).catch(() => null);
 		if (!parsed) continue;
 		const services = Object.keys(parsed.services).filter((x) =>
