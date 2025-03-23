@@ -57,6 +57,7 @@ export const commandDeploy = async () => {
 	if (jsonFiles.length === 0) {
 		jsonFiles.push(
 			...(await Bun.$`ls *.json`.text()).split("\n").filter(Boolean),
+			".deploy.json",
 		);
 	}
 	let isFound = false;
@@ -121,9 +122,7 @@ const deploy = async (config: Deploy, cwd: string) => {
 					.map(([key, value]) => `--build-arg=${key}=${value}`)
 					.join(" "),
 			};
-			await Bun.$`docker build --pull --push -t ${imageFullName} -f ${image.dockerfile} ${buildArgs} ${image.context}`.cwd(
-				cwd,
-			);
+			await Bun.$`docker build --pull --push --tag=${imageFullName} --file=${image.dockerfile} ${buildArgs} ${image.context}`;
 			console.log(`... ✅ Built ${imageFullName}`);
 
 			console.log(`🔗 Creating deployment for ${serviceAlias}...`);
@@ -143,7 +142,6 @@ const deploy = async (config: Deploy, cwd: string) => {
 				kubeEnv,
 			);
 			console.log(`... ✅ Deployed ${serviceAlias}`);
-			console.log(deploymentYaml);
 		}
 	}
 };
