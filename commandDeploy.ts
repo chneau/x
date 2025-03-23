@@ -13,7 +13,7 @@ export const deploySchema = z.object({
 		.default({}),
 	images: z.record(
 		z.object({
-			registry: z.string(),
+			registry: z.string().optional(),
 			dockerfile: z.string().default("Dockerfile"),
 			target: z.string().optional(),
 			args: z.record(z.string()).default({}),
@@ -45,10 +45,11 @@ export const commandDeploy = async () => {
 	const jsonFiles = args.filter((arg) => arg.endsWith(".json"));
 	const filters = args.filter((arg) => !arg.endsWith(".json"));
 	const isTargettingJsonFiles = jsonFiles.length > 0;
-	if (jsonFiles.length === 0)
+	if (jsonFiles.length === 0) {
 		jsonFiles.push(
 			...(await Bun.$`ls *.json`.text()).split("\n").filter(Boolean),
 		);
+	}
 	let isFound = false;
 	for (const jsonFile of jsonFiles) {
 		const file = Bun.file(jsonFile);

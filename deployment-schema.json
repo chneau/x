@@ -24,7 +24,8 @@
 						},
 						"required": ["hostname", "username", "password"],
 						"additionalProperties": false
-					}
+					},
+					"default": {}
 				},
 				"images": {
 					"type": "object",
@@ -45,7 +46,8 @@
 								"type": "object",
 								"additionalProperties": {
 									"type": "string"
-								}
+								},
+								"default": {}
 							},
 							"context": {
 								"type": "string",
@@ -58,10 +60,11 @@
 								"type": "string"
 							},
 							"tag": {
-								"type": "string"
+								"type": "string",
+								"default": "latest"
 							}
 						},
-						"required": ["registry", "repository", "imageName"],
+						"required": ["repository", "imageName"],
 						"additionalProperties": false
 					}
 				},
@@ -101,7 +104,8 @@
 								"type": "object",
 								"additionalProperties": {
 									"type": "string"
-								}
+								},
+								"default": {}
 							},
 							"endpoints": {
 								"type": "array",
@@ -117,7 +121,7 @@
 					}
 				}
 			},
-			"required": ["$schema", "registries", "images", "services"],
+			"required": ["images", "services"],
 			"additionalProperties": false
 		}
 	},
