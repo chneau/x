@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const deploymentSchema = z.object({
+export const deploySchema = z.object({
 	$schema: z.string().optional(),
 	registries: z
 		.record(
@@ -42,9 +42,30 @@ export const deploymentSchema = z.object({
 
 export const commandDeploy = async () => {
 	const args = Bun.argv.slice(3);
-	const deployFileName = args[0] || ".deploy.json";
-	const deployFile = Bun.file(deployFileName);
-	const deployFileJson = await deployFile.json();
-	const deployFileParsed = deploymentSchema.parse(deployFileJson);
-	console.log(deployFileParsed);
+	const jsonFiles = args.filter((arg) => arg.endsWith(".json"));
+	const filters = args.filter((arg) => !arg.endsWith(".json"));
+	const isTargettingJsonFiles = jsonFiles.length > 0;
+	if (jsonFiles.length === 0)
+		jsonFiles.push(
+			...(await Bun.$`ls *.json`.text()).split("\n").filter(Boolean),
+		);
+	let isFound = false;
+	for (const jsonFile of jsonFiles) {
+		const file = Bun.file(jsonFile);
+		const rawJson = await file.json().catch(() => 0);
+		const parsed = await deploySchema.parseAsync(rawJson).catch(() => null);
+		if (!parsed) continue;
+		const services = Object.keys(parsed.services).filter((x) =>
+			filters.length ? filters.includes(x) : true,
+		);
+		if (services.length === 0) continue;
+		isFound = true;
+		console.log(`Found ${services.length} services to deploy`);
+	}
+	if (!isFound && !isTargettingJsonFiles) {
+		console.log("TODO: create a template file");
+	}
+	if (isTargettingJsonFiles && !isFound) {
+		console.log("No valid json files found");
+	}
 };
