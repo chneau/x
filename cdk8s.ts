@@ -95,7 +95,7 @@ export const createDeployment = async ({
 	);
 
 	const deployment = new Deployment(chart, "deployment", {
-		replicas: 1,
+		replicas: service.replicas,
 		metadata: { name: image.imageName },
 		terminationGracePeriod: Duration.seconds(0),
 		dockerRegistryAuth: dockerSecret,
@@ -112,7 +112,7 @@ export const createDeployment = async ({
 			DEPLOYMENT_DATE: new Date().toISOString(),
 		}),
 		resources: {},
-		securityContext: { readOnlyRootFilesystem: false },
+		securityContext: { readOnlyRootFilesystem: service.readOnlyRootFilesystem },
 		startup: Probe.fromTcpSocket({ periodSeconds: Duration.seconds(1) }),
 	});
 	const _service = deployment.exposeViaService({ name: image.imageName });

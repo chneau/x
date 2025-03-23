@@ -31,8 +31,8 @@ export const serviceSchema = z.object({
 	context: z.string(),
 	namespace: z.string(),
 	port: z.number().min(1).max(65535).default(3000),
-	startupProbe: z.string().default("/"),
 	env: z.record(z.string(), z.string()).default({}),
+	readOnlyRootFilesystem: z.boolean().default(false),
 	endpoints: z
 		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
 		.default([]),
@@ -116,7 +116,12 @@ const deploy = async (config: Deploy, cwd: string) => {
 			const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
 
 			console.log(`🔨 Building ${imageFullName}...`);
-			await Bun.$`docker build --pull --push -t ${imageFullName} -f ${image.dockerfile} ${image.context}`.cwd(
+			const buildArgs = {
+				raw: Object.entries(image.args)
+					.map(([key, value]) => `--build-arg=${key}=${value}`)
+					.join(" "),
+			};
+			await Bun.$`docker build --pull --push -t ${imageFullName} -f ${image.dockerfile} ${buildArgs} ${image.context}`.cwd(
 				cwd,
 			);
 			console.log(`... ✅ Built ${imageFullName}`);
@@ -138,6 +143,7 @@ const deploy = async (config: Deploy, cwd: string) => {
 				kubeEnv,
 			);
 			console.log(`... ✅ Deployed ${serviceAlias}`);
+			console.log(deploymentYaml);
 		}
 	}
 };
