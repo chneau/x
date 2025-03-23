@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-export const commandDeploy = async () => {
-	console.log("Deploying services");
-};
-
 export const deploymentSchema = z.object({
 	$schema: z.string(),
 	registries: z.record(
@@ -42,4 +38,11 @@ export const deploymentSchema = z.object({
 	),
 });
 
-// TODO: env substitution
+export const commandDeploy = async () => {
+	const args = Bun.argv.slice(3);
+	const deployFile = args[0] || ".deploy.json";
+	console.log(`Deploying from ${deployFile}`);
+	const content = deploymentSchema.parse(await Bun.file(deployFile).json());
+	console.dir(content, { depth: null });
+	console.log("Deploying services");
+};

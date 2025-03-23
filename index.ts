@@ -22,8 +22,7 @@ program.command("fmt").description("Format all files").action(commandFmt);
 program
 	.command("deploy")
 	.description("Deploy to kubernetes")
-	.argument("[file]", "File to deploy", ".x-deploy.json")
-	.argument("filter", "Services to deploy", "*")
+	.allowExcessArguments()
 	.action(commandDeploy);
 
 program

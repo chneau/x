@@ -50,7 +50,7 @@
 
     "bun-types": ["bun-types@1.2.5", "", { "dependencies": { "@types/node": "*", "@types/ws": "~8.5.10" } }, "sha512-3oO6LVGGRRKI4kHINx5PIdIgnLRb7l/SprhzqXapmoYkFl5m4j6EvALvbDVuuBFaamB46Ap6HCUxIXNLCGy+tg=="],
 
-    "cdk8s": ["cdk8s@2.69.55", "", { "dependencies": { "fast-json-patch": "^3.1.1", "follow-redirects": "^1.15.9", "yaml": "2.7.0" }, "peerDependencies": { "constructs": "^10" } }, "sha512-rz9bE2ufGyb4tPu0vHEsRYHLuGJj3lqBcIoAFiUl2GMSE3bC8jAscQzEJdH3GuK6GMQD3+mKIAqF95lYGOP9ig=="],
+    "cdk8s": ["cdk8s@2.69.56", "", { "dependencies": { "fast-json-patch": "^3.1.1", "follow-redirects": "^1.15.9", "yaml": "2.7.0" }, "peerDependencies": { "constructs": "^10" } }, "sha512-sRN+2WCb1kRezOEh3FEUG9qYjukmuHSBeYAlnx09aym9s+kW9dcYjjTC+ZsqMFkv28EiO02ePghLlt4UiypDZg=="],
 
     "cdk8s-plus-32": ["cdk8s-plus-32@2.0.6", "", { "dependencies": { "minimatch": "^3.1.2" }, "peerDependencies": { "cdk8s": "^2.68.11", "constructs": "^10.3.0" } }, "sha512-nQ6KoaaW6tXZTDgsfsrdQZmzaewB8ugMDgORv3iTuBi3vU0Y2l1E2pIJ0wvIA5xiwHpVppC5eYJhb3GmNJv3Xg=="],
 

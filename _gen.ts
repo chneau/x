@@ -6,3 +6,4 @@ const jsonSchema = zodToJsonSchema(
 	"chneau-deployment-schema",
 );
 await Bun.write("deployment-schema.json", JSON.stringify(jsonSchema, null, 2));
+await Bun.$`timeout 0.5 bun run check`.nothrow();
