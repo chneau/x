@@ -90,12 +90,53 @@ export const commandDeploy = async () => {
 		}
 	}
 	if (!isFound && !isTargettingJsonFiles) {
-		console.log("❌ TODO: create a template file");
+		await createTemplateDeploy();
 	}
 	if (isTargettingJsonFiles && !isFound) {
 		console.log("❌ No valid json files found");
 	}
 	await Promise.all(promises);
+};
+
+const createTemplateDeploy = async () => {
+	console.log("🕒 Creating .deploy.json template...");
+	const template = deploySchema.parse({
+		$schema: "https://raw.githubusercontent.com/chneau/x/refs/heads/master/deployment-schema.json",
+		registries: {
+			dockerhub: {
+				hostname: "docker.io",
+				username: "username",
+				password: "password",
+			},
+		},
+		images: {
+			"my-image": {
+				registry: "dockerhub",
+				repository: "my-repo",
+				imageName: "my-image",
+			},
+		},
+		services: {
+			"my-service": {
+				image: "my-image",
+				file: "kubeconfig",
+				context: "my-context",
+				namespace: "my-namespace",
+				env: {
+					ENV: "value",
+				},
+				endpoints: ["my-endpoint.com"],
+			},
+		},
+	});
+	const templateStr = JSON.stringify(template, null, 2);
+	const file = Bun.file(".deploy.json");
+	if (await file.exists()) {
+		console.log("❌ .deploy.json already exists");
+		return;
+	}
+	await file.write(templateStr);
+	console.log("✅ Created .deploy.json");
 };
 
 const deploy = async (config: Deploy, cwd: string) => {
