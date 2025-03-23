@@ -14,11 +14,11 @@ export const deploymentSchema = z.object({
 			registry: z.string(),
 			dockerfile: z.string().default("Dockerfile"),
 			target: z.string().optional(),
-			args: z.record(z.string()).optional(),
+			args: z.record(z.string()).default({}),
 			context: z.string().default("."),
 			repository: z.string(),
 			imageName: z.string(),
-			tag: z.string().optional(),
+			tag: z.string().default("latest"),
 		}),
 	),
 	services: z.record(
@@ -30,7 +30,7 @@ export const deploymentSchema = z.object({
 			namespace: z.string(),
 			port: z.number().min(1).max(65535).default(3000),
 			startupProbe: z.string().default("/"),
-			env: z.record(z.string(), z.string()).optional(),
+			env: z.record(z.string(), z.string()).default({}),
 			endpoints: z
 				.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
 				.default([]),
