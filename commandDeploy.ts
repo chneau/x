@@ -3,47 +3,51 @@ import { z } from "zod";
 import { createDeployment } from "./cdk8s";
 import { envSubst } from "./envSubst";
 
-export const deploySchema = z.object({
-	$schema: z.string().optional(),
-	registries: z
-		.record(
-			z.object({
-				hostname: z.string(),
-				username: z.string(),
-				password: z.string(),
-			}),
-		)
-		.default({}),
-	images: z.record(
-		z.object({
-			registry: z.string().optional(),
-			dockerfile: z.string().default("Dockerfile"),
-			target: z.string().optional(),
-			args: z.record(z.string()).default({}),
-			context: z.string().default("."),
-			repository: z.string(),
-			imageName: z.string(),
-			tag: z.string().default("latest"),
-		}),
-	),
-	services: z.record(
-		z.object({
-			image: z.string(),
-			replicas: z.number().default(1),
-			file: z.string().default("kubeconfig"),
-			context: z.string(),
-			namespace: z.string(),
-			port: z.number().min(1).max(65535).default(3000),
-			startupProbe: z.string().default("/"),
-			env: z.record(z.string(), z.string()).default({}),
-			endpoints: z
-				.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
-				.default([]),
-		}),
-	),
+export const registrySchema = z.object({
+	hostname: z.string(),
+	username: z.string(),
+	password: z.string(),
 });
 
-type Deploy = z.infer<typeof deploySchema>;
+export type DeployRegistry = z.infer<typeof registrySchema>;
+
+export const imageSchema = z.object({
+	registry: z.string(),
+	dockerfile: z.string().default("Dockerfile"),
+	target: z.string().optional(),
+	args: z.record(z.string()).default({}),
+	context: z.string().default("."),
+	repository: z.string(),
+	imageName: z.string(),
+	tag: z.string().default("latest"),
+});
+
+export type DeployImage = z.infer<typeof imageSchema>;
+
+export const serviceSchema = z.object({
+	image: z.string(),
+	replicas: z.number().default(1),
+	file: z.string().default("kubeconfig"),
+	context: z.string(),
+	namespace: z.string(),
+	port: z.number().min(1).max(65535).default(3000),
+	startupProbe: z.string().default("/"),
+	env: z.record(z.string(), z.string()).default({}),
+	endpoints: z
+		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
+		.default([]),
+});
+
+export type DeployService = z.infer<typeof serviceSchema>;
+
+export const deploySchema = z.object({
+	$schema: z.string().optional(),
+	registries: z.record(registrySchema).default({}),
+	images: z.record(imageSchema),
+	services: z.record(serviceSchema),
+});
+
+export type Deploy = z.infer<typeof deploySchema>;
 
 export const commandDeploy = async () => {
 	const args = Bun.argv.slice(3);
@@ -119,15 +123,9 @@ const deploy = async (config: Deploy, cwd: string) => {
 
 			console.log(`🔗 Creating deployment for ${serviceAlias}...`);
 			const deploymentYaml = await createDeployment({
-				registryHost: registry.hostname,
-				registryUsername: registry.username,
-				registryPassword: registry.password,
-				imageName: image.imageName,
-				imageRepository: image.repository,
-				imageTag: image.tag,
-				kubePort: service.port,
-				kubeEnv: service.env,
-				kubeEndpoints: service.endpoints,
+				registry,
+				image,
+				service,
 			});
 			console.log(`... ✅ Created deployment for ${serviceAlias}`);
 

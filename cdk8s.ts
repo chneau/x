@@ -10,6 +10,11 @@ import {
 	Secret,
 	type Service,
 } from "cdk8s-plus-32";
+import type {
+	DeployImage,
+	DeployRegistry,
+	DeployService,
+} from "./commandDeploy";
 
 const createDockerConfigJson = (
 	chart: Chart,
@@ -64,68 +69,55 @@ const createIngress = (chart: Chart, service: Service, hosts: string[]) => {
 };
 
 type createDeploynentProps = {
-	registryHost: string;
-	registryUsername: string;
-	registryPassword: string;
-	imageName: string;
-	imageRepository: string;
-	imageTag: string;
-	kubePort: number;
-	kubeEnv: {
-		[key: string]: string;
-	};
-	kubeEndpoints: string[];
+	registry: DeployRegistry;
+	image: DeployImage;
+	service: DeployService;
 };
 export const createDeployment = async ({
-	registryHost,
-	registryUsername,
-	registryPassword,
-	imageName,
-	imageRepository,
-	imageTag,
-	kubePort,
-	kubeEnv,
-	kubeEndpoints,
+	registry,
+	image,
+	service,
 }: createDeploynentProps) => {
 	const app = new App({ outputFileExtension: ".yml" });
 
-	const chart = new Chart(app, imageName, {
-		namespace: imageName,
+	const chart = new Chart(app, image.imageName, {
+		namespace: service.namespace,
 		disableResourceNameHashes: true,
 	});
 
-	new Namespace(chart, imageName);
+	new Namespace(chart, service.namespace);
 
 	const dockerSecret = createDockerConfigJson(
 		chart,
-		registryHost,
-		registryUsername,
-		registryPassword,
+		registry.hostname,
+		registry.username,
+		registry.password,
 	);
 
 	const deployment = new Deployment(chart, "deployment", {
 		replicas: 1,
-		metadata: {
-			name: imageName,
-		},
+		metadata: { name: image.imageName },
 		terminationGracePeriod: Duration.seconds(0),
 		dockerRegistryAuth: dockerSecret,
 	});
 
-	const imageFullName = `${registryHost}/${imageRepository}/${imageName}:${imageTag}`;
+	const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
 
 	deployment.addContainer({
-		name: imageName,
+		name: image.imageName,
 		image: imageFullName,
-		portNumber: kubePort,
-		envVariables: envVarToCDK8S(kubeEnv),
+		portNumber: service.port,
+		envVariables: envVarToCDK8S({
+			...service.env,
+			DEPLOYMENT_DATE: new Date().toISOString(),
+		}),
 		resources: {},
 		securityContext: { readOnlyRootFilesystem: false },
 		startup: Probe.fromTcpSocket({ periodSeconds: Duration.seconds(1) }),
 	});
-	const service = deployment.exposeViaService({ name: imageName });
+	const _service = deployment.exposeViaService({ name: image.imageName });
 
-	createIngress(chart, service, kubeEndpoints);
+	createIngress(chart, _service, service.endpoints);
 
 	return app.synthYaml();
 };
