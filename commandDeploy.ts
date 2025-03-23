@@ -1,3 +1,4 @@
+import path from "node:path";
 import { z } from "zod";
 import { envSubst } from "./envSubst";
 
@@ -41,6 +42,8 @@ export const deploySchema = z.object({
 	),
 });
 
+type Deploy = z.infer<typeof deploySchema>;
+
 export const commandDeploy = async () => {
 	const args = Bun.argv.slice(3);
 	const jsonFiles = args.filter((arg) => arg.endsWith(".json"));
@@ -52,6 +55,7 @@ export const commandDeploy = async () => {
 		);
 	}
 	let isFound = false;
+	const promises: Promise<unknown>[] = [];
 	for (const jsonFile of jsonFiles) {
 		const file = Bun.file(jsonFile);
 		const rawStr = await file.text().catch(() => null);
@@ -60,17 +64,50 @@ export const commandDeploy = async () => {
 		const rawJson = JSON.parse(envSubstStr);
 		const parsed = await deploySchema.parseAsync(rawJson).catch(() => null);
 		if (!parsed) continue;
-		const services = Object.keys(parsed.services).filter((x) =>
-			filters.length ? filters.includes(x) : true,
-		);
-		if (services.length === 0) continue;
+		if (filters.length) {
+			for (const key in parsed.services) {
+				if (filters.includes(key)) continue;
+				delete parsed.services[key];
+			}
+		}
+		const serviceKeys = Object.keys(parsed.services);
+		if (!serviceKeys.length) continue;
 		isFound = true;
-		console.log(`Found ${services.length} services to deploy`);
+
+		promises.push(deploy(parsed, path.dirname(jsonFile)));
 	}
 	if (!isFound && !isTargettingJsonFiles) {
-		console.log("TODO: create a template file");
+		console.log("❌ TODO: create a template file");
 	}
 	if (isTargettingJsonFiles && !isFound) {
-		console.log("No valid json files found");
+		console.log("❌ No valid json files found");
+	}
+	await Promise.all(promises);
+};
+
+const deploy = async (config: Deploy, cwd: string) => {
+	for (const [serviceAlias, service] of Object.entries(config.services)) {
+		console.log(`🕒 Deploying ${serviceAlias}...`);
+		const image = config.images[service.image];
+		if (!image) {
+			console.error(`❌ Image ${service.image} not found`);
+			continue;
+		}
+		const registry = image.registry ? config.registries[image.registry] : null;
+		if (!registry) {
+			console.info(`❓ Registry ${image.registry} not found`);
+		} else {
+			console.log(`🔑 Logging in to ${registry.hostname}...`);
+			await Bun.$`echo ${registry.password} | docker login --username ${registry.username} --password-stdin ${registry.hostname}`;
+			console.log(`... ✅ Logged in to ${registry.hostname}`);
+
+			const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
+
+			console.log(`🔨 Building ${imageFullName}...`);
+			await Bun.$`docker build --pull --push -t ${imageFullName} -f ${image.dockerfile} ${image.context}`.cwd(
+				cwd,
+			);
+			console.log(`... ✅ Built ${imageFullName}`);
+		}
 	}
 };
