@@ -101,7 +101,8 @@ export const commandDeploy = async () => {
 const createTemplateDeploy = async () => {
 	console.log("🕒 Creating .deploy.json template...");
 	const template = deploySchema.parse({
-		$schema: "https://raw.githubusercontent.com/chneau/x/refs/heads/master/deployment-schema.json",
+		$schema:
+			"https://raw.githubusercontent.com/chneau/x/refs/heads/master/deployment-schema.json",
 		registries: {
 			dockerhub: {
 				hostname: "docker.io",
