@@ -140,8 +140,6 @@ const createTemplateDeploy = async () => {
 	console.log("✅ Created .deploy.json");
 };
 
-const prefix = (str: string) => ({ raw: `2>&1 | sed -e 's/^/[${str}] /;'` });
-
 const deploy = async (config: Deploy, cwd: string) => {
 	for (const [serviceAlias, service] of Object.entries(config.services)) {
 		console.log(`🕒 Deploying ${serviceAlias}...`);
@@ -156,9 +154,7 @@ const deploy = async (config: Deploy, cwd: string) => {
 			continue;
 		}
 		console.log(`🔑 Logging in to ${registry.hostname}...`);
-		await Bun.$`echo ${registry.password} | docker login --username ${registry.username} --password-stdin ${registry.hostname} ${prefix(
-			`LOGIN ${registry.hostname}`,
-		)}`;
+		await Bun.$`echo ${registry.password} | docker login --username ${registry.username} --password-stdin ${registry.hostname}`;
 		console.log(`... ✅ Logged in to ${registry.hostname}`);
 
 		const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
@@ -169,9 +165,7 @@ const deploy = async (config: Deploy, cwd: string) => {
 				.map(([key, value]) => `--build-arg=${key}=${value}`)
 				.join(" "),
 		};
-		await Bun.$`docker build --pull --push --tag=${imageFullName} --file=${image.dockerfile} ${buildArgs} ${image.context} ${prefix(
-			`PUSH ${image.imageName}:${image.tag}`,
-		)}`;
+		await Bun.$`docker build --pull --push --tag=${imageFullName} --file=${image.dockerfile} ${buildArgs} ${image.context}`;
 		console.log(`... ✅ Built ${imageFullName}`);
 
 		console.log(`🔗 Creating deployment for ${serviceAlias}...`);
@@ -187,9 +181,9 @@ const deploy = async (config: Deploy, cwd: string) => {
 			...Bun.env,
 			KUBECONFIG: path.join(cwd, service.file),
 		};
-		await Bun.$`echo ${deploymentYaml} | kubectl --context=${service.context} apply -f - ${prefix(
-			`DEPLOY ${serviceAlias}`,
-		)}`.env(kubeEnv);
+		await Bun.$`echo ${deploymentYaml} | kubectl --context=${service.context} apply -f -`.env(
+			kubeEnv,
+		);
 		console.log(`... ✅ Deployed ${serviceAlias}`);
 	}
 };
