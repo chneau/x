@@ -123,6 +123,8 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 		noEmit: true,
 		strict: true,
 		skipLibCheck: true,
+		incremental: true,
+		tsBuildInfoFile: "./node_modules/.tmp/tsconfig.tsbuildinfo",
 	};
 	for (const [key, value] of Object.entries(expected)) {
 		if (tsconfig.compilerOptions[key] === value) continue;
@@ -146,7 +148,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		upgrade: "bun update --latest",
 		check:
 			"deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
-		lint: "tsc",
+		lint: "tsc --noEmit",
 		all: "bun run upgrade; bun run check; bun run lint",
 	};
 	for (const [key, value] of Object.entries(expected)) {
