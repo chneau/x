@@ -147,7 +147,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 	const expected = {
 		upgrade: "bun update --latest",
 		check:
-			"deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
+			"deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; timeout 3s biome check --write --unsafe .",
 		lint: "tsc --noEmit",
 		all: "bun run upgrade; bun run check; bun run lint",
 	};
