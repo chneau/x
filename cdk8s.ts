@@ -80,7 +80,7 @@ export const createDeployment = async ({
 }: createDeploynentProps) => {
 	const app = new App({ outputFileExtension: ".yml" });
 
-	const chart = new Chart(app, image.imageName, {
+	const chart = new Chart(app, service.namespace, {
 		namespace: service.namespace,
 		disableResourceNameHashes: true,
 	});
