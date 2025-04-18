@@ -3,22 +3,22 @@
 		"start": "bun --watch index.ts",
 		"deploy": "bun _gen && bun _deploy.ts && x upgrade",
 		"upgrade": "bun update --latest",
-		"check": "deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
-		"lint": "tsc",
+		"check": "deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; timeout 3s biome check --write --unsafe .",
+		"lint": "tsc --noEmit",
 		"all": "bun run upgrade; bun run check; bun run lint"
 	},
 	"dependencies": {
-		"cdk8s": "^2.69.56",
-		"cdk8s-plus-32": "^2.0.6",
+		"cdk8s": "^2.69.63",
+		"cdk8s-plus-32": "^2.0.11",
 		"commander": "^13.1.0",
 		"jsonc-parser": "^3.3.1",
 		"p-queue": "^8.1.0",
-		"zod": "^3.24.2",
+		"zod": "^3.24.3",
 		"zod-to-json-schema": "^3.24.5"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"@types/bun": "^1.2.5",
-		"typescript": "^5.8.2"
+		"@types/bun": "^1.2.10",
+		"typescript": "^5.8.3"
 	}
 }
