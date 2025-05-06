@@ -8,17 +8,17 @@
 		"all": "bun run upgrade; bun run check; bun run lint"
 	},
 	"dependencies": {
-		"cdk8s": "^2.69.64",
-		"cdk8s-plus-32": "^2.0.12",
+		"cdk8s": "^2.69.66",
+		"cdk8s-plus-32": "^2.0.14",
 		"commander": "^13.1.0",
 		"jsonc-parser": "^3.3.1",
 		"p-queue": "^8.1.0",
-		"zod": "^3.24.3",
+		"zod": "^3.24.4",
 		"zod-to-json-schema": "^3.24.5"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"@types/bun": "^1.2.10",
+		"@types/bun": "^1.2.12",
 		"typescript": "^5.8.3"
 	}
 }

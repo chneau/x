@@ -56,7 +56,9 @@ export const commandDeploy = async () => {
 	const isTargettingJsonFiles = jsonFiles.length > 0;
 	if (jsonFiles.length === 0) {
 		jsonFiles.push(
-			...(await Bun.$`ls *.json`.text()).split("\n").filter(Boolean),
+			...(await Bun.$`ls *.json`.text().catch(() => ""))
+				.split("\n")
+				.filter(Boolean),
 			".deploy.json",
 		);
 	}
