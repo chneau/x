@@ -16,13 +16,13 @@
 								"type": "string"
 							},
 							"username": {
-								"type": "string"
+								"type": ["string", "null"]
 							},
 							"password": {
-								"type": "string"
+								"type": ["string", "null"]
 							}
 						},
-						"required": ["hostname", "username", "password"],
+						"required": ["hostname"],
 						"additionalProperties": false
 					},
 					"default": {}

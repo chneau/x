@@ -5,8 +5,8 @@ import { envSubst } from "./envSubst";
 
 export const registrySchema = z.object({
 	hostname: z.string(),
-	username: z.string(),
-	password: z.string(),
+	username: z.string().nullish(),
+	password: z.string().nullish(),
 });
 
 export type DeployRegistry = z.infer<typeof registrySchema>;
@@ -155,20 +155,22 @@ const deploy = async (config: Deploy, cwd: string) => {
 			console.info(`❓ Registry ${image.registry} not found`);
 			continue;
 		}
-		console.log(`🔑 Logging in to ${registry.hostname}...`);
-		await Bun.$`echo ${registry.password} | docker login --username ${registry.username} --password-stdin ${registry.hostname}`;
-		console.log(`... ✅ Logged in to ${registry.hostname}`);
+		if (registry.username && registry.password) {
+			console.log(`🔑 Logging in to ${registry.hostname}...`);
+			await Bun.$`echo ${registry.password} | docker login --username ${registry.username} --password-stdin ${registry.hostname}`;
+			console.log(`... ✅ Logged in to ${registry.hostname}`);
 
-		const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
+			const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
 
-		console.log(`🔨 Building ${imageFullName}...`);
-		const buildArgs = {
-			raw: Object.entries(image.args)
-				.map(([key, value]) => `--build-arg=${key}=${value}`)
-				.join(" "),
-		};
-		await Bun.$`docker build --pull --push --tag=${imageFullName} --file=${image.dockerfile} ${buildArgs} ${image.context}`;
-		console.log(`... ✅ Built ${imageFullName}`);
+			console.log(`🔨 Building ${imageFullName}...`);
+			const buildArgs = {
+				raw: Object.entries(image.args)
+					.map(([key, value]) => `--build-arg=${key}=${value}`)
+					.join(" "),
+			};
+			await Bun.$`docker build --pull --push --tag=${imageFullName} --file=${image.dockerfile} ${buildArgs} ${image.context}`;
+			console.log(`... ✅ Built ${imageFullName}`);
+		}
 
 		console.log(`🔗 Creating deployment for ${serviceAlias}...`);
 		const deploymentYaml = await createDeployment({

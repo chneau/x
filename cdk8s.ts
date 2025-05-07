@@ -87,18 +87,19 @@ export const createDeployment = async ({
 
 	new Namespace(chart, service.namespace);
 
-	const dockerSecret = createDockerConfigJson(
-		chart,
-		registry.hostname,
-		registry.username,
-		registry.password,
-	);
-
 	const deployment = new Deployment(chart, "deployment", {
 		replicas: service.replicas,
 		metadata: { name: image.imageName },
 		terminationGracePeriod: Duration.seconds(0),
-		dockerRegistryAuth: dockerSecret,
+		dockerRegistryAuth:
+			registry.username && registry.password
+				? createDockerConfigJson(
+						chart,
+						registry.hostname,
+						registry.username,
+						registry.password,
+					)
+				: undefined,
 	});
 
 	const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
