@@ -125,6 +125,8 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 		skipLibCheck: true,
 		incremental: true,
 		tsBuildInfoFile: "./node_modules/.tmp/tsconfig.tsbuildinfo",
+		resolveJsonModule: true,
+		esModuleInterop: true,
 	};
 	for (const [key, value] of Object.entries(expected)) {
 		if (tsconfig.compilerOptions[key] === value) continue;
