@@ -1,9 +1,171 @@
 {
-	"$ref": "#/definitions/chneau-deployment-schema",
-	"definitions": {
-		"chneau-deployment-schema": {
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"$schema": {
 			"type": "string"
+		},
+		"registries": {
+			"default": {},
+			"type": "object",
+			"propertyNames": {
+				"type": "string"
+			},
+			"additionalProperties": {
+				"type": "object",
+				"properties": {
+					"hostname": {
+						"type": "string"
+					},
+					"username": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"password": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "null"
+							}
+						]
+					}
+				},
+				"required": ["hostname"],
+				"additionalProperties": false
+			}
+		},
+		"images": {
+			"type": "object",
+			"propertyNames": {
+				"type": "string"
+			},
+			"additionalProperties": {
+				"type": "object",
+				"properties": {
+					"registry": {
+						"type": "string"
+					},
+					"dockerfile": {
+						"default": "Dockerfile",
+						"type": "string"
+					},
+					"target": {
+						"type": "string"
+					},
+					"args": {
+						"default": {},
+						"type": "object",
+						"propertyNames": {
+							"type": "string"
+						},
+						"additionalProperties": {
+							"type": "string"
+						}
+					},
+					"context": {
+						"default": ".",
+						"type": "string"
+					},
+					"repository": {
+						"type": "string"
+					},
+					"imageName": {
+						"type": "string"
+					},
+					"tag": {
+						"default": "latest",
+						"type": "string"
+					}
+				},
+				"required": [
+					"registry",
+					"dockerfile",
+					"args",
+					"context",
+					"repository",
+					"imageName",
+					"tag"
+				],
+				"additionalProperties": false
+			}
+		},
+		"services": {
+			"type": "object",
+			"propertyNames": {
+				"type": "string"
+			},
+			"additionalProperties": {
+				"type": "object",
+				"properties": {
+					"image": {
+						"type": "string"
+					},
+					"replicas": {
+						"default": 1,
+						"type": "number"
+					},
+					"file": {
+						"default": "kubeconfig",
+						"type": "string"
+					},
+					"context": {
+						"type": "string"
+					},
+					"namespace": {
+						"type": "string"
+					},
+					"port": {
+						"default": 3000,
+						"type": "number",
+						"minimum": 1,
+						"maximum": 65535
+					},
+					"env": {
+						"default": {},
+						"type": "object",
+						"propertyNames": {
+							"type": "string"
+						},
+						"additionalProperties": {
+							"type": "string"
+						}
+					},
+					"readOnlyRootFilesystem": {
+						"default": false,
+						"type": "boolean"
+					},
+					"endpoints": {
+						"default": [],
+						"type": "array",
+						"items": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+						}
+					}
+				},
+				"required": [
+					"image",
+					"replicas",
+					"file",
+					"context",
+					"namespace",
+					"port",
+					"env",
+					"readOnlyRootFilesystem",
+					"endpoints"
+				],
+				"additionalProperties": false
+			}
 		}
 	},
-	"$schema": "http://json-schema.org/draft-07/schema#"
+	"required": ["registries", "images", "services"],
+	"additionalProperties": false
 }
