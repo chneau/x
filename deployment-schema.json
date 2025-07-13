@@ -85,15 +85,7 @@
 						"type": "string"
 					}
 				},
-				"required": [
-					"registry",
-					"dockerfile",
-					"args",
-					"context",
-					"repository",
-					"imageName",
-					"tag"
-				],
+				"required": ["registry", "repository", "imageName"],
 				"additionalProperties": false
 			}
 		},
@@ -151,17 +143,7 @@
 						}
 					}
 				},
-				"required": [
-					"image",
-					"replicas",
-					"file",
-					"context",
-					"namespace",
-					"port",
-					"env",
-					"readOnlyRootFilesystem",
-					"endpoints"
-				],
+				"required": ["image", "context", "namespace"],
 				"additionalProperties": false
 			}
 		}

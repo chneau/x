@@ -118,7 +118,7 @@ export const createDeployment = async ({
 	});
 	const _service = deployment.exposeViaService({ name: image.imageName });
 
-	createIngress(chart, _service, service.endpoints);
+	createIngress(chart, _service, service.endpoints ?? []);
 
 	return app.synthYaml();
 };

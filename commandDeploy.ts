@@ -13,29 +13,30 @@ export type DeployRegistry = z.infer<typeof registrySchema>;
 
 export const imageSchema = z.object({
 	registry: z.string(),
-	dockerfile: z.string().default("Dockerfile"),
+	dockerfile: z.string().default("Dockerfile").optional(),
 	target: z.string().optional(),
-	args: z.record(z.string(), z.string()).default({}),
-	context: z.string().default("."),
+	args: z.record(z.string(), z.string()).default({}).optional(),
+	context: z.string().default(".").optional(),
 	repository: z.string(),
 	imageName: z.string(),
-	tag: z.string().default("latest"),
+	tag: z.string().default("latest").optional(),
 });
 
 export type DeployImage = z.infer<typeof imageSchema>;
 
 export const serviceSchema = z.object({
 	image: z.string(),
-	replicas: z.number().default(1),
-	file: z.string().default("kubeconfig"),
+	replicas: z.number().default(1).optional(),
+	file: z.string().default("kubeconfig").optional(),
 	context: z.string(),
 	namespace: z.string(),
-	port: z.number().min(1).max(65535).default(3000),
-	env: z.record(z.string(), z.string()).default({}),
-	readOnlyRootFilesystem: z.boolean().default(false),
+	port: z.number().min(1).max(65535).default(3000).optional(),
+	env: z.record(z.string(), z.string()).default({}).optional(),
+	readOnlyRootFilesystem: z.boolean().default(false).optional(),
 	endpoints: z
 		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
-		.default([]),
+		.default([])
+		.optional(),
 });
 
 export type DeployService = z.infer<typeof serviceSchema>;
@@ -164,7 +165,7 @@ const deploy = async (config: Deploy, cwd: string) => {
 
 			console.log(`🔨 Building ${imageFullName}...`);
 			const buildArgs = {
-				raw: Object.entries(image.args)
+				raw: Object.entries(image.args ?? {})
 					.map(([key, value]) => `--build-arg=${key}=${value}`)
 					.join(" "),
 			};
@@ -183,7 +184,7 @@ const deploy = async (config: Deploy, cwd: string) => {
 		console.log(`🚀 Deploying ${serviceAlias}...`);
 		const kubeEnv = {
 			...Bun.env,
-			KUBECONFIG: path.join(cwd, service.file),
+			KUBECONFIG: path.join(cwd, service.file ?? "kubeconfig"),
 		};
 		await Bun.$`echo ${deploymentYaml} | kubectl --context=${service.context} apply -f -`.env(
 			kubeEnv,
