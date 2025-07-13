@@ -2,9 +2,6 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"type": "object",
 	"properties": {
-		"$schema": {
-			"type": "string"
-		},
 		"registries": {
 			"default": {},
 			"type": "object",
@@ -38,8 +35,7 @@
 						]
 					}
 				},
-				"required": ["hostname"],
-				"additionalProperties": false
+				"required": ["hostname"]
 			}
 		},
 		"images": {
@@ -85,16 +81,7 @@
 						"type": "string"
 					}
 				},
-				"required": [
-					"registry",
-					"dockerfile",
-					"args",
-					"context",
-					"repository",
-					"imageName",
-					"tag"
-				],
-				"additionalProperties": false
+				"required": ["registry", "repository", "imageName"]
 			}
 		},
 		"services": {
@@ -151,21 +138,9 @@
 						}
 					}
 				},
-				"required": [
-					"image",
-					"replicas",
-					"file",
-					"context",
-					"namespace",
-					"port",
-					"env",
-					"readOnlyRootFilesystem",
-					"endpoints"
-				],
-				"additionalProperties": false
+				"required": ["image", "context", "namespace"]
 			}
 		}
 	},
-	"required": ["registries", "images", "services"],
-	"additionalProperties": false
+	"required": ["images", "services"]
 }

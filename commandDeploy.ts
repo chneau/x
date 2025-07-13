@@ -41,7 +41,6 @@ export const serviceSchema = z.object({
 export type DeployService = z.infer<typeof serviceSchema>;
 
 export const deploySchema = z.object({
-	$schema: z.string().optional(),
 	registries: z.record(z.string(), registrySchema).default({}),
 	images: z.record(z.string(), imageSchema),
 	services: z.record(z.string(), serviceSchema),
