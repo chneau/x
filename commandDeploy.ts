@@ -15,7 +15,7 @@ export const imageSchema = z.object({
 	registry: z.string(),
 	dockerfile: z.string().default("Dockerfile"),
 	target: z.string().optional(),
-	args: z.record(z.string()).default({}),
+	args: z.record(z.string(), z.string()).default({}),
 	context: z.string().default("."),
 	repository: z.string(),
 	imageName: z.string(),
@@ -42,9 +42,9 @@ export type DeployService = z.infer<typeof serviceSchema>;
 
 export const deploySchema = z.object({
 	$schema: z.string().optional(),
-	registries: z.record(registrySchema).default({}),
-	images: z.record(imageSchema),
-	services: z.record(serviceSchema),
+	registries: z.record(z.string(), registrySchema).default({}),
+	images: z.record(z.string(), imageSchema),
+	services: z.record(z.string(), serviceSchema),
 });
 
 export type Deploy = z.infer<typeof deploySchema>;

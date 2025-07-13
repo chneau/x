@@ -9,7 +9,7 @@ Bun.env.PATH = [
 	"$BUN_INSTALL/bin",
 	"$HOME/go/bin",
 	"$HOME/.arkade/bin",
-	"${KREW_ROOT:-$HOME/.krew}/bin",
+	`$\{KREW_ROOT:-$HOME/.krew}/bin`,
 	"$HOME/.cargo/bin",
 	"$HOME/.dotnet",
 	"$HOME/.dotnet/tools",
