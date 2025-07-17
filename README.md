@@ -1,6 +1,7 @@
 # x - chneau's utility CLI
 
-This is a command-line tool for managing and deploying projects, as well as maintaining the development system.
+This is a command-line tool for managing and deploying projects, as well as
+maintaining the development system.
 
 ## Installation
 
@@ -12,10 +13,12 @@ bun install -g @chneau/x
 
 ### `x [dir]`
 
-The default command recursively scans a directory to perform various cleanup and management tasks.
+The default command recursively scans a directory to perform various cleanup and
+management tasks.
 
 - **Cleans up**: Removes `yarn.lock` and `package-lock.json`.
-- **Manages `package.json`**: Adds or updates scripts for upgrading, checking, and linting.
+- **Manages `package.json`**: Adds or updates scripts for upgrading, checking,
+  and linting.
 - **Manages `tsconfig.json`**: Enforces strict and efficient compiler options.
 - **Manages `.gitignore`**: Ensures `node_modules` is ignored in Bun projects.
 - **Updates dependencies**: Runs `bun upgrade` if a `package.json` is found.
@@ -27,13 +30,15 @@ The default command recursively scans a directory to perform various cleanup and
 
 ### `x fmt`
 
-Formats all files in the current directory using `deno fmt`, `oxlint`, `biome`, `go fmt`, and `dotnet csharpier`.
+Formats all files in the current directory using `deno fmt`, `oxlint`, `biome`,
+`go fmt`, and `dotnet csharpier`.
 
 ### `x deploy [json_files...] [filters...]`
 
 Deploys applications to Kubernetes based on `.json` configuration files.
 
-- If no `.json` files are specified, it looks for `*.json` and `.deploy.json` in the current directory.
+- If no `.json` files are specified, it looks for `*.json` and `.deploy.json` in
+  the current directory.
 - If no configuration files are found, it creates a `.deploy.json` template.
 - You can filter which services to deploy by passing their names as arguments.
 
