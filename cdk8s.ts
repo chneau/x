@@ -13,7 +13,7 @@ import {
 import type {
 	DeployImage,
 	DeployRegistry,
-	DeployService,
+	NormalDeployService,
 } from "./commandDeploy";
 
 const createDockerConfigJson = (
@@ -71,7 +71,7 @@ const createIngress = (chart: Chart, service: Service, hosts: string[]) => {
 type createDeploynentProps = {
 	registry: DeployRegistry;
 	image: DeployImage;
-	service: DeployService;
+	service: NormalDeployService;
 };
 export const createDeployment = async ({
 	registry,

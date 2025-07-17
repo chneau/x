@@ -24,7 +24,7 @@ export const imageSchema = z.object({
 
 export type DeployImage = z.infer<typeof imageSchema>;
 
-export const serviceSchema = z.object({
+export const normalServiceSchema = z.object({
 	image: z.string(),
 	replicas: z.number().default(1),
 	file: z.string().default("kubeconfig"),
@@ -37,6 +37,27 @@ export const serviceSchema = z.object({
 		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
 		.default([]),
 });
+
+export type NormalDeployService = z.infer<typeof normalServiceSchema>;
+
+export const extendsServiceSchema = z.object({
+	extends: z.string(),
+	image: z.string().optional(),
+	replicas: z.number().optional(),
+	file: z.string().optional(),
+	context: z.string().optional(),
+	namespace: z.string().optional(),
+	port: z.number().min(1).max(65535).optional(),
+	env: z.record(z.string(), z.string()).optional(),
+	readOnlyRootFilesystem: z.boolean().optional(),
+	endpoints: z
+		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
+		.optional(),
+});
+
+export type ExtendsDeployService = z.infer<typeof extendsServiceSchema>;
+
+export const serviceSchema = normalServiceSchema.or(extendsServiceSchema);
 
 export type DeployService = z.infer<typeof serviceSchema>;
 
@@ -141,9 +162,39 @@ const createTemplateDeploy = async () => {
 	console.log("✅ Created .deploy.json");
 };
 
+const extendsServiceToNormal = (
+	service: ExtendsDeployService,
+	services: Record<string, DeployService>,
+): NormalDeployService => {
+	const targetService = services[service.extends];
+	if (!targetService) {
+		throw new Error(`Service ${service.extends} not found`);
+	}
+	if ("extends" in targetService) {
+		throw new Error(
+			`Service ${service.extends} is an extended service, cannot extend it further`,
+		);
+	}
+	targetService.image = service.image ?? targetService.image;
+	targetService.replicas = service.replicas ?? targetService.replicas;
+	targetService.file = service.file ?? targetService.file;
+	targetService.context = service.context ?? targetService.context;
+	targetService.namespace = service.namespace ?? targetService.namespace;
+	targetService.port = service.port ?? targetService.port;
+	targetService.env = { ...targetService.env, ...service.env }; // Merge env variables
+	targetService.readOnlyRootFilesystem =
+		service.readOnlyRootFilesystem ?? targetService.readOnlyRootFilesystem;
+	targetService.endpoints = service.endpoints ?? targetService.endpoints;
+	return targetService;
+};
+
 const deploy = async (config: Deploy, cwd: string) => {
-	for (const [serviceAlias, service] of Object.entries(config.services)) {
+	for (const [serviceAlias, _service] of Object.entries(config.services)) {
 		console.log(`🕒 Deploying ${serviceAlias}...`);
+		const service =
+			"extends" in _service
+				? extendsServiceToNormal(_service, config.services)
+				: _service;
 		const image = config.images[service.image];
 		if (!image) {
 			console.error(`❌ Image ${service.image} not found`);
