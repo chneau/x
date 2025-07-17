@@ -92,6 +92,7 @@ export const commandDeploy = async () => {
 		const rawJson = JSON.parse(envSubstStr);
 		const parsed = await deploySchema.parseAsync(rawJson).catch(() => null);
 		if (!parsed) continue;
+		const copy = structuredClone(parsed);
 		if (filters.length) {
 			for (const key in parsed.services) {
 				if (filters.includes(key)) continue;
@@ -104,10 +105,11 @@ export const commandDeploy = async () => {
 
 		for (const [serviceKey, service] of Object.entries(parsed.services)) {
 			promises.push(
-				deploy(
-					{ ...parsed, services: { [serviceKey]: service } },
-					path.dirname(jsonFile),
-				),
+				deploy({
+					config: { ...parsed, services: { [serviceKey]: service } },
+					allServices: copy.services,
+					cwd: path.dirname(jsonFile),
+				}),
 			);
 		}
 	}
@@ -166,7 +168,7 @@ const extendsServiceToNormal = (
 	service: ExtendsDeployService,
 	services: Record<string, DeployService>,
 ): NormalDeployService => {
-	const targetService = services[service.extends];
+	const targetService = structuredClone(services[service.extends]);
 	if (!targetService) {
 		throw new Error(`Service ${service.extends} not found`);
 	}
@@ -188,12 +190,18 @@ const extendsServiceToNormal = (
 	return targetService;
 };
 
-const deploy = async (config: Deploy, cwd: string) => {
+type DeployParams = {
+	config: Deploy;
+	allServices: Record<string, DeployService>;
+	cwd: string;
+};
+
+const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 	for (const [serviceAlias, _service] of Object.entries(config.services)) {
 		console.log(`🕒 Deploying ${serviceAlias}...`);
 		const service =
 			"extends" in _service
-				? extendsServiceToNormal(_service, config.services)
+				? extendsServiceToNormal(_service, allServices)
 				: _service;
 		const image = config.images[service.image];
 		if (!image) {
