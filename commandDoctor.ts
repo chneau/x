@@ -9,7 +9,8 @@ Bun.env.PATH = [
 	"$BUN_INSTALL/bin",
 	"$HOME/go/bin",
 	"$HOME/.arkade/bin",
-	`$\{KREW_ROOT:-$HOME/.krew}/bin`,
+	// biome-ignore lint/suspicious/noTemplateCurlyInString: it's what I actually expect
+	"${KREW_ROOT:-$HOME/.krew}/bin",
 	"$HOME/.cargo/bin",
 	"$HOME/.dotnet",
 	"$HOME/.dotnet/tools",
