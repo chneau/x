@@ -51,7 +51,7 @@
 
     "cdk8s": ["cdk8s@2.70.21", "", { "dependencies": { "fast-json-patch": "^3.1.1", "follow-redirects": "^1.15.11", "yaml": "2.8.1" }, "peerDependencies": { "constructs": "^10" } }, "sha512-EHS6jgMLG/9KlenWnCSs/DGJiTEIcLCAilf1Bdi3IJmBZ/S/nTXKmw+dYspLNW7AvZjGgbYrq+LEAv2JPaStgQ=="],
 
-    "cdk8s-plus-33": ["cdk8s-plus-33@2.3.13", "", { "dependencies": { "minimatch": "^9.0.5" }, "peerDependencies": { "cdk8s": "^2.68.11", "constructs": "^10.3.0" } }, "sha512-c5h1vQF5Bj2s9tEjp/eA+AdUbOIgiCYsFDMpdxo+BqiRAmbid+y7aoFWy7+sDy32kT6KTLat+YRYFxCTI2Txcg=="],
+    "cdk8s-plus-33": ["cdk8s-plus-33@2.4.0", "", { "dependencies": { "minimatch": "^9.0.5" }, "peerDependencies": { "cdk8s": "^2.68.11", "constructs": "^10.3.0" } }, "sha512-BEVlg1BlG3dClfanHsmCSqYPeAc6I3wVcO2KWnupgh7q8sYUrBN2+33lB18bpvV3ZV3WmwjS4cigZdy9lJKqFA=="],
 
     "commander": ["commander@14.0.1", "", {}, "sha512-2JkV3gUZUVrbNA+1sjBOYLsMZ5cEEl8GTFP2a4AVz5hvasAMCQ1D2l2le/cX+pV4N6ZU17zjUahLpIXRrnWL8A=="],
 
