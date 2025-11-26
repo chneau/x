@@ -15,6 +15,8 @@ const aptIt = (name: string) => ({
 
 const aptPkgs: Pkg[] = [
 	aptIt("git"),
+	aptIt("gcc"),
+	aptIt("make"),
 	aptIt("curl"),
 	aptIt("wget"),
 	aptIt("unzip"),
@@ -32,7 +34,6 @@ const brewPkgs: Pkg[] = [
 	brewIt("aichat"),
 	brewIt("bpytop"),
 	brewIt("dive"),
-	brewIt("gcc"),
 	brewIt("dldash/core/docker-color-output", "docker-color-output"),
 	brewIt("docker-compose"),
 	brewIt("go"),
