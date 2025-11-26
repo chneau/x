@@ -56,7 +56,7 @@ const bunIt = (name: string, check?: string) => ({
 	install: async () => await $`bun install --force --global ${name}`,
 });
 
-const bunPkgs: Pkg[] = [
+export const bunPkgs: Pkg[] = [
 	bunIt("@biomejs/biome", "biome"),
 	bunIt("@google/gemini-cli", "gemini"),
 	bunIt("opencode-ai", "opencode"),

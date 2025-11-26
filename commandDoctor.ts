@@ -1,28 +1,37 @@
 import { $ } from "bun";
-import z from "zod";
+import {
+	type DoctorOptions,
+	doctorGitconfig,
+	doctorGithub,
+	doctorSsh,
+	optionsSchema,
+} from "./doctorCommon";
 import { canSudo, isRoot } from "./helpers";
 import { pkgs } from "./pkgs";
+import { commandDoctorWindows } from "./windows/commandDoctorWindows";
 
-Bun.env.PATH = [
-	Bun.env.PATH ?? "",
-	"/home/linuxbrew/.linuxbrew/bin",
-	"/home/linuxbrew/.linuxbrew/sbin",
-	"$BUN_INSTALL/bin",
-	"$HOME/go/bin",
-	"$HOME/.arkade/bin",
-	// biome-ignore lint/suspicious/noTemplateCurlyInString: it's what I actually expect
-	"${KREW_ROOT:-$HOME/.krew}/bin",
-	"$HOME/.cargo/bin",
-	"$HOME/.dotnet",
-	"$HOME/.dotnet/tools",
-	"$HOME/.go/bin",
-	"$HOME/.local/bin",
-	"$HOME/bin",
-	"/snap/bin",
-	"/usr/local/sbin",
-	"/usr/sbin",
-	"/sbin",
-].join(":");
+if (process.platform !== "win32") {
+	Bun.env.PATH = [
+		Bun.env.PATH ?? "",
+		"/home/linuxbrew/.linuxbrew/bin",
+		"/home/linuxbrew/.linuxbrew/sbin",
+		"$BUN_INSTALL/bin",
+		"$HOME/go/bin",
+		"$HOME/.arkade/bin",
+		// biome-ignore lint/suspicious/noTemplateCurlyInString: it's what I actually expect
+		"${KREW_ROOT:-$HOME/.krew}/bin",
+		"$HOME/.cargo/bin",
+		"$HOME/.dotnet",
+		"$HOME/.dotnet/tools",
+		"$HOME/.go/bin",
+		"$HOME/.local/bin",
+		"$HOME/bin",
+		"/snap/bin",
+		"/usr/local/sbin",
+		"/usr/sbin",
+		"/sbin",
+	].join(":");
+}
 
 const doctorRoot = async () => {
 	if (!(await isRoot())) console.log("✅ You are not root");
@@ -83,46 +92,6 @@ const doctorPkgs = async () => {
 	}
 };
 
-const optionsSchema = z.object({
-	email: z.email(),
-	name: z.string().min(1),
-	updates: z.boolean(),
-});
-type DoctorOptions = z.infer<typeof optionsSchema>;
-
-const doctorGitconfig = async (options: DoctorOptions) => {
-	const currentName = await $`git config --global user.name`.nothrow().text();
-	const currentEmail = await $`git config --global user.email`.nothrow().text();
-
-	if (currentName.trim() === "") {
-		console.log("❌ Git user.name is not set");
-		console.log("🕒 Setting git user.name");
-		await $`git config --global user.name ${options.name}`;
-		console.log("✅ Git user.name set");
-	} else {
-		console.log(`✅ Git user.name is already set to "${currentName.trim()}"`);
-	}
-
-	if (currentEmail.trim() === "") {
-		console.log("❌ Git user.email is not set");
-		console.log("🕒 Setting git user.email");
-		await $`git config --global user.email ${options.email}`;
-		console.log("✅ Git user.email set");
-	} else {
-		console.log(`✅ Git user.email is already set to "${currentEmail.trim()}"`);
-	}
-
-	// Set other configurations
-	await $`git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"`;
-	await $`git config --global merge.ff false`;
-	await $`git config --global pull.ff true`;
-	await $`git config --global pull.rebase true`;
-	await $`git config --global core.whitespace "blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol"`;
-	await $`git config --global fetch.prune true`;
-
-	console.log("✅ Git config checked and updated.");
-};
-
 const doctorDotfiles = async () => {
 	const baseFiles = "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/";
 	const expected = await Promise.all(
@@ -171,37 +140,6 @@ const doctorUserGroups = async () => {
 	}
 };
 
-const doctorSsh = async () => {
-	const sshDir = `${Bun.env.HOME}/.ssh/id_rsa`;
-	if (await Bun.file(sshDir).exists()) {
-		console.log("✅ SSH key is set");
-	} else {
-		console.log("❌ SSH key is not set");
-		console.log(
-			'⚡ Please execute this command:\n\nssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -P ""',
-		);
-		throw new Error("❌ SSH key is not set");
-	}
-};
-
-const doctorGithub = async () => {
-	if (
-		await $`ssh -o "StrictHostKeyChecking no" git@github.com 2>&1`
-			.nothrow()
-			.text()
-			.then((x) => x.includes("successfully authenticated"))
-	) {
-		console.log("✅ SSH key is set on GitHub");
-	} else {
-		console.log("❌ SSH key is not set on GitHub");
-		console.log("🕒 Adding SSH key to GitHub");
-		await $`cat ~/.ssh/id_rsa.pub`;
-		console.log(
-			"⚡ Go to https://github.com/settings/ssh/new and past the text above",
-		);
-	}
-};
-
 // TODO: install dotnet
 
 const doctorZsh = async () => {
@@ -228,9 +166,8 @@ const doctorZsh = async () => {
 	}
 };
 
-export const commandDoctor = async (options: DoctorOptions) => {
-	options = optionsSchema.parse(options);
-	console.log("🔍 Running doctor...");
+const commandDoctorLinux = async (options: DoctorOptions) => {
+	console.log("🔍 Running doctor (Linux)...");
 	console.log(
 		"⚙️  email =",
 		options.email,
@@ -254,5 +191,14 @@ export const commandDoctor = async (options: DoctorOptions) => {
 		await doctorUpdateSystem();
 	} else {
 		console.log("⚠️  Skipping system updates");
+	}
+};
+
+export const commandDoctor = async (options: DoctorOptions) => {
+	options = optionsSchema.parse(options);
+	if (process.platform === "win32") {
+		await commandDoctorWindows(options);
+	} else {
+		await commandDoctorLinux(options);
 	}
 };
