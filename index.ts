@@ -32,6 +32,9 @@ program
 program
 	.command("doctor")
 	.description("Check the system for issues")
+	.option("-e, --email <email>", "Git email", "charles63500@gmail.com")
+	.option("-n, --name <name>", "Git name", "chneau")
+	.option("--no-updates", "Skip system updates")
 	.action(commandDoctor);
 
 program.parse();

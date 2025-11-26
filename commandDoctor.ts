@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import z from "zod";
 import { canSudo, isRoot } from "./helpers";
 import { pkgs } from "./pkgs";
 
@@ -82,10 +83,17 @@ const doctorPkgs = async () => {
 	}
 };
 
-const doctorGitconfig = async () => {
+const optionsSchema = z.object({
+	email: z.email(),
+	name: z.string().min(1),
+	updates: z.boolean(),
+});
+type DoctorOptions = z.infer<typeof optionsSchema>;
+
+const doctorGitconfig = async (options: DoctorOptions) => {
 	const expected = `[user]
-        email = charles63500@gmail.com
-        name = chneau
+        email = ${options.email}
+        name = ${options.name}
 [url "ssh://git@github.com/"]
         insteadOf = https://github.com/
 [merge]
@@ -214,17 +222,32 @@ const doctorZsh = async () => {
 	}
 };
 
-export const commandDoctor = async () => {
+export const commandDoctor = async (options: DoctorOptions) => {
+	options = optionsSchema.parse(options);
+	console.log("🔍 Running doctor...");
+	console.log(
+		"⚙️  Options:",
+		"email =",
+		options.email,
+		", name =",
+		options.name,
+		", updates =",
+		options.updates,
+	);
 	await Promise.all([doctorRoot(), doctorSudo()]);
 	await Promise.all([
 		doctorDotfiles(),
 		doctorPkgs().then(() =>
 			Promise.all([
-				doctorGitconfig().then(doctorSsh).then(doctorGithub),
+				doctorGitconfig(options).then(doctorSsh).then(doctorGithub),
 				doctorZsh(),
 				doctorDocker().then(doctorUserGroups),
 			]),
 		),
 	]);
-	await doctorUpdateSystem();
+	if (options.updates) {
+		await doctorUpdateSystem();
+	} else {
+		console.log("⚠️  Skipping system updates");
+	}
 };
