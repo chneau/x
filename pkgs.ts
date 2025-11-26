@@ -31,6 +31,8 @@ const brewIt = (name: string, check?: string) => ({
 const brewPkgs: Pkg[] = [
 	brewIt("aichat"),
 	brewIt("bpytop"),
+	brewIt("dive"),
+	brewIt("dldash/core/docker-color-output", "docker-color-output"),
 	brewIt("docker-compose"),
 	brewIt("go"),
 	brewIt("graphviz", "dot"),

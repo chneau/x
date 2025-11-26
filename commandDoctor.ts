@@ -33,6 +33,32 @@ const doctorSudo = async () => {
 	else throw new Error("❌ You cannot sudo");
 };
 
+const doctorUpdateSystem = async () => {
+	console.log("🕒 Updating system...");
+
+	// Apt
+	await $`sudo apt update -y`.nothrow();
+	await $`sudo apt upgrade -y`.nothrow();
+	await $`sudo apt autoremove -y`.nothrow();
+	await $`sudo apt autoclean -y`.nothrow();
+
+	// Brew
+	const brew =
+		(await $`which brew`.text().catch(() => "")).trim() ||
+		"/home/linuxbrew/.linuxbrew/bin/brew";
+	if (await Bun.file(brew).exists()) {
+		await $`${brew} update`.nothrow();
+		await $`${brew} upgrade`.nothrow();
+		await $`${brew} cleanup`.nothrow();
+	}
+
+	// Bun
+	await $`bun upgrade`.nothrow();
+	await $`bun update --latest --force --global`.nothrow();
+
+	console.log("✅ System updated");
+};
+
 const doctorPkgs = async () => {
 	const result = await Promise.all(
 		pkgs.map(async (pkg) => ({
@@ -200,4 +226,5 @@ export const commandDoctor = async () => {
 			]),
 		),
 	]);
+	await doctorUpdateSystem();
 };
