@@ -5,16 +5,7 @@ import {
 	doctorGithub,
 	doctorSsh,
 } from "../doctorCommon";
-import { isAdmin } from "./helpersWindows";
-import { windowsPackages } from "./windowsPackages";
-
-const doctorAdmin = async () => {
-	if (await isAdmin()) {
-		console.log("✅ You are Admin");
-	} else {
-		console.log("⚠️  You are NOT Admin. Some installations might fail.");
-	}
-};
+import { windowsPackages } from "./windowsPkgs";
 
 const doctorUpdateSystem = async () => {
 	console.log("🕒 Updating system (winget upgrade --all)...");
@@ -62,7 +53,6 @@ export const commandDoctorWindows = async (options: DoctorOptions) => {
 		options.updates,
 	);
 
-	await doctorAdmin();
 	await doctorPkgs();
 	await doctorGitconfig(options);
 	try {
@@ -77,4 +67,5 @@ export const commandDoctorWindows = async (options: DoctorOptions) => {
 	} else {
 		console.log("⚠️  Skipping system updates");
 	}
+	console.log("ℹ️  Restart your shell for installed packages to be available.");
 };

@@ -10,9 +10,9 @@ type Pkg = {
 
 const wingetIt = (id: string, cmd?: string) => ({
 	name: id,
-	check: async () => commandExists(cmd ?? id),
+	check: async () => await commandExists(cmd ?? id),
 	install: async () =>
-		await $`winget install --id ${id} -e --source winget --accept-package-agreements --accept-source-agreements`,
+		await $`powershell.exe -Command "winget install --id ${id} -e --source winget --accept-package-agreements --accept-source-agreements"`,
 });
 
 const wingetPkgs: Pkg[] = [

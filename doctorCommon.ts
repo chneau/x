@@ -42,8 +42,8 @@ export const doctorGitconfig = async (options: DoctorOptions) => {
 };
 
 export const doctorSsh = async () => {
-	const sshDir = `${Bun.env.HOME}/.ssh/id_rsa`;
-	if (await Bun.file(sshDir).exists()) {
+	const sshFile = `${Bun.env.HOME || Bun.env.USERPROFILE}/.ssh/id_rsa`;
+	if (await Bun.file(sshFile).exists()) {
 		console.log("✅ SSH key is set");
 	} else {
 		console.log("❌ SSH key is not set");
@@ -56,7 +56,7 @@ export const doctorSsh = async () => {
 
 export const doctorGithub = async () => {
 	if (
-		await $`ssh -o "StrictHostKeyChecking no" git@github.com 2>&1`
+		await $`ssh -T -o "StrictHostKeyChecking no" git@github.com 2>&1`
 			.nothrow()
 			.text()
 			.then((x) => x.includes("successfully authenticated"))

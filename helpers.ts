@@ -2,14 +2,13 @@ import { $ } from "bun";
 
 export const commandExists = async (cmd: string) => {
 	if (process.platform === "win32") {
-		return await $`where ${cmd}`
+		return await $`powershell.exe -Command "Get-Command ${cmd}"`
 			.quiet()
 			.then((x) => x.exitCode === 0)
 			.catch(() => false);
 	}
 	return (await $`which ${cmd}`.text().catch(() => "")).trim() !== "";
 };
-
 
 export const isRoot = async () => {
 	const id = (await $`id -u`.text()).trim();
