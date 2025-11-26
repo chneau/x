@@ -11,6 +11,7 @@
 		"cdk8s": "^2.70.26",
 		"cdk8s-plus-33": "^2.4.3",
 		"commander": "^14.0.2",
+		"constructs": "^10.4.3",
 		"jsonc-parser": "^3.3.1",
 		"p-queue": "^9.0.0",
 		"zod": "^4.1.12"

@@ -4,7 +4,6 @@ import { command } from "./command";
 import { commandDeploy } from "./commandDeploy";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
-import { commandSystem } from "./commandSystem";
 import { commandUpgrade } from "./commandUpgrade";
 import { getCurrentVersion } from "./helpers";
 
@@ -31,13 +30,8 @@ program
 	.action(commandUpgrade);
 
 program
-	.command("system")
-	.description("Update/install the system packages")
-	.action(commandSystem);
-
-program
 	.command("doctor")
-	.description("Check the system for issues")
+	.description("Update/install the system packages and check for issues")
 	.action(commandDoctor);
 
 program.parse();

@@ -1,87 +1,134 @@
 import { $ } from "bun";
 import { commandExists } from "./helpers";
 
-type Pkg = {
+export type Pkg = {
 	name: string;
 	check: () => Promise<boolean>;
 	install: () => Promise<unknown>;
 };
 
-const aptIt = (name: string) => ({
-	name,
-	check: async () => commandExists(name),
-	install: async () => await $`sudo apt install -y ${name}`,
-});
+export type PkgManager = {
+	name: string;
+	pkgs: Pkg[];
+	update: () => Promise<unknown>;
+	cleanup: () => Promise<unknown>;
+	installPkgs: (pkgs: string[]) => Promise<unknown>;
+};
 
-const aptPkgs: Pkg[] = [
-	aptIt("git"),
-	aptIt("curl"),
-	aptIt("wget"),
-	aptIt("unzip"),
-	aptIt("bash"),
-];
+const apt: PkgManager = {
+	name: "apt",
+	pkgs: ["git", "curl", "wget", "unzip", "zsh", "bash"].map((name) => ({
+		name,
+		check: async () => commandExists(name),
+		install: async () => {
+			await $`sudo apt install -y ${name}`;
+		},
+	})),
+	update: async () => {
+		await $`sudo apt update -y`;
+		await $`sudo apt upgrade -y`;
+	},
+	cleanup: async () => {
+		await $`sudo apt autoremove -y`;
+		await $`sudo apt autoclean -y`;
+	},
+	installPkgs: async (pkgs: string[]) => {
+		await $`sudo apt install -y ${{ raw: pkgs.join(" ") }}`;
+	},
+};
 
-const brewIt = (name: string, check?: string) => ({
-	name,
-	check: async () => commandExists(check ?? name),
-	install: async () => await $`brew install ${name}`,
-});
+const brew: PkgManager = {
+	name: "brew",
+	pkgs: [
+		{ name: "aichat" },
+		{ name: "bpytop" },
+		{ name: "dive" },
+		{ name: "dldash/core/docker-color-output" },
+		{ name: "docker-compose" },
+		{ name: "go" },
+		{ name: "graphviz", check: "dot" },
+		{ name: "helm" },
+		{ name: "hyperfine" },
+		{ name: "kubecolor" },
+		{ name: "kubectx" },
+		{ name: "kubernetes-cli", check: "kubectl" },
+		{ name: "lazygit" },
+		{ name: "node" },
+		{ name: "openjdk", check: "javac" },
+		{ name: "pipx" },
+		{ name: "zsh" },
+	].map(({ name, check }) => ({
+		name,
+		check: async () => commandExists(check ?? name),
+		install: async () => {
+			await $`brew install ${name}`;
+		},
+	})),
+	update: async () => {
+		await $`brew update`;
+		await $`brew upgrade`;
+	},
+	cleanup: async () => {
+		await $`brew cleanup`;
+	},
+	installPkgs: async (pkgs: string[]) => {
+		await $`brew install ${{
+			raw: pkgs.join(" "),
+		}}`;
+	},
+};
 
-const brewPkgs: Pkg[] = [
-	brewIt("aichat"),
-	brewIt("bpytop"),
-	brewIt("docker-compose"),
-	brewIt("go"),
-	brewIt("graphviz", "dot"),
-	brewIt("helm"),
-	brewIt("hyperfine"),
-	brewIt("kubecolor"),
-	brewIt("kubectx"),
-	brewIt("kubernetes-cli", "kubectl"),
-	brewIt("lazygit"),
-	brewIt("node"),
-	brewIt("openjdk", "javac"),
-	brewIt("pipx"),
-	brewIt("zsh"),
-];
+const bun: PkgManager = {
+	name: "bun",
+	pkgs: [
+		{ name: "@biomejs/biome", check: "biome" },
+		{ name: "concurrently" },
+		{ name: "depcheck" },
+		{ name: "fkill-cli", check: "fkill" },
+		{ name: "http-server" },
+		{ name: "live-server" },
+		{ name: "nodemon" },
+		{ name: "npm-check-updates" },
+		{ name: "npm-check" },
+		{ name: "opencode-ai", check: "opencode" },
+		{ name: "oxlint" },
+		{ name: "prettier" },
+		{ name: "ts-unused-exports" },
+		{ name: "tsx" },
+		{ name: "typesync" },
+		{ name: "ungit" },
+	].map(({ name, check }) => ({
+		name,
+		check: async () => commandExists(check ?? name),
+		install: async () => {
+			await $`bun install --force --global ${name}`;
+		},
+	})),
+	update: async () => {
+		await $`bun upgrade`;
+		await $`bun update --latest --force --global`;
+	},
+	cleanup: async () => {},
+	installPkgs: async (pkgs: string[]) => {
+		await $`bun install --force --global ${{ raw: pkgs.join(" ") }}`;
+	},
+};
 
-const bunIt = (name: string, check?: string) => ({
-	name,
-	check: async () => commandExists(check ?? name),
-	install: async () => await $`bun install --force --global ${name}`,
-});
+export const pkgManagers = [apt, brew, bun];
 
-const bunPkgs: Pkg[] = [
-	bunIt("@biomejs/biome", "biome"),
-	bunIt("opencode-ai", "opencode"),
-	bunIt("concurrently"),
-	bunIt("depcheck"),
-	bunIt("fkill-cli", "fkill"),
-	bunIt("http-server"),
-	bunIt("live-server"),
-	bunIt("nodemon"),
-	bunIt("npm-check-updates"),
-	bunIt("npm-check"),
-	bunIt("oxlint"),
-	bunIt("prettier"),
-	bunIt("ts-unused-exports"),
-	bunIt("tsx"),
-	bunIt("typesync"),
-	bunIt("ungit"),
-];
 export const pkgs: Pkg[] = [
-	...aptPkgs,
+	...apt.pkgs,
+	...brew.pkgs,
+	...bun.pkgs,
 	{
 		name: "brew",
 		check: async () => commandExists("brew"),
 		install: async () =>
-			await $`HOME=/tmp CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
+			await $`CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
 	},
 	{
 		name: "deno",
 		check: async () => commandExists("deno"),
 		install: async () => await $`curl -fsSL https://deno.land/install.sh | sh`,
 	},
-	...brewPkgs,
-	...bunPkgs,
 ];

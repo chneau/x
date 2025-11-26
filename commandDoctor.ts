@@ -1,6 +1,6 @@
 import { $ } from "bun";
 import { canSudo, isRoot } from "./helpers";
-import { pkgs } from "./pkgs";
+import { pkgManagers, pkgs } from "./pkgs";
 
 Bun.env.PATH = [
 	Bun.env.PATH ?? "",
@@ -84,28 +84,10 @@ const doctorGitconfig = async () => {
 };
 
 const doctorDotfiles = async () => {
-	const baseFiles = "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/";
-	const expected = await Promise.all(
-		[".bashrc", ".zshrc", ".aliases", ".profile"].map(async (x) => ({
-			name: x,
-			content: await fetch(`${baseFiles}${x}`).then((x) => x.text()),
-			isPresent: await Bun.file(`${Bun.env.HOME}/${x}`).exists(),
-		})),
-	);
-	if (expected.every((x) => x.isPresent)) {
-		console.log("✅ Dotfiles are installed");
-	} else {
-		console.log("❌ Dotfiles are not installed");
-		console.log("🕒 Installing dotfiles");
-		await Promise.all(
-			expected.map(async (x) => {
-				console.log(`🕒 Installing ${x.name}`);
-				await Bun.write(`${Bun.env.HOME}/${x.name}`, x.content);
-				console.log(`✅ Installed ${x.name}`);
-			}),
-		);
-		console.log("✅ Dotfiles are installed");
-	}
+	const initScript = await fetch(
+		"https://raw.githubusercontent.com/chneau/dotfiles/master/bootstrap.sh",
+	).then((x) => x.text());
+	await $`echo ${initScript} | sh`.nothrow();
 };
 
 const doctorDocker = async () => {
@@ -162,8 +144,6 @@ const doctorGithub = async () => {
 	}
 };
 
-// TODO: install dotnet
-
 const doctorZsh = async () => {
 	const etcShells = await Bun.file("/etc/shells")
 		.text()
@@ -188,6 +168,22 @@ const doctorZsh = async () => {
 	}
 };
 
+const doctorUpdate = async () => {
+	for (const pkgManager of pkgManagers) {
+		console.log(`🕒 Updating ${pkgManager.name}`);
+		await pkgManager.update();
+		console.log(`✅ Updated ${pkgManager.name}`);
+	}
+};
+
+const doctorCleanup = async () => {
+	for (const pkgManager of pkgManagers) {
+		console.log(`🕒 Cleaning up ${pkgManager.name}`);
+		await pkgManager.cleanup();
+		console.log(`✅ Cleaned up ${pkgManager.name}`);
+	}
+};
+
 export const commandDoctor = async () => {
 	await Promise.all([doctorRoot(), doctorSudo()]);
 	await Promise.all([
@@ -200,4 +196,6 @@ export const commandDoctor = async () => {
 			]),
 		),
 	]);
+	await doctorUpdate();
+	await doctorCleanup();
 };
