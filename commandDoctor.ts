@@ -91,30 +91,36 @@ const optionsSchema = z.object({
 type DoctorOptions = z.infer<typeof optionsSchema>;
 
 const doctorGitconfig = async (options: DoctorOptions) => {
-	const expected = `[user]
-        email = ${options.email}
-        name = ${options.name}
-[url "ssh://git@github.com/"]
-        insteadOf = https://github.com/
-[merge]
-        ff = false
-[pull]
-        ff = true
-        rebase = true
-[core]
-        whitespace = blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
-[fetch]
-        prune = true
-`;
-	const gitconfig = await Bun.file(`${Bun.env.HOME}/.gitconfig`)
-		.text()
-		.catch(() => "");
-	if (gitconfig !== expected) {
-		console.log("❌ Git config is not set");
-		console.log("🕒 Setting git config");
-		await Bun.write(`${Bun.env.HOME}/.gitconfig`, expected);
+	const currentName = await $`git config --global user.name`.text().nothrow();
+	const currentEmail = await $`git config --global user.email`.text().nothrow();
+
+	if (currentName.trim() !== options.name) {
+		console.log(`❌ Git user.name is not set correctly. Current: "${currentName.trim()}", Expected: "${options.name}"`);
+		console.log("🕒 Setting git user.name");
+		await $`git config --global user.name ${options.name}`;
+		console.log("✅ Git user.name set");
+	} else {
+		console.log(`✅ Git user.name is already set to "${options.name}"`);
 	}
-	console.log("✅ Git config is set");
+
+	if (currentEmail.trim() !== options.email) {
+		console.log(`❌ Git user.email is not set correctly. Current: "${currentEmail.trim()}", Expected: "${options.email}"`);
+		console.log("🕒 Setting git user.email");
+		await $`git config --global user.email ${options.email}`;
+		console.log("✅ Git user.email set");
+	} else {
+		console.log(`✅ Git user.email is already set to "${options.email}"`);
+	}
+
+	// Set other configurations
+	await $`git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"`;
+	await $`git config --global merge.ff false`;
+	await $`git config --global pull.ff true`;
+	await $`git config --global pull.rebase true`;
+	await $`git config --global core.whitespace "blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol"`;
+	await $`git config --global fetch.prune true`;
+
+	console.log("✅ Git config checked and updated.");
 };
 
 const doctorDotfiles = async () => {
