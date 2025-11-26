@@ -226,8 +226,7 @@ export const commandDoctor = async (options: DoctorOptions) => {
 	options = optionsSchema.parse(options);
 	console.log("🔍 Running doctor...");
 	console.log(
-		"⚙️  Options:",
-		"email =",
+		"⚙️  email =",
 		options.email,
 		", name =",
 		options.name,

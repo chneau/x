@@ -56,7 +56,7 @@ const bunIt = (name: string, check?: string) => ({
 
 const bunPkgs: Pkg[] = [
 	bunIt("@biomejs/biome", "biome"),
-	bunIt("@google/gemini", "gemini"),
+	bunIt("@google/gemini-cli", "gemini"),
 	bunIt("opencode-ai", "opencode"),
 	bunIt("concurrently"),
 	bunIt("depcheck"),
