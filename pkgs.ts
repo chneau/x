@@ -18,6 +18,7 @@ const aptPkgs: Pkg[] = [
 	aptIt("curl"),
 	aptIt("wget"),
 	aptIt("unzip"),
+	aptIt("zsh"),
 	aptIt("bash"),
 ];
 
