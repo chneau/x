@@ -91,25 +91,25 @@ const optionsSchema = z.object({
 type DoctorOptions = z.infer<typeof optionsSchema>;
 
 const doctorGitconfig = async (options: DoctorOptions) => {
-	const currentName = await $`git config --global user.name`.text().nothrow();
-	const currentEmail = await $`git config --global user.email`.text().nothrow();
+	const currentName = await $`git config --global user.name`.nothrow().text();
+	const currentEmail = await $`git config --global user.email`.nothrow().text();
 
-	if (currentName.trim() !== options.name) {
-		console.log(`❌ Git user.name is not set correctly. Current: "${currentName.trim()}", Expected: "${options.name}"`);
+	if (currentName.trim() === "") {
+		console.log("❌ Git user.name is not set");
 		console.log("🕒 Setting git user.name");
 		await $`git config --global user.name ${options.name}`;
 		console.log("✅ Git user.name set");
 	} else {
-		console.log(`✅ Git user.name is already set to "${options.name}"`);
+		console.log(`✅ Git user.name is already set to "${currentName.trim()}"`);
 	}
 
-	if (currentEmail.trim() !== options.email) {
-		console.log(`❌ Git user.email is not set correctly. Current: "${currentEmail.trim()}", Expected: "${options.email}"`);
+	if (currentEmail.trim() === "") {
+		console.log("❌ Git user.email is not set");
 		console.log("🕒 Setting git user.email");
 		await $`git config --global user.email ${options.email}`;
 		console.log("✅ Git user.email set");
 	} else {
-		console.log(`✅ Git user.email is already set to "${options.email}"`);
+		console.log(`✅ Git user.email is already set to "${currentEmail.trim()}"`);
 	}
 
 	// Set other configurations
