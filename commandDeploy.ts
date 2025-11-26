@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createDeployment } from "./cdk8s";
 import { envSubst } from "./envSubst";
 
-export const registrySchema = z.object({
+const registrySchema = z.object({
 	hostname: z.string(),
 	username: z.string().nullish(),
 	password: z.string().nullish(),
@@ -11,7 +11,7 @@ export const registrySchema = z.object({
 
 export type DeployRegistry = z.infer<typeof registrySchema>;
 
-export const imageSchema = z.object({
+const imageSchema = z.object({
 	registry: z.string(),
 	dockerfile: z.string().default("Dockerfile"),
 	target: z.string().optional(),
@@ -24,7 +24,7 @@ export const imageSchema = z.object({
 
 export type DeployImage = z.infer<typeof imageSchema>;
 
-export const normalServiceSchema = z.object({
+const normalServiceSchema = z.object({
 	image: z.string(),
 	replicas: z.number().default(1),
 	file: z.string().default("kubeconfig"),
@@ -40,7 +40,7 @@ export const normalServiceSchema = z.object({
 
 export type NormalDeployService = z.infer<typeof normalServiceSchema>;
 
-export const extendsServiceSchema = z.object({
+const extendsServiceSchema = z.object({
 	extends: z.string(),
 	image: z.string().optional(),
 	replicas: z.number().optional(),
@@ -55,11 +55,11 @@ export const extendsServiceSchema = z.object({
 		.optional(),
 });
 
-export type ExtendsDeployService = z.infer<typeof extendsServiceSchema>;
+type ExtendsDeployService = z.infer<typeof extendsServiceSchema>;
 
-export const serviceSchema = normalServiceSchema.or(extendsServiceSchema);
+const serviceSchema = normalServiceSchema.or(extendsServiceSchema);
 
-export type DeployService = z.infer<typeof serviceSchema>;
+type DeployService = z.infer<typeof serviceSchema>;
 
 export const deploySchema = z.object({
 	registries: z.record(z.string(), registrySchema).default({}),
@@ -67,7 +67,7 @@ export const deploySchema = z.object({
 	services: z.record(z.string(), serviceSchema),
 });
 
-export type Deploy = z.infer<typeof deploySchema>;
+type Deploy = z.infer<typeof deploySchema>;
 
 export const commandDeploy = async () => {
 	const args = Bun.argv.slice(3);
