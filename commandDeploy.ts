@@ -200,7 +200,7 @@ const extendsServiceToNormal = (
 	targetService.context = service.context ?? targetService.context;
 	targetService.namespace = service.namespace ?? targetService.namespace;
 	targetService.port = service.port ?? targetService.port;
-	targetService.env = { ...targetService.env, ...service.env }; // Merge env variables
+	targetService.env = { ...targetService.env, ...service.env };
 	targetService.readOnlyRootFilesystem =
 		service.readOnlyRootFilesystem ?? targetService.readOnlyRootFilesystem;
 	targetService.endpoints = service.endpoints ?? targetService.endpoints;
