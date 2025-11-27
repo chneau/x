@@ -89,7 +89,7 @@ export const createDeployment = async ({
 
 	new Namespace(chart, service.namespace);
 
-	const deployment = new Deployment(chart, serviceAlias, {
+	const deployment = new Deployment(chart, `d-${serviceAlias}`, {
 		replicas: service.replicas,
 		metadata: { name: image.imageName },
 		terminationGracePeriod: Duration.seconds(0),
@@ -116,7 +116,10 @@ export const createDeployment = async ({
 		}),
 		resources: {},
 		securityContext: { readOnlyRootFilesystem: service.readOnlyRootFilesystem },
-		startup: Probe.fromTcpSocket({ periodSeconds: Duration.seconds(1) }),
+		startup: Probe.fromTcpSocket({
+			periodSeconds: Duration.seconds(1),
+			failureThreshold: 30,
+		}),
 	});
 	const _service = deployment.exposeViaService({ name: image.imageName });
 
