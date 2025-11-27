@@ -167,16 +167,33 @@ const createTemplateDeploy = async () => {
 const extendsServiceToNormal = (
 	service: ExtendsDeployService,
 	services: Record<string, DeployService>,
+	visited: string[] = [],
 ): NormalDeployService => {
-	const targetService = structuredClone(services[service.extends]);
-	if (!targetService) {
-		throw new Error(`Service ${service.extends} not found`);
-	}
-	if ("extends" in targetService) {
+	if (visited.includes(service.extends)) {
 		throw new Error(
-			`Service ${service.extends} is an extended service, cannot extend it further`,
+			`Circular dependency detected: ${visited.join(
+				" -> ",
+			)} -> ${service.extends}`,
 		);
 	}
+	const nextVisited = [...visited, service.extends];
+
+	const targetServiceRaw = services[service.extends];
+	if (!targetServiceRaw) {
+		throw new Error(`Service ${service.extends} not found`);
+	}
+
+	let targetService: NormalDeployService;
+	if ("extends" in targetServiceRaw) {
+		targetService = extendsServiceToNormal(
+			targetServiceRaw,
+			services,
+			nextVisited,
+		);
+	} else {
+		targetService = structuredClone(targetServiceRaw);
+	}
+
 	targetService.image = service.image ?? targetService.image;
 	targetService.replicas = service.replicas ?? targetService.replicas;
 	targetService.file = service.file ?? targetService.file;
