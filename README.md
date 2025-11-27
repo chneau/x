@@ -1,7 +1,6 @@
-# x - chneau's utility CLI
+# x - Utility CLI
 
-This is a command-line tool for managing and deploying projects, as well as
-maintaining the development system.
+A command-line tool for project management, system maintenance, and Kubernetes deployment.
 
 ## Installation
 
@@ -11,71 +10,56 @@ bun install -g @chneau/x
 
 ## Usage
 
-### `x [dir]`
+### Project Management
 
-The default command recursively scans a directory to perform various cleanup and
-management tasks.
+```bash
+x [dir] [-r depth]
+```
 
-- **Cleans up**: Removes `yarn.lock` and `package-lock.json` (enforcing Bun).
-- **Manages `package.json`**: Adds or updates scripts for upgrading, checking,
-  and linting.
-- **Manages `tsconfig.json`**: Enforces strict and efficient compiler options.
-- **Manages `.gitignore`**: Ensures `node_modules` is ignored in Bun projects.
-- **Updates dependencies**: Runs `bun upgrade` if a `package.json` is found.
-- **Checks and lints**: Runs checks and linting if a `tsconfig.json` is found.
+Recursively scans directories to:
 
-**Options:**
+- Clean lock files (`yarn.lock`, `package-lock.json`).
+- Enforce `tsconfig.json` and `package.json` standards.
+- Update `.gitignore` for Bun projects.
+- Run `bun upgrade`, `check` (lint), and `lint` (tsc).
 
-- `-r, --recursive [number]`: Specifies the recursion level (up to 4).
+### Formatting
 
-### `x fmt`
+```bash
+x fmt
+```
 
-Formats all files in the current directory using:
+Formats files using `deno fmt`, `oxlint`, `biome`, `go fmt`, and `dotnet csharpier`.
 
-- `deno fmt`
-- `oxlint`
-- `biome`
-- `go fmt`
-- `dotnet csharpier`
+### Deployment
 
-### `x deploy [json_files...] [filters...]`
+```bash
+x deploy [files...] [services...]
+```
 
-Deploys applications to Kubernetes based on `.json` configuration files.
+Deploys to Kubernetes using JSON configuration.
 
-- If no `.json` files are specified, it looks for `*.json` and `.deploy.json` in
-  the current directory.
-- If no configuration files are found, it creates a `.deploy.json` template.
-- You can filter which services to deploy by passing their names as arguments.
+- Supports environment variable substitution and service inheritance.
+- Builds and pushes Docker images if registries are configured.
+- Generates a template `.deploy.json` if no configuration is found.
 
-### `x upgrade`
+### System Setup
 
-Upgrades the `x` CLI to the latest version.
+```bash
+x doctor [--email <email>] [--name <name>] [--no-updates]
+```
 
-### `x doctor`
+Sets up the development environment (Linux/Windows):
 
-Checks the system for common issues, installs dependencies, and performs
-updates.
+- Installs system tools (`git`, `docker`, `go`, `node`, `deno`, `kubectl`, etc.).
+- Configures Git, SSH keys, and GitHub authentication.
+- Installs dotfiles and configures shell (Zsh).
+- Updates system packages (`apt`, `brew`, `bun`).
 
-**Features:**
+### Self Update
 
-- **System Updates**: Updates `apt`, `brew`, and global `bun` packages (can be
-  disabled with `--no-updates`).
-- **Package Installation**: Installs essential tools including:
-  - System: `git`, `curl`, `zsh`, `docker`, `gcc`, `make`
-  - Runtimes: `go`, `node`, `deno`, `openjdk`
-  - Utils: `kubectl`, `helm`, `lazygit`, `biome`, `oxlint`, and more.
-- **Configuration**:
-  - Configures `git` (email/name).
-  - Sets up SSH keys and ensures they are on GitHub.
-  - installs and configures dotfiles from `github.com/chneau/dotfiles`.
-  - Configures `zsh` as the default shell.
-  - Adds user to `docker` group.
-  - **Windows Support**: On Windows, the `doctor` command utilizes `winget` for
-    installing system tools and `bun` for managing other packages, ensuring a
-    tailored setup for the environment.
+```bash
+x upgrade
+```
 
-**Options:**
-
-- `--email <email>`: Git email address (default: "charles63500@gmail.com").
-- `--name <name>`: Git name (default: "chneau").
-- `--no-updates`: Skip system package updates.
+Updates `x` to the latest version.
