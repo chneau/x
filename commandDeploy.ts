@@ -232,6 +232,7 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 
 		console.log(`🔗 Creating deployment for ${serviceAlias}...`);
 		const deploymentYaml = await createDeployment({
+			serviceAlias,
 			registry,
 			image,
 			service,

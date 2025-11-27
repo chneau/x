@@ -68,16 +68,18 @@ const createIngresses = (chart: Chart, service: Service, hosts: string[]) => {
 	}
 };
 
-type createDeploynentProps = {
+type createDeploymentProps = {
+	serviceAlias: string;
 	registry: DeployRegistry;
 	image: DeployImage;
 	service: NormalDeployService;
 };
 export const createDeployment = async ({
+	serviceAlias,
 	registry,
 	image,
 	service,
-}: createDeploynentProps) => {
+}: createDeploymentProps) => {
 	const app = new App({ outputFileExtension: ".yml" });
 
 	const chart = new Chart(app, service.namespace, {
@@ -87,7 +89,7 @@ export const createDeployment = async ({
 
 	new Namespace(chart, service.namespace);
 
-	const deployment = new Deployment(chart, "deployment", {
+	const deployment = new Deployment(chart, serviceAlias, {
 		replicas: service.replicas,
 		metadata: { name: image.imageName },
 		terminationGracePeriod: Duration.seconds(0),
