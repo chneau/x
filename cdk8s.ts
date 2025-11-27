@@ -46,9 +46,10 @@ const envVarToCDK8S = (envVars: { [key: string]: string }) => {
 	return result;
 };
 
-const createIngress = (chart: Chart, service: Service, hosts: string[]) => {
-	const ingress = new Ingress(chart, "ingress", { className: "nginx" });
+const createIngresses = (chart: Chart, service: Service, hosts: string[]) => {
 	for (const host of hosts) {
+		const sanitizedHost = host.replace(/\.|:|\//g, "-");
+		const ingress = new Ingress(chart, sanitizedHost, { className: "nginx" });
 		ingress.addRules({
 			backend: IngressBackend.fromService(service),
 			host: host,
@@ -57,15 +58,14 @@ const createIngress = (chart: Chart, service: Service, hosts: string[]) => {
 		ingress.addTls([
 			{
 				hosts: [host],
-				secret: { name: host.replace(/\.|:|\//g, "-") } as ISecret,
+				secret: { name: sanitizedHost } as ISecret,
 			},
 		]);
+		ingress.metadata.addAnnotation(
+			"cert-manager.io/cluster-issuer",
+			"letsencrypt",
+		);
 	}
-	ingress.metadata.addAnnotation(
-		"cert-manager.io/cluster-issuer",
-		"letsencrypt",
-	);
-	return ingress;
 };
 
 type createDeploynentProps = {
@@ -118,7 +118,7 @@ export const createDeployment = async ({
 	});
 	const _service = deployment.exposeViaService({ name: image.imageName });
 
-	createIngress(chart, _service, service.endpoints);
+	createIngresses(chart, _service, service.endpoints);
 
 	return app.synthYaml();
 };
