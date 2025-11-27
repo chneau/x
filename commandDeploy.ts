@@ -226,7 +226,8 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 					.map(([key, value]) => `--build-arg=${key}=${value}`)
 					.join(" "),
 			};
-			await Bun.$`docker build --pull --push --tag=${imageFullName} --file=${image.dockerfile} ${buildArgs} ${image.context}`;
+			const targetArg = { raw: image.target ? `--target=${image.target}` : "" };
+			await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${image.dockerfile} ${buildArgs} ${image.context}`;
 			console.log(`... ✅ Built ${imageFullName}`);
 		}
 
