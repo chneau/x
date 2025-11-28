@@ -262,7 +262,7 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 			...Bun.env,
 			KUBECONFIG: path.join(cwd, service.file),
 		};
-		await Bun.$`echo ${deploymentYaml} | kubectl --context=${service.context} apply --force --filename=-`.env(
+		await Bun.$`echo ${deploymentYaml} | kubectl --context=${service.context} apply --filename=-`.env(
 			kubeEnv,
 		);
 		console.log(`... ✅ Deployed ${serviceAlias}`);
