@@ -1,6 +1,7 @@
 # x - Utility CLI
 
-A command-line tool for project management, system maintenance, and Kubernetes deployment.
+A command-line tool for project management, system maintenance, and Kubernetes
+deployment.
 
 ## Installation
 
@@ -29,7 +30,8 @@ Recursively scans directories to:
 x fmt
 ```
 
-Formats files using `deno fmt`, `oxlint`, `biome`, `go fmt`, and `dotnet csharpier`.
+Formats files using `deno fmt`, `oxlint`, `biome`, `go fmt`, and
+`dotnet csharpier`.
 
 ### Deployment
 
@@ -51,7 +53,8 @@ x doctor [--email <email>] [--name <name>] [--no-updates]
 
 Sets up the development environment (Linux/Windows):
 
-- Installs system tools (`git`, `docker`, `go`, `node`, `deno`, `kubectl`, etc.).
+- Installs system tools (`git`, `docker`, `go`, `node`, `deno`, `kubectl`,
+  etc.).
 - Configures Git, SSH keys, and GitHub authentication.
 - Installs dotfiles and configures shell (Zsh).
 - Updates system packages (`apt`, `brew`, `bun`).
