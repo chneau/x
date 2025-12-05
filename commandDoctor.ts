@@ -43,7 +43,7 @@ const doctorSudo = async () => {
 	else {
 		console.log("⚡ Please run this command to configure sudo:");
 		console.log(
-			`sudo sed -i 's/%sudo\s\+ALL=(ALL:ALL)\s\+ALL/%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers`,
+			`sudo sed -i 's/%sudo\\s\\+ALL=(ALL:ALL)\\s\\+ALL/%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers`,
 		);
 		throw new Error("❌ You cannot sudo");
 	}
