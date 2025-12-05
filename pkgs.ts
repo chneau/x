@@ -78,6 +78,12 @@ export const bunPkgs: Pkg[] = [
 export const pkgs: Pkg[] = [
 	...aptPkgs,
 	{
+		name: "uv",
+		check: async () => commandExists("uv"),
+		install: async () =>
+			await $`curl -LsSf https://astral.sh/uv/install.sh | sh`,
+	},
+	{
 		name: "brew",
 		check: async () => commandExists("brew"),
 		install: async () =>
