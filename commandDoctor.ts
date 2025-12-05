@@ -40,7 +40,13 @@ const doctorRoot = async () => {
 
 const doctorSudo = async () => {
 	if (await canSudo()) console.log("✅ You can sudo");
-	else throw new Error("❌ You cannot sudo");
+	else {
+		console.log("⚡ Please run this command to configure sudo:");
+		console.log(
+			`sudo sed -i 's/%sudo\s\+ALL=(ALL:ALL)\s\+ALL/%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers`,
+		);
+		throw new Error("❌ You cannot sudo");
+	}
 };
 
 const doctorUpdateSystem = async () => {
