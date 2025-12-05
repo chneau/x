@@ -8,7 +8,7 @@
 		"all": "bun run upgrade; bun run check; bun run lint"
 	},
 	"dependencies": {
-		"cdk8s": "^2.70.29",
+		"cdk8s": "^2.70.30",
 		"cdk8s-plus-33": "^2.4.7",
 		"commander": "^14.0.2",
 		"jsonc-parser": "^3.3.1",
