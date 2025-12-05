@@ -22,6 +22,7 @@ const aptPkgs: Pkg[] = [
 	aptIt("unzip"),
 	aptIt("zsh"),
 	aptIt("bash"),
+	aptIt("tree"),
 ];
 
 const brewIt = (name: string, check?: string) => ({
@@ -58,6 +59,7 @@ const bunIt = (name: string, check?: string) => ({
 
 export const bunPkgs: Pkg[] = [
 	bunIt("@biomejs/biome", "biome"),
+	bunIt("@github/copilot", "copilot"),
 	bunIt("@google/gemini-cli", "gemini"),
 	bunIt("opencode-ai", "opencode"),
 	bunIt("concurrently"),
