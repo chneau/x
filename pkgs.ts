@@ -96,6 +96,12 @@ export const pkgs: Pkg[] = [
 		check: async () => commandExists("deno"),
 		install: async () => await $`curl -fsSL https://deno.land/install.sh | sh`,
 	},
+	{
+		name: "dotnet",
+		check: async () => commandExists("dotnet"),
+		install: async () =>
+			await $`curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0`,
+	},
 	...brewPkgs,
 	...bunPkgs,
 ];
