@@ -22,6 +22,7 @@ export const commandNew = async () => {
 	pkgJson.dependencies = {};
 	pkgJson.devDependencies = devDependencies;
 	await Bun.write("package.json", JSON.stringify(pkgJson, null, 2));
-	await $`bun run all`;
+	await Bun.write("README.md", `# ${pkgJson.name}`);
 	await $`echo node_modules > .gitignore`;
+	await $`bun run all`;
 };
