@@ -4,6 +4,7 @@ import { command } from "./command";
 import { commandDeploy } from "./commandDeploy";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
+import { commandNew } from "./commandNew";
 import { commandUpgrade } from "./commandUpgrade";
 import { getCurrentVersion } from "./helpers";
 
@@ -36,5 +37,7 @@ program
 	.option("-n, --name <name>", "Git name", "chneau")
 	.option("--no-updates", "Skip system updates")
 	.action(commandDoctor);
+
+program.command("new").description("Create new bun project").action(commandNew);
 
 program.parse();
