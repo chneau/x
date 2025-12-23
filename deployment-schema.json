@@ -56,7 +56,7 @@
 					"target": {
 						"type": "string"
 					},
-					"args": {
+					"buildArgs": {
 						"default": {},
 						"type": "object",
 						"propertyNames": {
