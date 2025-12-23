@@ -238,12 +238,10 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 			const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
 
 			console.log(`🔨 Building ${imageFullName}...`);
-			const buildArgs = {
-				raw: Object.entries(image.args)
-					.map(([key, value]) => `--build-arg=${key}=${value}`)
-					.join(" "),
-			};
-			const targetArg = { raw: image.target ? `--target=${image.target}` : "" };
+			const buildArgs = Object.entries(image.args).map(
+				([key, value]) => `--build-arg=${key}=${value}`,
+			);
+			const targetArg = image.target ? [`--target=${image.target}`] : [];
 			await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${image.dockerfile} ${buildArgs} ${image.context}`;
 			console.log(`... ✅ Built ${imageFullName}`);
 		}
