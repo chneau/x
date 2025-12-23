@@ -15,7 +15,7 @@ const imageSchema = z.object({
 	registry: z.string(),
 	dockerfile: z.string().default("Dockerfile"),
 	target: z.string().optional(),
-	args: z.record(z.string(), z.string()).default({}),
+	buildArgs: z.record(z.string(), z.string()).default({}),
 	context: z.string().default("."),
 	repository: z.string(),
 	imageName: z.string(),
@@ -238,7 +238,7 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 			const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
 
 			console.log(`🔨 Building ${imageFullName}...`);
-			const buildArgs = Object.entries(image.args).map(
+			const buildArgs = Object.entries(image.buildArgs).map(
 				([key, value]) => `--build-arg=${key}=${value}`,
 			);
 			const targetArg = image.target ? [`--target=${image.target}`] : [];
