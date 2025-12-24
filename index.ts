@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import "./verboseShell";
 import { program } from "commander";
 import { command } from "./command";
 import { commandDeploy } from "./commandDeploy";
