@@ -48,6 +48,7 @@ const brewPkgs: Pkg[] = [
 	brewIt("node"),
 	brewIt("openjdk", "javac"),
 	brewIt("pipx"),
+	brewIt("stern"),
 	brewIt("zsh"),
 ];
 
