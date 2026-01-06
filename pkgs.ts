@@ -61,6 +61,7 @@ export const bunPkgs: Pkg[] = [
 	bunIt("@biomejs/biome", "biome"),
 	bunIt("@github/copilot", "copilot"),
 	bunIt("@google/gemini-cli", "gemini"),
+	bunIt("@qwen-code/qwen-code", "qwen"),
 	bunIt("opencode-ai", "opencode"),
 	bunIt("concurrently"),
 	bunIt("depcheck"),
