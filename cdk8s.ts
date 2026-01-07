@@ -2,9 +2,9 @@ import { App, Chart, Duration } from "cdk8s";
 import {
 	Deployment,
 	EnvValue,
-	type ISecret,
 	Ingress,
 	IngressBackend,
+	type ISecret,
 	Namespace,
 	Probe,
 	Secret,
@@ -100,7 +100,7 @@ export const createDeployment = async ({
 						registry.hostname,
 						registry.username,
 						registry.password,
-				  )
+					)
 				: undefined,
 	});
 

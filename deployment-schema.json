@@ -160,9 +160,6 @@
 					{
 						"type": "object",
 						"properties": {
-							"extends": {
-								"type": "string"
-							},
 							"image": {
 								"type": "string"
 							},
@@ -216,6 +213,9 @@
 									"type": "string",
 									"pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
 								}
+							},
+							"extends": {
+								"type": "string"
 							}
 						},
 						"required": ["extends"]

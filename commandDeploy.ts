@@ -24,45 +24,37 @@ const imageSchema = z.object({
 
 export type DeployImage = z.infer<typeof imageSchema>;
 
-const normalServiceSchema = z.object({
+const serviceBase = z.object({
 	image: z.string(),
-	replicas: z.number().default(1),
-	file: z.string().default("kubeconfig"),
+	replicas: z.number(),
+	file: z.string(),
 	context: z.string(),
 	namespace: z.string(),
-	port: z.number().min(1).max(65535).default(3000),
-	env: z.record(z.string(), z.string()).default({}),
-	readOnlyRootFilesystem: z.boolean().default(false),
+	port: z.number().min(1).max(65535),
+	env: z.record(z.string(), z.string()),
+	readOnlyRootFilesystem: z.boolean(),
 	runAsUser: z.number().optional(),
 	runAsGroup: z.number().optional(),
 	runAsNonRoot: z.boolean().optional(),
 	allowPrivilegeEscalation: z.boolean().optional(),
 	privileged: z.boolean().optional(),
-	endpoints: z
-		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
-		.default([]),
+	endpoints: z.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)),
+});
+
+const normalServiceSchema = serviceBase.extend({
+	replicas: serviceBase.shape.replicas.default(1),
+	file: serviceBase.shape.file.default("kubeconfig"),
+	port: serviceBase.shape.port.default(3000),
+	env: serviceBase.shape.env.default({}),
+	readOnlyRootFilesystem:
+		serviceBase.shape.readOnlyRootFilesystem.default(false),
+	endpoints: serviceBase.shape.endpoints.default([]),
 });
 
 export type NormalDeployService = z.infer<typeof normalServiceSchema>;
 
-const extendsServiceSchema = z.object({
+const extendsServiceSchema = serviceBase.partial().extend({
 	extends: z.string(),
-	image: z.string().optional(),
-	replicas: z.number().optional(),
-	file: z.string().optional(),
-	context: z.string().optional(),
-	namespace: z.string().optional(),
-	port: z.number().min(1).max(65535).optional(),
-	env: z.record(z.string(), z.string()).optional(),
-	readOnlyRootFilesystem: z.boolean().optional(),
-	runAsUser: z.number().optional(),
-	runAsGroup: z.number().optional(),
-	runAsNonRoot: z.boolean().optional(),
-	allowPrivilegeEscalation: z.boolean().optional(),
-	privileged: z.boolean().optional(),
-	endpoints: z
-		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
-		.optional(),
 });
 
 type ExtendsDeployService = z.infer<typeof extendsServiceSchema>;
