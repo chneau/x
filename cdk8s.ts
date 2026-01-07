@@ -2,9 +2,9 @@ import { App, Chart, Duration } from "cdk8s";
 import {
 	Deployment,
 	EnvValue,
+	type ISecret,
 	Ingress,
 	IngressBackend,
-	type ISecret,
 	Namespace,
 	Probe,
 	Secret,
@@ -100,7 +100,7 @@ export const createDeployment = async ({
 						registry.hostname,
 						registry.username,
 						registry.password,
-					)
+				  )
 				: undefined,
 	});
 
@@ -115,7 +115,14 @@ export const createDeployment = async ({
 			DEPLOYMENT_DATE: new Date().toISOString(),
 		}),
 		resources: {},
-		securityContext: { readOnlyRootFilesystem: service.readOnlyRootFilesystem },
+		securityContext: {
+			readOnlyRootFilesystem: service.readOnlyRootFilesystem,
+			user: service.runAsUser,
+			group: service.runAsGroup,
+			ensureNonRoot: service.runAsNonRoot,
+			allowPrivilegeEscalation: service.allowPrivilegeEscalation,
+			privileged: service.privileged,
+		},
 		startup: Probe.fromTcpSocket({
 			periodSeconds: Duration.seconds(1),
 			failureThreshold: 30,

@@ -33,6 +33,11 @@ const normalServiceSchema = z.object({
 	port: z.number().min(1).max(65535).default(3000),
 	env: z.record(z.string(), z.string()).default({}),
 	readOnlyRootFilesystem: z.boolean().default(false),
+	runAsUser: z.number().optional(),
+	runAsGroup: z.number().optional(),
+	runAsNonRoot: z.boolean().optional(),
+	allowPrivilegeEscalation: z.boolean().optional(),
+	privileged: z.boolean().optional(),
 	endpoints: z
 		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
 		.default([]),
@@ -50,6 +55,11 @@ const extendsServiceSchema = z.object({
 	port: z.number().min(1).max(65535).optional(),
 	env: z.record(z.string(), z.string()).optional(),
 	readOnlyRootFilesystem: z.boolean().optional(),
+	runAsUser: z.number().optional(),
+	runAsGroup: z.number().optional(),
+	runAsNonRoot: z.boolean().optional(),
+	allowPrivilegeEscalation: z.boolean().optional(),
+	privileged: z.boolean().optional(),
 	endpoints: z
 		.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
 		.optional(),
@@ -203,6 +213,13 @@ const extendsServiceToNormal = (
 	targetService.env = { ...targetService.env, ...service.env };
 	targetService.readOnlyRootFilesystem =
 		service.readOnlyRootFilesystem ?? targetService.readOnlyRootFilesystem;
+	targetService.runAsUser = service.runAsUser ?? targetService.runAsUser;
+	targetService.runAsGroup = service.runAsGroup ?? targetService.runAsGroup;
+	targetService.runAsNonRoot =
+		service.runAsNonRoot ?? targetService.runAsNonRoot;
+	targetService.allowPrivilegeEscalation =
+		service.allowPrivilegeEscalation ?? targetService.allowPrivilegeEscalation;
+	targetService.privileged = service.privileged ?? targetService.privileged;
 	targetService.endpoints = service.endpoints ?? targetService.endpoints;
 	return targetService;
 };
