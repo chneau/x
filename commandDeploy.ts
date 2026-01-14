@@ -287,7 +287,11 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 				([key, value]) => `--build-arg=${key}=${value}`,
 			);
 			const targetArg = image.target ? [`--target=${image.target}`] : [];
-			await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${image.dockerfile} ${buildArgs} ${image.context}`;
+			const buildContext = path.resolve(cwd, image.context);
+			const dockerfilePath = path.resolve(cwd, image.dockerfile);
+			await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`.cwd(
+				buildContext,
+			);
 			console.log(`... ✅ Built ${imageFullName}`);
 		}
 
