@@ -13,18 +13,23 @@ const getDirectories = async (path = ".") =>
 		.map((x) => `${path}/${x.name}`);
 
 const getDirectoriesDeep = async (path = ".", level = 0) => {
-	if (level === 0) return [path];
-	const directories = await getDirectories(path);
-	let _level = level - 1;
-	while (_level > 0) {
-		for (const directory of directories) {
-			const p = await getDirectories(directory);
-			directories.push(...p);
+	const result = [path];
+	if (level <= 0) return result;
+
+	let currentLevel = [path];
+	for (let i = 0; i < level; i++) {
+		const nextLevel: string[] = [];
+		const dirsPerParent = await Promise.all(
+			currentLevel.map((dir) => getDirectories(dir).catch(() => [])),
+		);
+		for (const dirs of dirsPerParent) {
+			nextLevel.push(...dirs);
 		}
-		_level--;
+		if (nextLevel.length === 0) break;
+		result.push(...nextLevel);
+		currentLevel = nextLevel;
 	}
-	directories.push(path);
-	return directories;
+	return result;
 };
 
 export const command = async () => {
