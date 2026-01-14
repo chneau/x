@@ -1,3 +1,4 @@
+import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
 import { createDeployment } from "./cdk8s";
@@ -70,6 +71,28 @@ export const deploySchema = z.object({
 });
 
 type Deploy = z.infer<typeof deploySchema>;
+
+const loginPromises = new Map<string, Promise<void>>();
+
+const isDockerLoggedIn = async (hostname: string) => {
+	const configPath = path.join(os.homedir(), ".docker", "config.json");
+	const file = Bun.file(configPath);
+	if (!(await file.exists())) return false;
+
+	try {
+		const config = await file.json();
+		const auths = config.auths || {};
+
+		const normalizedHostname =
+			hostname === "docker.io" ? "index.docker.io" : hostname;
+
+		for (const h of Object.keys(auths)) {
+			if (h.includes(normalizedHostname)) return true;
+		}
+	} catch (_) {}
+
+	return false;
+};
 
 export const commandDeploy = async () => {
 	const args = Bun.argv.slice(3);
@@ -240,9 +263,22 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 			continue;
 		}
 		if (registry.username && registry.password) {
-			console.log(`🔑 Logging in to ${registry.hostname}...`);
-			await Bun.$`echo ${registry.password} | docker login --username ${registry.username} --password-stdin ${registry.hostname}`;
-			console.log(`... ✅ Logged in to ${registry.hostname}`);
+			const { hostname, username, password } = registry;
+			if (!loginPromises.has(hostname)) {
+				loginPromises.set(
+					hostname,
+					(async () => {
+						if (await isDockerLoggedIn(hostname)) {
+							console.log(`✅ Already logged in to ${hostname}`);
+							return;
+						}
+						console.log(`🔑 Logging in to ${hostname}...`);
+						await Bun.$`echo ${password} | docker login --username ${username} --password-stdin ${hostname}`;
+						console.log(`... ✅ Logged in to ${hostname}`);
+					})(),
+				);
+			}
+			await loginPromises.get(hostname);
 
 			const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
 
