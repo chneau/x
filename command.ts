@@ -42,7 +42,7 @@ export const command = async () => {
 		process.exit(1);
 	}
 	const directories = await getDirectoriesDeep(cwd, recursive);
-	const queue = new PQueue({ concurrency: cpus().length });
+	const queue = new PQueue({ concurrency: cpus().length * 2 });
 	await Promise.all(
 		directories.map((dir) => queue.add(() => purify(dir).catch(console.error))),
 	).catch(console.error);
