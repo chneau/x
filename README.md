@@ -1,7 +1,7 @@
 # x - Utility CLI
 
-A command-line tool for project management, system maintenance, and Kubernetes
-deployment.
+A powerful, all-in-one command-line tool for project management, system
+maintenance, and Kubernetes deployment.
 
 ## Installation
 
@@ -17,12 +17,29 @@ bun install -g @chneau/x
 x [dir] [-r depth]
 ```
 
-Recursively scans directories to:
+Recursively scans directories (up to depth 4) to:
 
-- Clean lock files (`yarn.lock`, `package-lock.json`).
-- Enforce `tsconfig.json` and `package.json` standards.
-- Update `.gitignore` for Bun projects.
-- Run `bun upgrade`, `check` (lint), and `lint` (tsc).
+- **Clean up:** Removes `yarn.lock` and `package-lock.json` in favor of Bun.
+- **Enforce Standards:** Updates `package.json` with standard scripts
+  (`upgrade`, `check`, `lint`, `all`) and `tsconfig.json` with strict compiler
+  options.
+- **Git Integration:** Ensures `.gitignore` includes `node_modules` for Bun
+  projects.
+- **Auto-Maintenance:** Runs `bun upgrade`, `check` (lint), and `lint` (tsc)
+  automatically.
+
+### New Project
+
+```bash
+x new
+```
+
+Initializes a new Bun project in the current directory:
+
+- Runs `bun init -y`.
+- Sets up standard `package.json` scripts.
+- Configures basic `README.md` and `.gitignore`.
+- Automatically runs `x` to enforce standards.
 
 ### Formatting
 
@@ -30,8 +47,11 @@ Recursively scans directories to:
 x fmt
 ```
 
-Formats files using `deno fmt`, `oxlint`, `biome`, `go fmt`, and
-`dotnet csharpier`.
+Formats files across different languages using:
+
+- **Web:** `deno fmt`, `oxlint`, `biome`.
+- **Go:** `go fmt`.
+- **C#:** `dotnet csharpier`.
 
 ### Deployment
 
@@ -39,25 +59,30 @@ Formats files using `deno fmt`, `oxlint`, `biome`, `go fmt`, and
 x deploy [files...] [services...]
 ```
 
-Deploys to Kubernetes using JSON configuration.
+Deploys to Kubernetes using JSON configuration (e.g., `.deploy.json`).
 
-- Supports environment variable substitution and service inheritance.
-- Builds and pushes Docker images if registries are configured.
-- Generates a template `.deploy.json` if no configuration is found.
+- **Substitution:** Supports environment variable substitution.
+- **Docker:** Handles Docker login, builds, and pushes images to configured
+  registries.
+- **CDK8s:** Generates Kubernetes manifests and applies them via `kubectl`.
+- **Templates:** Generates a `.deploy.json` template if no configuration is
+  found.
 
-### System Setup
+### System Setup (Doctor)
 
 ```bash
 x doctor [--email <email>] [--name <name>] [--no-updates]
 ```
 
-Sets up the development environment (Linux/Windows):
+Sets up and maintains your development environment (Linux/Windows):
 
-- Installs system tools (`git`, `docker`, `go`, `node`, `deno`, `kubectl`,
-  etc.).
-- Configures Git, SSH keys, and GitHub authentication.
-- Installs dotfiles and configures shell (Zsh).
-- Updates system packages (`apt`, `brew`, `bun`).
+- **Package Managers:** Updates `apt`, `brew`, and `bun`.
+- **Tools:** Installs essential tools including `git`, `docker`, `go`, `deno`,
+  `dotnet`, `uv`, `kubectl`, `lazygit`, and many Bun-based utilities.
+- **Configuration:** Sets up dotfiles (`.zshrc`, `.bashrc`, etc.), SSH keys,
+  Git, and GitHub authentication.
+- **Shell:** Configures Zsh as the default shell and ensures Docker group
+  permissions.
 
 ### Self Update
 
