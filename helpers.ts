@@ -5,19 +5,13 @@ export const commandExists = async (cmd: string) => {
 		process.platform === "win32"
 			? $`powershell.exe -Command "Get-Command ${cmd}"`
 			: $`which ${cmd}`;
-	return await shell
-		.quiet()
-		.then((x) => x.exitCode === 0)
-		.catch(() => false);
+	return (await shell.quiet().nothrow()).exitCode === 0;
 };
 
 export const isRoot = async () => (await $`id -u`.text()).trim() === "0";
 
 export const canSudo = async () =>
-	await $`sudo -n true`
-		.quiet()
-		.then((x) => x.exitCode === 0)
-		.catch(() => false);
+	(await $`sudo -n true`.quiet().nothrow()).exitCode === 0;
 
 export const getCurrentVersion = async () =>
 	await Bun.file(`${import.meta.dir}/package.json`)

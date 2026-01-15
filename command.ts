@@ -18,13 +18,10 @@ const getDirectoriesDeep = async (path = ".", level = 0) => {
 
 	let currentLevel = [path];
 	for (let i = 0; i < level; i++) {
-		const nextLevel: string[] = [];
 		const dirsPerParent = await Promise.all(
 			currentLevel.map((dir) => getDirectories(dir).catch(() => [])),
 		);
-		for (const dirs of dirsPerParent) {
-			nextLevel.push(...dirs);
-		}
+		const nextLevel = dirsPerParent.flat();
 		if (nextLevel.length === 0) break;
 		result.push(...nextLevel);
 		currentLevel = nextLevel;
@@ -50,8 +47,8 @@ export const command = async () => {
 
 const purify = async (dir: string) => {
 	console.log(`🚀 Managing files in ${dir}`);
-	await managePackagelockjson(dir).catch(console.error);
-	await manageYarnlock(dir).catch(console.error);
+	await removeFileIfExists(dir, "package-lock.json").catch(console.error);
+	await removeFileIfExists(dir, "yarn.lock").catch(console.error);
 	const packageJsonExists = await managePackagejson(dir).catch(console.error);
 	const tsconfigExists = await manageTsconfig(dir).catch(console.error);
 	await manageGitignore(dir, packageJsonExists ?? false).catch(console.error);
@@ -71,21 +68,15 @@ const purify = async (dir: string) => {
 	console.log("🎉 Done with all files");
 };
 
-const manageYarnlock = async (dir: string): Promise<boolean> => {
-	const filename = `${dir}/yarn.lock`;
-	const file = Bun.file(filename);
+const removeFileIfExists = async (
+	dir: string,
+	filename: string,
+): Promise<boolean> => {
+	const path = `${dir}/${filename}`;
+	const file = Bun.file(path);
 	if (!(await file.exists())) return false;
-	await Bun.$`rm -f ${filename}`.nothrow();
-	console.log(`✅ Done with ${filename}`);
-	return true;
-};
-
-const managePackagelockjson = async (dir: string): Promise<boolean> => {
-	const filename = `${dir}/package-lock.json`;
-	const file = Bun.file(filename);
-	if (!(await file.exists())) return false;
-	await Bun.$`rm -f ${filename}`.nothrow();
-	console.log(`✅ Done with ${filename}`);
+	await Bun.$`rm -f ${path}`.nothrow();
+	console.log(`✅ Done with ${path}`);
 	return true;
 };
 
@@ -97,19 +88,17 @@ const manageGitignore = async (
 	const file = Bun.file(filename);
 	if (!(await file.exists())) return false;
 	const gitignore = await file.text();
-	const lines = gitignore
-		.split("\n")
-		.map((x) => x.trim())
-		.filter(Boolean);
-	const isTooLong = lines.length > 10;
-	if (isTooLong) console.error(`👁️ ${filename} is too long`);
+	const lines = new Set(
+		gitignore
+			.split("\n")
+			.map((x) => x.trim())
+			.filter(Boolean),
+	);
+	if (lines.size > 10) console.error(`👁️ ${filename} is too long`);
 	if (isBunProject) {
-		const hasNodeModules = lines.includes("node_modules");
-		if (!hasNodeModules) {
-			lines.push("node_modules");
-		}
+		lines.add("node_modules");
 	}
-	await Bun.write(file, lines.join("\n"));
+	await Bun.write(file, [...lines].join("\n"));
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };

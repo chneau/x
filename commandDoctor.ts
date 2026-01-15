@@ -166,27 +166,18 @@ const doctorUserGroups = () =>
 // TODO: install dotnet
 
 const doctorZsh = async () => {
-	const etcShells = await Bun.file("/etc/shells")
-		.text()
-		.then((x) => x.split("\n"));
 	const whichZsh = (await $`which zsh`.text()).trim();
-	if (etcShells.includes(whichZsh)) {
-		console.log("✅ Zsh is set as a valid shell");
-	} else {
-		console.log("❌ Zsh is not set as a valid shell");
-		console.log("🕒 Adding Zsh to /etc/shells");
-		await $`echo ${whichZsh} | sudo tee -a /etc/shells`;
-		console.log("✅ Zsh is set as a valid shell");
-	}
-	const etcPasswdOfUSer = await $`cat /etc/passwd | grep "^$USER:"`.text();
-	if (etcPasswdOfUSer.includes(whichZsh)) {
-		console.log("✅ Zsh is set as your shell");
-	} else {
-		console.log("❌ Zsh is not set as your shell");
-		console.log("🕒 Setting Zsh as your shell");
-		await $`sudo chsh -s ${whichZsh} $USER`;
-		console.log("✅ Zsh is set as your shell");
-	}
+	await checkLogFix(
+		"Zsh is set as a valid shell",
+		async () => (await Bun.file("/etc/shells").text()).includes(whichZsh),
+		() => $`echo ${whichZsh} | sudo tee -a /etc/shells`,
+	);
+	await checkLogFix(
+		"Zsh is set as your shell",
+		async () =>
+			(await $`cat /etc/passwd | grep "^$USER:"`.text()).includes(whichZsh),
+		() => $`sudo chsh -s ${whichZsh} $USER`,
+	);
 };
 
 const commandDoctorLinux = async (options: DoctorOptions) => {

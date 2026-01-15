@@ -2,9 +2,10 @@ import { $ } from "bun";
 import { fetchLatestVersion } from "./helpers";
 
 const latestVersion = await fetchLatestVersion();
-const latestVersionFix = Number(latestVersion.split(".").at(-1));
+const lastPart = latestVersion.split(".").pop();
+const latestVersionFix = Number(lastPart);
 if (Number.isNaN(latestVersionFix)) {
-	throw new Error("latestVersionFix is not a number");
+	throw new Error(`latestVersionFix is not a number: ${lastPart}`);
 }
 const version = `0.0.${latestVersionFix + 1}`;
 

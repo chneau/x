@@ -13,11 +13,10 @@ export const commandUpgrade = async () => {
 	console.log(`🕒 You are using version ${currentVersion}`);
 	while (true) {
 		console.log(`🕒 Updating to version ${latestVersion}`);
-		const installed = await $`bun i -fg @chneau/x@${latestVersion}`
+		const { exitCode } = await $`bun i -fg @chneau/x@${latestVersion}`
 			.quiet()
-			.then(() => true)
-			.catch(() => false);
-		if (installed) break;
+			.nothrow();
+		if (exitCode === 0) break;
 		await Bun.sleep(1000);
 	}
 	console.log(`✅ Updated to version ${latestVersion}`);
