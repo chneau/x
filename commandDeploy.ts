@@ -76,22 +76,13 @@ const loginPromises = new Map<string, Promise<void>>();
 
 const isDockerLoggedIn = async (hostname: string) => {
 	const configPath = path.join(os.homedir(), ".docker", "config.json");
-	const file = Bun.file(configPath);
-	if (!(await file.exists())) return false;
-
 	try {
-		const config = await file.json();
-		const auths = config.auths || {};
-
-		const normalizedHostname =
-			hostname === "docker.io" ? "index.docker.io" : hostname;
-
-		for (const h of Object.keys(auths)) {
-			if (h.includes(normalizedHostname)) return true;
-		}
-	} catch (_) {}
-
-	return false;
+		const config = await Bun.file(configPath).json();
+		const normalized = hostname === "docker.io" ? "index.docker.io" : hostname;
+		return Object.keys(config?.auths ?? {}).some((h) => h.includes(normalized));
+	} catch {
+		return false;
+	}
 };
 
 export const commandDeploy = async () => {
@@ -208,34 +199,23 @@ const extendsServiceToNormal = (
 		throw new Error(`Service ${service.extends} not found`);
 	}
 
-	let targetService: NormalDeployService;
-	if ("extends" in targetServiceRaw) {
-		targetService = extendsServiceToNormal(
-			targetServiceRaw,
-			services,
-			nextVisited,
-		);
-	} else {
-		targetService = structuredClone(targetServiceRaw);
+	const targetService =
+		"extends" in targetServiceRaw
+			? extendsServiceToNormal(targetServiceRaw, services, nextVisited)
+			: structuredClone(targetServiceRaw);
+
+	for (const [key, value] of Object.entries(service)) {
+		if (key === "extends") continue;
+		if (key === "env") {
+			targetService.env = { ...targetService.env, ...service.env };
+			continue;
+		}
+		if (value !== undefined) {
+			// @ts-expect-error
+			targetService[key] = value;
+		}
 	}
 
-	targetService.image = service.image ?? targetService.image;
-	targetService.replicas = service.replicas ?? targetService.replicas;
-	targetService.file = service.file ?? targetService.file;
-	targetService.context = service.context ?? targetService.context;
-	targetService.namespace = service.namespace ?? targetService.namespace;
-	targetService.port = service.port ?? targetService.port;
-	targetService.env = { ...targetService.env, ...service.env };
-	targetService.readOnlyRootFilesystem =
-		service.readOnlyRootFilesystem ?? targetService.readOnlyRootFilesystem;
-	targetService.runAsUser = service.runAsUser ?? targetService.runAsUser;
-	targetService.runAsGroup = service.runAsGroup ?? targetService.runAsGroup;
-	targetService.runAsNonRoot =
-		service.runAsNonRoot ?? targetService.runAsNonRoot;
-	targetService.allowPrivilegeEscalation =
-		service.allowPrivilegeEscalation ?? targetService.allowPrivilegeEscalation;
-	targetService.privileged = service.privileged ?? targetService.privileged;
-	targetService.endpoints = service.endpoints ?? targetService.endpoints;
 	return targetService;
 };
 

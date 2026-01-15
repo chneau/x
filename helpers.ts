@@ -22,14 +22,14 @@ export const canSudo = async () =>
 export const getCurrentVersion = async () =>
 	await Bun.file(`${import.meta.dir}/package.json`)
 		.json()
-		.then((x) => (x.version as string) ?? "UNKNOWN")
-		.catch(() => "UNKNOWN");
+		.then((x) => (x.version as string) ?? "0.0.0")
+		.catch(() => "0.0.0");
 
 export const fetchLatestVersion = async () =>
 	await fetch("https://registry.npmjs.org/@chneau/x/latest")
 		.then((x) => x.json())
 		.then((x) => x.version as string)
-		.catch(() => "UNKNOWN");
+		.catch(() => "0.0.0");
 
 export const envSubst = (str: string) =>
 	str.replace(/\${(.*?)}/g, (_, key) => Bun.env[key] ?? "");

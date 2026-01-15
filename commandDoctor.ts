@@ -76,75 +76,92 @@ const doctorUpdateSystem = async () => {
 };
 
 const doctorPkgs = async () => {
-	const result = await Promise.all(
+	const missing = await Promise.all(
 		pkgs.map(async (pkg) => ({
-			name: pkg.name,
+			pkg,
 			exists: await pkg.check(),
-			install: pkg.install,
 		})),
-	).then((x) => x.filter((y) => !y.exists));
-	if (!result.length) {
+	).then((results) => results.filter((r) => !r.exists).map((r) => r.pkg));
+
+	if (missing.length === 0) {
 		console.log("✅ All packages are installed");
-	} else {
-		console.log("❌ Some packages are not installed");
-		console.table(result);
-		for (const r of result) {
-			console.log(`🕒 Installing ${r.name}`);
-			await r
-				.install()
-				.then(() => console.log(`✅ Installed ${r.name}`))
-				.catch(() => console.log(`❌ Failed to install ${r.name}`));
+		return;
+	}
+
+	console.log("❌ Some packages are not installed");
+	console.table(missing.map((p) => ({ name: p.name })));
+
+	for (const pkg of missing) {
+		console.log(`🕒 Installing ${pkg.name}...`);
+		try {
+			await pkg.install();
+			console.log(`✅ Installed ${pkg.name}`);
+		} catch {
+			console.log(`❌ Failed to install ${pkg.name}`);
 		}
+	}
+};
+
+const checkLogFix = async (
+	name: string,
+	check: () => Promise<boolean>,
+	fix: () => Promise<unknown>,
+) => {
+	if (await check()) {
+		console.log(`✅ ${name} is correct`);
+	} else {
+		console.log(`❌ ${name} is incorrect`);
+		console.log(`🕒 Fixing ${name}...`);
+		await fix();
+		console.log(`✅ ${name} is fixed`);
 	}
 };
 
 const doctorDotfiles = async () => {
 	const baseFiles = "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/";
-	const expected = await Promise.all(
-		[".bashrc", ".zshrc", ".aliases", ".profile"].map(async (x) => ({
-			name: x,
-			content: await fetch(`${baseFiles}${x}`).then((x) => x.text()),
-			isPresent: await Bun.file(`${Bun.env.HOME}/${x}`).exists(),
+	const files = [".bashrc", ".zshrc", ".aliases", ".profile"];
+	const results = await Promise.all(
+		files.map(async (name) => ({
+			name,
+			isPresent: await Bun.file(`${Bun.env.HOME}/${name}`).exists(),
 		})),
 	);
-	if (expected.every((x) => x.isPresent)) {
+
+	if (results.every((x) => x.isPresent)) {
 		console.log("✅ Dotfiles are installed");
-	} else {
-		console.log("❌ Dotfiles are not installed");
-		console.log("🕒 Installing dotfiles");
-		await Promise.all(
-			expected.map(async (x) => {
+		return;
+	}
+
+	console.log("❌ Dotfiles are not installed");
+	console.log("🕒 Installing dotfiles");
+	await Promise.all(
+		results
+			.filter((x) => !x.isPresent)
+			.map(async (x) => {
 				console.log(`🕒 Installing ${x.name}`);
-				await Bun.write(`${Bun.env.HOME}/${x.name}`, x.content);
+				const content = await fetch(`${baseFiles}${x.name}`).then((r) =>
+					r.text(),
+				);
+				await Bun.write(`${Bun.env.HOME}/${x.name}`, content);
 				console.log(`✅ Installed ${x.name}`);
 			}),
-		);
-		console.log("✅ Dotfiles are installed");
-	}
+	);
+	console.log("✅ Dotfiles are installed");
 };
 
-const doctorDocker = async () => {
-	if (await commandExists("docker")) {
-		console.log("✅ Docker is installed");
-	} else {
-		console.log("❌ Docker is not installed");
-		console.log("🕒 Installing Docker");
-		await $`curl -sSL get.docker.com | sh`;
-		console.log("✅ Docker is installed");
-	}
-};
+const doctorDocker = () =>
+	checkLogFix(
+		"Docker",
+		() => commandExists("docker"),
+		() => $`curl -sSL get.docker.com | sh`,
+	);
 
-const doctorUserGroups = async () => {
-	const groups = await $`groups`.text();
-	if (groups.includes("docker")) {
-		console.log("✅ User is in docker groups");
-	} else {
-		console.log("❌ User is not in docker groups");
-		console.log("🕒 Adding user to docker groups");
-		await $`sudo usermod -aG docker $USER`.catch(() => {});
-		console.log("✅ User is in docker groups");
-	}
-};
+const doctorUserGroups = () =>
+	checkLogFix(
+		"User in docker group",
+		async () => (await $`groups`.text()).includes("docker"),
+		() => $`sudo usermod -aG docker $USER`.nothrow(),
+	);
 
 // TODO: install dotnet
 

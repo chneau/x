@@ -8,27 +8,21 @@ export const optionsSchema = z.object({
 });
 export type DoctorOptions = z.infer<typeof optionsSchema>;
 
+const checkGitConfig = async (key: string, expected: string) => {
+	const current = (await $`git config --global ${key}`.nothrow().text()).trim();
+	if (current === "") {
+		console.log(`❌ Git ${key} is not set`);
+		console.log(`🕒 Setting git ${key}`);
+		await $`git config --global ${key} ${expected}`;
+		console.log(`✅ Git ${key} set`);
+	} else {
+		console.log(`✅ Git ${key} is already set to "${current}"`);
+	}
+};
+
 export const doctorGitconfig = async (options: DoctorOptions) => {
-	const currentName = await $`git config --global user.name`.nothrow().text();
-	const currentEmail = await $`git config --global user.email`.nothrow().text();
-
-	if (currentName.trim() === "") {
-		console.log("❌ Git user.name is not set");
-		console.log("🕒 Setting git user.name");
-		await $`git config --global user.name ${options.name}`;
-		console.log("✅ Git user.name set");
-	} else {
-		console.log(`✅ Git user.name is already set to "${currentName.trim()}"`);
-	}
-
-	if (currentEmail.trim() === "") {
-		console.log("❌ Git user.email is not set");
-		console.log("🕒 Setting git user.email");
-		await $`git config --global user.email ${options.email}`;
-		console.log("✅ Git user.email set");
-	} else {
-		console.log(`✅ Git user.email is already set to "${currentEmail.trim()}"`);
-	}
+	await checkGitConfig("user.name", options.name);
+	await checkGitConfig("user.email", options.email);
 
 	// Set other configurations
 	await $`git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"`;

@@ -3,26 +3,32 @@ import { $ } from "bun";
 export const commandNew = async () => {
 	await $`bun init -y .`;
 	await $`x`;
-	const pkgJson = await Bun.file("package.json").json();
-	delete pkgJson.module;
-	delete pkgJson.type;
-	delete pkgJson.private;
-	pkgJson.devDependencies = {
-		...pkgJson.devDependencies,
-		...pkgJson.peerDependencies,
+	const {
+		module,
+		type,
+		private: _,
+		peerDependencies,
+		devDependencies,
+		scripts,
+		...pkgJson
+	} = await Bun.file("package.json").json();
+
+	const newPkg = {
+		...pkgJson,
+		scripts: {
+			start: "bun index.ts",
+			dev: "bun --watch index.ts",
+			...scripts,
+		},
+		dependencies: {},
+		devDependencies: {
+			...devDependencies,
+			...peerDependencies,
+		},
 	};
-	delete pkgJson.peerDependencies;
-	const devDependencies = pkgJson.devDependencies;
-	delete pkgJson.devDependencies;
-	pkgJson.scripts = {
-		start: "bun index.ts",
-		dev: "bun --watch index.ts",
-		...pkgJson.scripts,
-	};
-	pkgJson.dependencies = {};
-	pkgJson.devDependencies = devDependencies;
-	await Bun.write("package.json", JSON.stringify(pkgJson, null, 2));
-	await Bun.write("README.md", `# ${pkgJson.name}`);
+
+	await Bun.write("package.json", JSON.stringify(newPkg, null, 2));
+	await Bun.write("README.md", `# ${newPkg.name}`);
 	await $`echo node_modules > .gitignore`;
 	await $`bun run all`;
 };

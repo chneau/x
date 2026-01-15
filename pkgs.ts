@@ -7,29 +7,33 @@ type Pkg = {
 	install: () => Promise<unknown>;
 };
 
-const aptIt = (name: string) => ({
+const createPkg = (
+	name: string,
+	install: () => Promise<unknown>,
+	checkName?: string,
+): Pkg => ({
 	name,
-	check: async () => commandExists(name),
-	install: async () => await $`sudo apt install -y ${name}`,
+	check: () => commandExists(checkName ?? name),
+	install,
 });
+
+const aptIt = (name: string) =>
+	createPkg(name, () => $`sudo apt install -y ${name}`);
 
 const aptPkgs: Pkg[] = [
-	aptIt("git"),
-	aptIt("gcc"),
-	aptIt("make"),
-	aptIt("curl"),
-	aptIt("wget"),
-	aptIt("unzip"),
-	aptIt("zsh"),
-	aptIt("bash"),
-	aptIt("tree"),
-];
+	"git",
+	"gcc",
+	"make",
+	"curl",
+	"wget",
+	"unzip",
+	"zsh",
+	"bash",
+	"tree",
+].map(aptIt);
 
-const brewIt = (name: string, check?: string) => ({
-	name,
-	check: async () => commandExists(check ?? name),
-	install: async () => await $`brew install ${name}`,
-});
+const brewIt = (name: string, check?: string) =>
+	createPkg(name, () => $`brew install ${name}`, check);
 
 const brewPkgs: Pkg[] = [
 	brewIt("aichat"),
@@ -52,11 +56,8 @@ const brewPkgs: Pkg[] = [
 	brewIt("zsh"),
 ];
 
-const bunIt = (name: string, check?: string) => ({
-	name,
-	check: async () => commandExists(check ?? name),
-	install: async () => await $`bun install --force --global ${name}`,
-});
+const bunIt = (name: string, check?: string) =>
+	createPkg(name, () => $`bun install --force --global ${name}`, check);
 
 export const bunPkgs: Pkg[] = [
 	bunIt("@biomejs/biome", "biome"),
@@ -81,29 +82,18 @@ export const bunPkgs: Pkg[] = [
 ];
 export const pkgs: Pkg[] = [
 	...aptPkgs,
-	{
-		name: "uv",
-		check: async () => commandExists("uv"),
-		install: async () =>
-			await $`curl -LsSf https://astral.sh/uv/install.sh | sh`,
-	},
-	{
-		name: "brew",
-		check: async () => commandExists("brew"),
-		install: async () =>
-			await $`HOME=/tmp CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
-	},
-	{
-		name: "deno",
-		check: async () => commandExists("deno"),
-		install: async () => await $`curl -fsSL https://deno.land/install.sh | sh`,
-	},
-	{
-		name: "dotnet",
-		check: async () => commandExists("dotnet"),
-		install: async () =>
-			await $`curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0`,
-	},
+	createPkg("uv", () => $`curl -LsSf https://astral.sh/uv/install.sh | sh`),
+	createPkg(
+		"brew",
+		() =>
+			$`HOME=/tmp CI=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
+	),
+	createPkg("deno", () => $`curl -fsSL https://deno.land/install.sh | sh`),
+	createPkg(
+		"dotnet",
+		() =>
+			$`curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0`,
+	),
 	...brewPkgs,
 	...bunPkgs,
 ];
