@@ -93,12 +93,10 @@ const doctorPkgs = async () => {
 
 	for (const pkg of missing) {
 		console.log(`🕒 Installing ${pkg.name}...`);
-		try {
-			await pkg.install();
-			console.log(`✅ Installed ${pkg.name}`);
-		} catch {
-			console.log(`❌ Failed to install ${pkg.name}`);
-		}
+		await pkg
+			.install()
+			.then(() => console.log(`✅ Installed ${pkg.name}`))
+			.catch(() => console.log(`❌ Failed to install ${pkg.name}`));
 	}
 };
 
