@@ -1,27 +1,35 @@
 import { $ } from "bun";
 
 export const commandExists = async (cmd: string) => {
-	if (process.platform === "win32") {
-		return await $`powershell.exe -Command "Get-Command ${cmd}"`
-			.quiet()
-			.then((x) => x.exitCode === 0)
-			.catch(() => false);
-	}
-	return (await $`which ${cmd}`.text().catch(() => "")).trim() !== "";
+	const shell =
+		process.platform === "win32"
+			? $`powershell.exe -Command "Get-Command ${cmd}"`
+			: $`which ${cmd}`;
+	return await shell
+		.quiet()
+		.then((x) => x.exitCode === 0)
+		.catch(() => false);
 };
 
-export const isRoot = async () => {
-	const id = (await $`id -u`.text()).trim();
-	return id === "0";
-};
+export const isRoot = async () => (await $`id -u`.text()).trim() === "0";
 
-export const canSudo = async () => {
-	const text = (await $`sudo echo 0`.text().catch(() => "")).trim();
-	return text === "0";
-};
+export const canSudo = async () =>
+	await $`sudo -n true`
+		.quiet()
+		.then((x) => x.exitCode === 0)
+		.catch(() => false);
 
 export const getCurrentVersion = async () =>
 	await Bun.file(`${import.meta.dir}/package.json`)
 		.json()
+		.then((x) => (x.version as string) ?? "UNKNOWN")
+		.catch(() => "UNKNOWN");
+
+export const fetchLatestVersion = async () =>
+	await fetch("https://registry.npmjs.org/@chneau/x/latest")
+		.then((x) => x.json())
 		.then((x) => x.version as string)
 		.catch(() => "UNKNOWN");
+
+export const envSubst = (str: string) =>
+	str.replace(/\${(.*?)}/g, (_, key) => Bun.env[key] ?? "");

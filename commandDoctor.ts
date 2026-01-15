@@ -6,7 +6,7 @@ import {
 	doctorSsh,
 	optionsSchema,
 } from "./doctorCommon";
-import { canSudo, isRoot } from "./helpers";
+import { canSudo, commandExists, isRoot } from "./helpers";
 import { pkgs } from "./pkgs";
 import { commandDoctorWindows } from "./windows/commandDoctorWindows";
 
@@ -59,9 +59,9 @@ const doctorUpdateSystem = async () => {
 	await $`sudo apt autoclean -y`.nothrow();
 
 	// Brew
-	const brew =
-		(await $`which brew`.text().catch(() => "")).trim() ||
-		"/home/linuxbrew/.linuxbrew/bin/brew";
+	const brew = (await commandExists("brew"))
+		? "brew"
+		: "/home/linuxbrew/.linuxbrew/bin/brew";
 	if (await Bun.file(brew).exists()) {
 		await $`${brew} update`.nothrow();
 		await $`${brew} upgrade`.nothrow();
@@ -124,7 +124,7 @@ const doctorDotfiles = async () => {
 };
 
 const doctorDocker = async () => {
-	if (!(await $`which docker`.nothrow().text()).includes("not found")) {
+	if (await commandExists("docker")) {
 		console.log("✅ Docker is installed");
 	} else {
 		console.log("❌ Docker is not installed");
@@ -152,7 +152,7 @@ const doctorZsh = async () => {
 	const etcShells = await Bun.file("/etc/shells")
 		.text()
 		.then((x) => x.split("\n"));
-	const whichZsh = await $`which zsh`.nothrow().text();
+	const whichZsh = (await $`which zsh`.text()).trim();
 	if (etcShells.includes(whichZsh)) {
 		console.log("✅ Zsh is set as a valid shell");
 	} else {

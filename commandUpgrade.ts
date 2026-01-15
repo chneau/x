@@ -1,6 +1,5 @@
 import { $ } from "bun";
-import { fetchLatestVersion } from "./fetchLatestVersion";
-import { getCurrentVersion } from "./helpers";
+import { fetchLatestVersion, getCurrentVersion } from "./helpers";
 
 export const commandUpgrade = async () => {
 	const latestVersion = await fetchLatestVersion();
