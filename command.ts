@@ -1,8 +1,8 @@
 import { readdir } from "node:fs/promises";
 import { cpus } from "node:os";
 import { program } from "commander";
-import { parse } from "jsonc-parser";
 import PQueue from "p-queue";
+import type { ZodAny, z } from "zod";
 
 const getDirectories = async (path = ".") =>
 	(await readdir(path, { withFileTypes: true }))
@@ -107,7 +107,7 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 	const filename = `${dir}/tsconfig.json`;
 	const file = Bun.file(filename);
 	if (!(await file.exists())) return false;
-	const tsconfig = parse(await file.text());
+	const tsconfig = Bun.JSONC.parse(await file.text()) as z.infer<ZodAny>;
 	if (!tsconfig.compilerOptions) return false;
 	const expected = {
 		noUnusedLocals: true,
