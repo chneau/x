@@ -146,6 +146,18 @@
 							"privileged": {
 								"type": "boolean"
 							},
+							"cpuRequest": {
+								"type": "string"
+							},
+							"cpuLimit": {
+								"type": "string"
+							},
+							"memoryRequest": {
+								"type": "string"
+							},
+							"memoryLimit": {
+								"type": "string"
+							},
 							"endpoints": {
 								"default": [],
 								"type": "array",
@@ -206,6 +218,18 @@
 							},
 							"privileged": {
 								"type": "boolean"
+							},
+							"cpuRequest": {
+								"type": "string"
+							},
+							"cpuLimit": {
+								"type": "string"
+							},
+							"memoryRequest": {
+								"type": "string"
+							},
+							"memoryLimit": {
+								"type": "string"
 							},
 							"endpoints": {
 								"type": "array",

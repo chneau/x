@@ -1,5 +1,6 @@
-import { App, Chart, Duration } from "cdk8s";
+import { App, Chart, Duration, Size } from "cdk8s";
 import {
+	Cpu,
 	Deployment,
 	EnvValue,
 	Ingress,
@@ -15,6 +16,36 @@ import type {
 	DeployRegistry,
 	NormalDeployService,
 } from "./commandDeploy";
+
+const parseCpu = (value: string): Cpu => {
+	if (value.endsWith("m")) {
+		return Cpu.millis(Number.parseInt(value.slice(0, -1), 10));
+	}
+	return Cpu.units(Number.parseFloat(value));
+};
+
+const parseSize = (value: string): Size => {
+	const match = value.match(/^(\d+)([a-zA-Z]*)$/);
+	if (!match || match[1] === undefined || match[2] === undefined) {
+		throw new Error(`Invalid size: ${value}`);
+	}
+	const amount = Number.parseInt(match[1], 10);
+	const unit = match[2];
+	switch (unit) {
+		case "Ki":
+			return Size.kibibytes(amount);
+		case "Mi":
+			return Size.mebibytes(amount);
+		case "Gi":
+			return Size.gibibytes(amount);
+		case "Ti":
+			return Size.tebibytes(amount);
+		case "Pi":
+			return Size.pebibyte(amount);
+		default:
+			return Size.mebibytes(amount);
+	}
+};
 
 const createDockerConfigJson = (
 	chart: Chart,
@@ -114,7 +145,18 @@ export const createDeployment = async ({
 			...service.env,
 			DEPLOYMENT_DATE: new Date().toISOString(),
 		}),
-		resources: {},
+		resources: {
+			cpu: {
+				request: service.cpuRequest ? parseCpu(service.cpuRequest) : undefined,
+				limit: service.cpuLimit ? parseCpu(service.cpuLimit) : undefined,
+			},
+			memory: {
+				request: service.memoryRequest
+					? parseSize(service.memoryRequest)
+					: undefined,
+				limit: service.memoryLimit ? parseSize(service.memoryLimit) : undefined,
+			},
+		},
 		securityContext: {
 			readOnlyRootFilesystem: service.readOnlyRootFilesystem,
 			user: service.runAsUser,

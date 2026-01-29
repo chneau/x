@@ -39,6 +39,10 @@ const serviceBase = z.object({
 	runAsNonRoot: z.boolean().optional(),
 	allowPrivilegeEscalation: z.boolean().optional(),
 	privileged: z.boolean().optional(),
+	cpuRequest: z.string().optional(),
+	cpuLimit: z.string().optional(),
+	memoryRequest: z.string().optional(),
+	memoryLimit: z.string().optional(),
 	endpoints: z.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)),
 });
 
