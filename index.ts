@@ -39,6 +39,10 @@ program
 	.option("--no-updates", "Skip system updates")
 	.action(commandDoctor);
 
-program.command("new").description("Create new bun project").action(commandNew);
+program
+	.command("new")
+	.description("Create new bun project")
+	.option("-t, --template <template-name>", "Template name or git repo")
+	.action(commandNew);
 
 program.parse();
