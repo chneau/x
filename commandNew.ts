@@ -29,6 +29,8 @@ export const commandNew = async (options: { template?: string }) => {
 
 		const newPkg = {
 			...pkgJson,
+			version: undefined,
+			name: process.cwd().split("/").pop(),
 			scripts: {
 				start: "bun index.ts",
 				dev: "bun --watch index.ts",
