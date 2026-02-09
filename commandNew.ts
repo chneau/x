@@ -7,8 +7,7 @@ export const commandNew = async (options: { template?: string }) => {
 		if (template === "bun-hono-react-template" || template === "web") {
 			repoUrl = "https://github.com/chneau/bun-hono-react-template";
 		}
-		await $`git clone --depth 1 ${repoUrl} .`;
-		await $`rm -rf .git`;
+		await $`bunx degit ${repoUrl} .`;
 	} else {
 		await $`bun init -y .`;
 	}
