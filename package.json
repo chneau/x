@@ -8,8 +8,8 @@
 		"all": "bun run upgrade; bun run check; bun run lint"
 	},
 	"dependencies": {
-		"cdk8s": "^2.70.46",
-		"cdk8s-plus-33": "^2.4.23",
+		"cdk8s": "^2.70.47",
+		"cdk8s-plus-33": "^2.4.24",
 		"commander": "^14.0.3",
 		"p-queue": "^9.1.0",
 		"zod": "^4.3.6"
