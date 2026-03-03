@@ -142,12 +142,14 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 	if (!hasDependencies) return false;
 	const expected = {
 		upgrade: "bun update --latest",
-		check: "bun run --sequential check:deno check:oxlint check:biome lint",
+		check:
+			"bun run --sequential check:deno check:oxlint check:biome check:export lint",
 		"check:deno": "deno fmt --use-tabs --quiet",
 		"check:oxlint": "oxlint --fix-dangerously --quiet",
 		"check:biome": "timeout 3s biome check --write --unsafe .",
+		"check:export": "ts-unused-exports tsconfig.json",
 		lint: "tsc --noEmit",
-		all: "bun run --sequential upgrade check:deno check:oxlint check:biome lint",
+		all: "bun run --sequential upgrade check:deno check:oxlint check:biome check:export lint",
 	};
 	for (const [key, value] of Object.entries(expected)) {
 		if (
