@@ -149,7 +149,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 		"check:biome": "timeout 3s biome check --write --unsafe .",
 		"check:export": "ts-unused-exports tsconfig.json",
 		lint: "tsc --noEmit",
-		all: "bun run --sequential upgrade check:deno check:oxlint check:biome check:export lint",
+		all: "bun run --sequential upgrade check",
 	};
 	for (const [key, value] of Object.entries(expected)) {
 		if (
