@@ -3,14 +3,14 @@
 		"start": "bun --watch index.ts",
 		"deploy": "bun _gen && bun _deploy.ts && x upgrade",
 		"upgrade": "bun update --latest",
-		"clean": "rm -rf dist",
-		"check": "bun run --sequential clean check:deno check:oxlint check:biome check:export lint",
+		"check": "bun run --sequential check:clean check:deno check:oxlint check:biome check:export lint",
 		"check:deno": "deno fmt --use-tabs --quiet",
 		"check:oxlint": "oxlint --fix-dangerously --quiet",
 		"check:biome": "timeout 3s biome check --write --unsafe .",
 		"check:export": "ts-unused-exports tsconfig.json",
 		"lint": "tsc --noEmit",
-		"all": "bun run --sequential upgrade check"
+		"all": "bun run --sequential upgrade check",
+		"check:clean": "rm -rf dist out build"
 	},
 	"dependencies": {
 		"cdk8s": "^2.70.51",
