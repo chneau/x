@@ -9,17 +9,17 @@
 		"check:biome": "timeout 3s biome check --write --unsafe .",
 		"check:export": "ts-unused-exports tsconfig.json",
 		"lint": "tsc --noEmit",
-		"all": "bun run --sequential upgrade check:deno check:oxlint check:biome check:export lint"
+		"all": "bun run --sequential upgrade check"
 	},
 	"dependencies": {
-		"cdk8s": "^2.70.50",
-		"cdk8s-plus-33": "^2.4.34",
+		"cdk8s": "^2.70.51",
+		"cdk8s-plus-33": "^2.4.37",
 		"commander": "^14.0.3",
 		"p-queue": "^9.1.0",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.5",
+		"@biomejs/biome": "^2.4.6",
 		"@types/bun": "^1.3.10",
 		"typescript": "^5.9.3"
 	}
