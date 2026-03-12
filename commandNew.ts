@@ -55,5 +55,7 @@ export const commandNew = async (options: { template?: string }) => {
 		await $`echo node_modules > .gitignore`;
 	}
 
+	await $`rm -rf CLAUDE.md`;
+
 	await $`bun run all`;
 };
