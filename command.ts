@@ -146,7 +146,7 @@ const managePackagejson = async (dir: string): Promise<boolean> => {
 			"bun run --sequential --no-exit-on-error check:clean check:deno check:oxlint check:biome check:export lint",
 		"check:clean": "rm -rf dist out build",
 		"check:deno": "deno fmt --use-tabs --quiet",
-		"check:oxlint": "oxlint --fix-dangerously --quiet",
+		"check:oxlint": "oxlint --fix-dangerously --fix-suggestions --fix --quiet",
 		"check:biome": "timeout 3s biome check --write --unsafe .",
 		"check:export": "ts-unused-exports tsconfig.json",
 		lint: "tsc --noEmit",
