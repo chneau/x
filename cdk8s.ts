@@ -99,17 +99,48 @@ const createIngresses = (chart: Chart, service: Service, hosts: string[]) => {
 	}
 };
 
+const createTraefikIngressRoutesYaml = (
+	service: Service,
+	hosts: string[],
+	namespace: string,
+	port: number,
+): string => {
+	const yamls = hosts.map((host) => {
+		const sanitizedHost = host.replace(/\.|:|\//g, "-");
+		return `apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ${sanitizedHost}
+  namespace: ${namespace}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(\`${host}\`)
+      kind: Rule
+      services:
+        - name: ${service.name}
+          port: ${port}
+  tls:
+    certResolver: le`;
+	});
+
+	return yamls.join("\n---\n");
+};
+
 type createDeploymentProps = {
 	serviceAlias: string;
 	registry: DeployRegistry;
 	image: DeployImage;
 	service: NormalDeployService;
+	ingress: string;
 };
 export const createDeployment = async ({
 	serviceAlias,
 	registry,
 	image,
 	service,
+	ingress,
 }: createDeploymentProps) => {
 	const app = new App({ outputFileExtension: ".yml" });
 
@@ -172,7 +203,18 @@ export const createDeployment = async ({
 	});
 	const _service = deployment.exposeViaService({ name: image.imageName });
 
-	createIngresses(chart, _service, service.endpoints);
+	let yaml = app.synthYaml();
+	if (ingress === "traefik") {
+		const traefikYaml = createTraefikIngressRoutesYaml(
+			_service,
+			service.endpoints,
+			service.namespace,
+			service.port,
+		);
+		yaml = `${yaml}\n---\n${traefikYaml}`;
+	} else {
+		createIngresses(chart, _service, service.endpoints);
+	}
 
-	return app.synthYaml();
+	return yaml;
 };

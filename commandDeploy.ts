@@ -44,6 +44,7 @@ const serviceBase = z.object({
 	memoryRequest: z.string().optional(),
 	memoryLimit: z.string().optional(),
 	endpoints: z.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)),
+	ingress: z.enum(["nginx", "traefik"]).optional(),
 });
 
 const normalServiceSchema = serviceBase.extend({
@@ -54,6 +55,7 @@ const normalServiceSchema = serviceBase.extend({
 	readOnlyRootFilesystem:
 		serviceBase.shape.readOnlyRootFilesystem.default(false),
 	endpoints: serviceBase.shape.endpoints.default([]),
+	ingress: serviceBase.shape.ingress.default("nginx"),
 });
 
 export type NormalDeployService = z.infer<typeof normalServiceSchema>;
@@ -167,6 +169,7 @@ const createTemplateDeploy = async () => {
 				file: "kubeconfig",
 				context: "my-context",
 				namespace: "my-namespace",
+				ingress: "nginx",
 				env: {
 					ENV: "value",
 				},
@@ -285,6 +288,7 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 			registry,
 			image,
 			service,
+			ingress: service.ingress,
 		});
 		console.log(`... ✅ Created deployment for ${serviceAlias}`);
 
