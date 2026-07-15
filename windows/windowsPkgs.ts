@@ -1,21 +1,18 @@
 import { $ } from "bun";
 import { commandExists } from "../helpers";
-import { bunPkgs } from "../pkgs";
+import { bunPkgs, type Pkg } from "../pkgs";
 
-type Pkg = {
-	name: string;
-	check: () => Promise<boolean>;
-	install: () => Promise<unknown>;
-};
+type WinPkg = Pkg & { type: "winget" | "bun" };
 
-const wingetIt = (id: string, cmd?: string) => ({
+const wingetIt = (id: string, cmd?: string): WinPkg => ({
 	name: id,
+	type: "winget",
 	check: async () => await commandExists(cmd ?? id),
 	install: async () =>
 		await $`powershell.exe -Command "winget install --id ${id} -e --source winget --accept-package-agreements --accept-source-agreements"`,
 });
 
-const wingetPkgs: Pkg[] = [
+const wingetPkgs: WinPkg[] = [
 	wingetIt("Git.Git", "git"),
 	wingetIt("GoLang.Go", "go"),
 	wingetIt("OpenJS.NodeJS", "node"),
@@ -28,4 +25,7 @@ const wingetPkgs: Pkg[] = [
 	wingetIt("JanDeDobbeleer.OhMyPosh", "oh-my-posh"),
 ];
 
-export const windowsPackages: Pkg[] = [...wingetPkgs, ...bunPkgs];
+export const windowsPackages: WinPkg[] = [
+	...wingetPkgs,
+	...(bunPkgs as WinPkg[]),
+];

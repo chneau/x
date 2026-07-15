@@ -8,7 +8,7 @@ import {
 	optionsSchema,
 } from "./doctorCommon";
 import { canSudo, commandExists, isRoot } from "./helpers";
-import { pkgs } from "./pkgs";
+import { installAptPkgs, installBrewPkgs, installBunPkgs, pkgs } from "./pkgs";
 import { commandDoctorWindows } from "./windows/commandDoctorWindows";
 
 if (process.platform !== "win32") {
@@ -90,10 +90,58 @@ const doctorPkgs = async () => {
 	}
 
 	console.log("❌ Some packages are not installed");
-	console.table(missing.map((p) => ({ name: p.name })));
+	console.table(missing.map((p) => ({ name: p.name, type: p.type })));
 
-	for (const pkg of missing) {
-		console.log(`🕒 Installing ${pkg.name}...`);
+	const aptToInstall = missing.filter((p) => p.type === "apt");
+	const brewToInstall = missing.filter((p) => p.type === "brew");
+	const bunToInstall = missing.filter((p) => p.type === "bun");
+	const customToInstall = missing.filter((p) => p.type === "custom");
+
+	// Batch Apt
+	if (aptToInstall.length > 0) {
+		const names = aptToInstall.map((p) => p.name);
+		console.log(`🕒 Batch installing apt packages: ${names.join(", ")}...`);
+		try {
+			await installAptPkgs(names);
+			console.log(`✅ Installed apt packages: ${names.join(", ")}`);
+		} catch {
+			console.log(
+				`❌ Failed to install some apt packages: ${names.join(", ")}`,
+			);
+		}
+	}
+
+	// Batch Brew
+	if (brewToInstall.length > 0) {
+		const names = brewToInstall.map((p) => p.name);
+		console.log(`🕒 Batch installing brew packages: ${names.join(", ")}...`);
+		try {
+			await installBrewPkgs(names);
+			console.log(`✅ Installed brew packages: ${names.join(", ")}`);
+		} catch {
+			console.log(
+				`❌ Failed to install some brew packages: ${names.join(", ")}`,
+			);
+		}
+	}
+
+	// Batch Bun
+	if (bunToInstall.length > 0) {
+		const names = bunToInstall.map((p) => p.name);
+		console.log(`🕒 Batch installing bun packages: ${names.join(", ")}...`);
+		try {
+			await installBunPkgs(names);
+			console.log(`✅ Installed bun packages: ${names.join(", ")}`);
+		} catch {
+			console.log(
+				`❌ Failed to install some bun packages: ${names.join(", ")}`,
+			);
+		}
+	}
+
+	// Individual Custom installs
+	for (const pkg of customToInstall) {
+		console.log(`🕒 Installing custom package ${pkg.name}...`);
 		await pkg
 			.install()
 			.then(() => console.log(`✅ Installed ${pkg.name}`))
