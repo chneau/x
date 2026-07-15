@@ -9,5 +9,84 @@
 	},
 	"dotfiles": {
 		"baseUrl": "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/"
+	},
+	"packages": {
+		"apt": [
+			"git",
+			"gcc",
+			"make",
+			"curl",
+			"wget",
+			"unzip",
+			"zsh",
+			"bash",
+			"tree"
+		],
+		"brew": [
+			{ "name": "aichat" },
+			{ "name": "bpytop" },
+			{ "name": "dive" },
+			{
+				"name": "dldash/core/docker-color-output",
+				"check": "docker-color-output"
+			},
+			{ "name": "docker-compose" },
+			{ "name": "go" },
+			{ "name": "graphviz", "check": "dot" },
+			{ "name": "helm" },
+			{ "name": "hyperfine" },
+			{ "name": "kubecolor" },
+			{ "name": "kubectx" },
+			{ "name": "kubernetes-cli", "check": "kubectl" },
+			{ "name": "lazygit" },
+			{ "name": "node" },
+			{ "name": "openjdk", "check": "javac" },
+			{ "name": "pipx" },
+			{ "name": "stern" },
+			{ "name": "zsh" }
+		],
+		"bun": [
+			{ "name": "@biomejs/biome", "check": "biome" },
+			{ "name": "@github/copilot", "check": "copilot" },
+			{ "name": "@google/gemini-cli", "check": "gemini" },
+			{ "name": "@qwen-code/qwen-code", "check": "qwen" },
+			{ "name": "opencode-ai", "check": "opencode" },
+			{ "name": "concurrently" },
+			{ "name": "depcheck" },
+			{ "name": "fkill-cli", "check": "fkill" },
+			{ "name": "http-server" },
+			{ "name": "live-server" },
+			{ "name": "nodemon" },
+			{ "name": "npm-check-updates" },
+			{ "name": "npm-check" },
+			{ "name": "oxlint" },
+			{ "name": "prettier" },
+			{ "name": "ts-unused-exports" },
+			{ "name": "tsx" },
+			{ "name": "typesync" },
+			{ "name": "ungit" }
+		],
+		"custom": [
+			{
+				"name": "uv",
+				"command": "curl -LsSf https://astral.sh/uv/install.sh | sh"
+			},
+			{
+				"name": "brew",
+				"env": {
+					"CI": "1",
+					"HOME": "/tmp"
+				},
+				"command": "curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash"
+			},
+			{
+				"name": "deno",
+				"command": "curl -fsSL https://deno.land/install.sh | sh"
+			},
+			{
+				"name": "dotnet",
+				"command": "curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0"
+			}
+		]
 	}
 }
