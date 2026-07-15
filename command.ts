@@ -45,11 +45,27 @@ export const command = async () => {
 	).catch(console.error);
 };
 
+const isCSharpProject = async (dir: string): Promise<boolean> => {
+	try {
+		const files = await readdir(dir, { withFileTypes: true });
+		return files.some(
+			(file) =>
+				file.isFile() &&
+				(file.name.endsWith(".csproj") || file.name.endsWith(".sln")),
+		);
+	} catch {
+		return false;
+	}
+};
+
 const purify = async (dir: string) => {
 	console.log(`🚀 Managing files in ${dir}`);
 	await removeFileIfExists(dir, "package-lock.json").catch(console.error);
 	await removeFileIfExists(dir, "yarn.lock").catch(console.error);
-	const packageJsonExists = await managePackagejson(dir).catch(console.error);
+	const isCSharp = await isCSharpProject(dir);
+	const packageJsonExists = await managePackagejson(dir, isCSharp).catch(
+		console.error,
+	);
 	const tsconfigExists = await manageTsconfig(dir).catch(console.error);
 	await manageGitignore(dir, packageJsonExists ?? false).catch(console.error);
 	if (packageJsonExists) {
@@ -64,6 +80,11 @@ const purify = async (dir: string) => {
 			Bun.$`timeout 6s bun run --cwd=${dir} check`.nothrow(),
 			Bun.$`timeout 3s bun run --cwd=${dir} lint`.nothrow(),
 		]).catch(console.error);
+	} else if (isCSharp && packageJsonExists) {
+		console.log("🚀 Checking C# project!");
+		await Bun.$`timeout 60s bun run --cwd=${dir} check`
+			.nothrow()
+			.catch(console.error);
 	}
 	console.log("🎉 Done with all files");
 };
@@ -132,36 +153,72 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 	return true;
 };
 
-const managePackagejson = async (dir: string): Promise<boolean> => {
+type PackageJson = {
+	scripts?: Record<string, string>;
+	prettier?: unknown;
+	dependencies?: unknown;
+	devDependencies?: unknown;
+};
+
+const managePackagejson = async (
+	dir: string,
+	isCSharp: boolean,
+): Promise<boolean> => {
 	const filename = `${dir}/package.json`;
 	const file = Bun.file(filename);
-	if (!(await file.exists())) return false;
-	const pkgJson = await file.json();
-	pkgJson.scripts ??= {};
-	const hasDependencies = pkgJson.dependencies || pkgJson.devDependencies;
-	if (!hasDependencies) return false;
-	const expected = {
-		upgrade: "bun update --latest",
-		check:
-			"bun run --sequential --no-exit-on-error check:clean check:deno check:oxlint check:biome check:export lint",
-		"check:clean": "rm -rf dist out build",
-		"check:deno": "deno fmt --use-tabs --quiet",
-		"check:oxlint": "oxlint --fix-dangerously --fix-suggestions --fix --quiet",
-		"check:biome": "timeout 3s biome check --write --unsafe .",
-		"check:export": "ts-unused-exports tsconfig.json",
-		lint: "tsc --noEmit",
-		all: "bun run --sequential --no-exit-on-error upgrade check",
-	};
+	let pkgJson: PackageJson;
+	if (!(await file.exists())) {
+		if (isCSharp) {
+			pkgJson = { scripts: {} };
+		} else {
+			return false;
+		}
+	} else {
+		pkgJson = (await file.json()) as PackageJson;
+		pkgJson.scripts ??= {};
+	}
+	if (!isCSharp) {
+		const hasDependencies = pkgJson.dependencies || pkgJson.devDependencies;
+		if (!hasDependencies) return false;
+	}
+	const expected = isCSharp
+		? {
+				check:
+					"bun run --sequential --no-exit-on-error check:deno check:biome check:dotnet check:csharpier",
+				"check:deno": "deno fmt --use-tabs --quiet",
+				"check:biome": "biome format --write .",
+				"check:dotnet":
+					"dotnet format style --severity info --no-restore --exclude-diagnostics IDE0130",
+				"check:csharpier": "dotnet csharpier format .",
+				upgrade: "dotnet tool update --all; dotnet outdated --upgrade",
+				"upgrade-minor": "bun run upgrade --version-lock=Minor",
+				"upgrade-major": "bun run upgrade --version-lock=Major",
+				all: "bun run upgrade; bun run check",
+			}
+		: {
+				upgrade: "bun update --latest",
+				check:
+					"bun run --sequential --no-exit-on-error check:clean check:deno check:oxlint check:biome check:export lint",
+				"check:clean": "rm -rf dist out build",
+				"check:deno": "deno fmt --use-tabs --quiet",
+				"check:oxlint":
+					"oxlint --fix-dangerously --fix-suggestions --fix --quiet",
+				"check:biome": "timeout 3s biome check --write --unsafe .",
+				"check:export": "ts-unused-exports tsconfig.json",
+				lint: "tsc --noEmit",
+				all: "bun run --sequential --no-exit-on-error upgrade check",
+			};
 	for (const [key, value] of Object.entries(expected)) {
 		if (
-			typeof pkgJson.scripts[key] === "string" &&
+			typeof pkgJson.scripts?.[key] === "string" &&
 			pkgJson.scripts[key].includes("bun") &&
 			(pkgJson.scripts[key].includes("--filter") ||
 				pkgJson.scripts[key].includes("--cwd"))
 		) {
 			continue;
 		}
-		if (pkgJson.scripts[key] === value) continue;
+		if (pkgJson.scripts?.[key] === value) continue;
+		pkgJson.scripts ??= {};
 		pkgJson.scripts[key] = value;
 	}
 	pkgJson.prettier = undefined;
