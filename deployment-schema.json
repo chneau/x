@@ -243,12 +243,12 @@
 									"pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
 								}
 							},
-							"extends": {
-								"type": "string"
-							},
 							"ingress": {
 								"type": "string",
 								"enum": ["nginx", "traefik"]
+							},
+							"extends": {
+								"type": "string"
 							}
 						},
 						"required": ["extends"]
