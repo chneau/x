@@ -7,6 +7,7 @@ import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
 import { commandNew } from "./commandNew";
 import { commandUpgrade } from "./commandUpgrade";
+import config from "./config.json";
 import { getCurrentVersion } from "./helpers";
 
 const version = await getCurrentVersion();
@@ -34,8 +35,8 @@ program
 program
 	.command("doctor")
 	.description("Check the system for issues")
-	.option("-e, --email <email>", "Git email", "charles63500@gmail.com")
-	.option("-n, --name <name>", "Git name", "chneau")
+	.option("-e, --email <email>", "Git email", config.git.defaultEmail)
+	.option("-n, --name <name>", "Git name", config.git.defaultName)
 	.option("--no-updates", "Skip system updates")
 	.action(commandDoctor);
 

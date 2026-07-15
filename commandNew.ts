@@ -1,12 +1,11 @@
 import { $ } from "bun";
+import config from "./config.json";
 
 export const commandNew = async (options: { template?: string }) => {
 	const { template } = options;
 	if (template) {
-		let repoUrl = template;
-		if (template === "bun-hono-react-template" || template === "web") {
-			repoUrl = "https://github.com/chneau/bun-hono-react-template";
-		}
+		const repoUrl =
+			config.templates[template as keyof typeof config.templates] ?? template;
 		await $`bunx degit --force ${repoUrl} .`;
 	} else {
 		await $`bun init -y .`;

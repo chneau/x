@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import config from "./config.json";
 import {
 	type DoctorOptions,
 	doctorGitconfig,
@@ -116,7 +117,7 @@ const checkLogFix = async (
 };
 
 const doctorDotfiles = async () => {
-	const baseFiles = "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/";
+	const baseFiles = config.dotfiles.baseUrl;
 	const files = [".bashrc", ".zshrc", ".aliases", ".profile"];
 	const results = await Promise.all(
 		files.map(async (name) => ({

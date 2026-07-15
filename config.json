@@ -1,0 +1,13 @@
+{
+	"git": {
+		"defaultName": "chneau",
+		"defaultEmail": "charles63500@gmail.com"
+	},
+	"templates": {
+		"web": "https://github.com/chneau/bun-hono-react-template",
+		"bun-hono-react-template": "https://github.com/chneau/bun-hono-react-template"
+	},
+	"dotfiles": {
+		"baseUrl": "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/"
+	}
+}
