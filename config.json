@@ -87,6 +87,17 @@
 				"name": "dotnet",
 				"command": "curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0"
 			}
+		],
+		"winget": [
+			{ "name": "Git.Git", "check": "git" },
+			{ "name": "GoLang.Go", "check": "go" },
+			{ "name": "OpenJS.NodeJS", "check": "node" },
+			{ "name": "DenoLand.Deno", "check": "deno" },
+			{ "name": "JesseDuffield.Lazygit", "check": "lazygit" },
+			{ "name": "Microsoft.VisualStudioCode", "check": "code" },
+			{ "name": "Kubernetes.kubectl", "check": "kubectl" },
+			{ "name": "Helm.Helm", "check": "helm" },
+			{ "name": "JanDeDobbeleer.OhMyPosh", "check": "oh-my-posh" }
 		]
 	}
 }

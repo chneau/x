@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import config from "../config.json";
 import { commandExists } from "../helpers";
 import { bunPkgs, type Pkg } from "../pkgs";
 
@@ -12,18 +13,9 @@ const wingetIt = (id: string, cmd?: string): WinPkg => ({
 		await $`powershell.exe -Command "winget install --id ${id} -e --source winget --accept-package-agreements --accept-source-agreements"`,
 });
 
-const wingetPkgs: WinPkg[] = [
-	wingetIt("Git.Git", "git"),
-	wingetIt("GoLang.Go", "go"),
-	wingetIt("OpenJS.NodeJS", "node"),
-	wingetIt("DenoLand.Deno", "deno"),
-	wingetIt("JesseDuffield.Lazygit", "lazygit"),
-	wingetIt("Microsoft.VisualStudioCode", "code"),
-	wingetIt("Kubernetes.kubectl", "kubectl"),
-	wingetIt("Helm.Helm", "helm"),
-	// Common tools
-	wingetIt("JanDeDobbeleer.OhMyPosh", "oh-my-posh"),
-];
+const wingetPkgs: WinPkg[] = config.packages.winget.map((pkg) =>
+	wingetIt(pkg.name, "check" in pkg ? pkg.check : undefined),
+);
 
 export const windowsPackages: WinPkg[] = [
 	...wingetPkgs,
