@@ -14,7 +14,7 @@ bun install -g @chneau/x
 ### Project Management
 
 ```bash
-x [dir] [-r depth]
+x [dir] [-r|--recursive <depth>]
 ```
 
 Recursively scans directories (up to depth 4) to:
@@ -25,21 +25,24 @@ Recursively scans directories (up to depth 4) to:
   options.
 - **Git Integration:** Ensures `.gitignore` includes `node_modules` for Bun
   projects.
-- **Auto-Maintenance:** Runs `bun upgrade`, `check` (lint), and `lint` (tsc)
-  automatically.
+- **Auto-Maintenance:** Runs `bun run upgrade`, `bun run check`, and
+  `bun run lint` automatically.
 
 ### New Project
 
 ```bash
-x new
+x new [-t|--template <template-name|repo>]
 ```
 
 Initializes a new Bun project in the current directory:
 
-- Runs `bun init -y`.
-- Sets up standard `package.json` scripts.
-- Configures basic `README.md` and `.gitignore`.
-- Automatically runs `x` to enforce standards.
+- **Template support:** If specified, fetches the template via `degit` (supports
+  templates configured in config like `web` / `bun-hono-react-template` or a
+  full git repository URL).
+- **Default init:** Otherwise, runs `bun init -y`.
+- **Scripts:** Sets up standard `package.json` scripts.
+- **Files:** Configures basic `README.md` and `.gitignore`.
+- **Enforcement:** Automatically runs `x` to enforce standards.
 
 ### Formatting
 
@@ -50,7 +53,7 @@ x fmt
 Formats files across different languages using:
 
 - **Web:** `deno fmt`, `oxlint`, `biome`.
-- **Go:** `go fmt`.
+- **Go:** `go fmt ./...`.
 - **C#:** `dotnet csharpier`.
 
 ### Deployment
@@ -71,7 +74,7 @@ Deploys to Kubernetes using JSON configuration (e.g., `.deploy.json`).
 ### System Setup (Doctor)
 
 ```bash
-x doctor [--email <email>] [--name <name>] [--no-updates]
+x doctor [-e|--email <email>] [-n|--name <name>] [--no-updates]
 ```
 
 Sets up and maintains your development environment (Linux/Windows):
