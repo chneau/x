@@ -10,7 +10,7 @@ import {
 	Probe,
 	Secret,
 	type Service,
-} from "cdk8s-plus-33";
+} from "cdk8s-plus-34";
 import type {
 	DeployImage,
 	DeployRegistry,
