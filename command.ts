@@ -76,10 +76,9 @@ const purify = async (dir: string) => {
 	}
 	if (tsconfigExists) {
 		console.log("🚀 Checking and linting!");
-		await Promise.all([
-			Bun.$`timeout 6s bun run --cwd=${dir} check`.nothrow(),
-			Bun.$`timeout 3s bun run --cwd=${dir} lint`.nothrow(),
-		]).catch(console.error);
+		await Bun.$`timeout 6s bun run --cwd=${dir} check`
+			.nothrow()
+			.catch(console.error);
 	} else if (isCSharp && packageJsonExists) {
 		console.log("🚀 Checking C# project!");
 		await Bun.$`timeout 60s bun run --cwd=${dir} check`

@@ -1,3 +1,4 @@
+import { basename } from "node:path";
 import { $ } from "bun";
 import config from "./config.json";
 
@@ -16,8 +17,8 @@ export const commandNew = async (options: { template?: string }) => {
 	const pkgFile = Bun.file("package.json");
 	if (await pkgFile.exists()) {
 		const {
-			module,
-			type,
+			module: _module,
+			type: _type,
 			private: _,
 			peerDependencies,
 			devDependencies,
@@ -29,7 +30,7 @@ export const commandNew = async (options: { template?: string }) => {
 		const newPkg = {
 			...pkgJson,
 			version: undefined,
-			name: process.cwd().split("/").pop(),
+			name: basename(process.cwd()),
 			scripts: {
 				start: "bun index.ts",
 				dev: "bun --watch index.ts",

@@ -29,7 +29,7 @@ program
 
 program
 	.command("upgrade")
-	.description("Uprade x to the latest version")
+	.description("Upgrade x to the latest version")
 	.action(commandUpgrade);
 
 program
