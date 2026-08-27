@@ -187,7 +187,7 @@ const managePackagejson = async (
 				"check:deno": "deno fmt --use-tabs --quiet",
 				"check:biome": "biome format --write .",
 				"check:dotnet":
-					"dotnet format style --severity info --no-restore --exclude-diagnostics IDE0130",
+					"dotnet format --severity info --no-restore --exclude-diagnostics IDE0130 CA1869",
 				"check:csharpier": "dotnet csharpier format .",
 				upgrade: "dotnet tool update --all; dotnet outdated --upgrade",
 				"upgrade-minor": "bun run upgrade --version-lock=Minor",
