@@ -1,6 +1,5 @@
 import { readdir } from "node:fs/promises";
 import { cpus } from "node:os";
-import { program } from "commander";
 import PQueue from "p-queue";
 import type { ZodAny, z } from "zod";
 
@@ -29,19 +28,30 @@ const getDirectoriesDeep = async (path = ".", level = 0) => {
 	return result;
 };
 
-export const command = async () => {
-	let cwd: string = program.processedArgs[0];
-	if (typeof cwd !== "string") cwd = ".";
-	let recursive: number = program.opts().recursive;
-	if (typeof recursive !== "number") recursive = 0;
+type CommandOptions = {
+	recursive?: number;
+	dryRun?: boolean;
+};
+
+export const command = async (dir = ".", options: CommandOptions = {}) => {
+	const cwd = typeof dir === "string" && dir.trim().length > 0 ? dir : ".";
+	const recursive = options.recursive ?? 0;
 	if (recursive > 4) {
-		console.error("👁️ Recursion level is too high");
+		console.error("👁️ Recursion level is too high (maximum allowed is 4)");
 		process.exit(1);
 	}
+	const isDryRun = Boolean(options.dryRun);
+	if (isDryRun) {
+		console.log(
+			"🔍 Running in dry-run mode (no files or scripts will be modified/executed)",
+		);
+	}
 	const directories = await getDirectoriesDeep(cwd, recursive);
-	const queue = new PQueue({ concurrency: cpus().length * 2 });
+	const queue = new PQueue({ concurrency: Math.max(cpus().length * 2, 2) });
 	await Promise.all(
-		directories.map((dir) => queue.add(() => purify(dir).catch(console.error))),
+		directories.map((d) =>
+			queue.add(() => purify(d, isDryRun).catch(console.error)),
+		),
 	).catch(console.error);
 };
 
@@ -58,16 +68,27 @@ const isCSharpProject = async (dir: string): Promise<boolean> => {
 	}
 };
 
-const purify = async (dir: string) => {
+const purify = async (dir: string, dryRun = false) => {
 	console.log(`🚀 Managing files in ${dir}`);
-	await removeFileIfExists(dir, "package-lock.json").catch(console.error);
-	await removeFileIfExists(dir, "yarn.lock").catch(console.error);
-	const isCSharp = await isCSharpProject(dir);
-	const packageJsonExists = await managePackagejson(dir, isCSharp).catch(
+	await removeFileIfExists(dir, "package-lock.json", dryRun).catch(
 		console.error,
 	);
-	const tsconfigExists = await manageTsconfig(dir).catch(console.error);
-	await manageGitignore(dir, packageJsonExists ?? false).catch(console.error);
+	await removeFileIfExists(dir, "yarn.lock", dryRun).catch(console.error);
+	const isCSharp = await isCSharpProject(dir);
+	const packageJsonExists = await managePackagejson(
+		dir,
+		isCSharp,
+		dryRun,
+	).catch(console.error);
+	const tsconfigExists = await manageTsconfig(dir, dryRun).catch(console.error);
+	await manageGitignore(dir, packageJsonExists ?? false, dryRun).catch(
+		console.error,
+	);
+	if (dryRun) {
+		console.log(`🔍 [dry-run] Would run checks/upgrades for ${dir}`);
+		console.log(`🎉 Done previewing files in ${dir}`);
+		return;
+	}
 	if (packageJsonExists) {
 		console.log("🚀 Updating everything!");
 		await Bun.$`timeout 20s bun run --cwd=${dir} upgrade`
@@ -91,10 +112,15 @@ const purify = async (dir: string) => {
 const removeFileIfExists = async (
 	dir: string,
 	filename: string,
+	dryRun = false,
 ): Promise<boolean> => {
 	const path = `${dir}/${filename}`;
 	const file = Bun.file(path);
 	if (!(await file.exists())) return false;
+	if (dryRun) {
+		console.log(`🔍 [dry-run] Would remove ${path}`);
+		return true;
+	}
 	await Bun.$`rm -f ${path}`.nothrow();
 	console.log(`✅ Done with ${path}`);
 	return true;
@@ -103,6 +129,7 @@ const removeFileIfExists = async (
 const manageGitignore = async (
 	dir: string,
 	isBunProject: boolean,
+	dryRun = false,
 ): Promise<boolean> => {
 	const filename = `${dir}/.gitignore`;
 	const file = Bun.file(filename);
@@ -118,12 +145,19 @@ const manageGitignore = async (
 	if (isBunProject) {
 		lines.add("node_modules");
 	}
+	if (dryRun) {
+		console.log(`🔍 [dry-run] Would update ${filename}`);
+		return true;
+	}
 	await Bun.write(file, [...lines].join("\n"));
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
 
-const manageTsconfig = async (dir: string): Promise<boolean> => {
+const manageTsconfig = async (
+	dir: string,
+	dryRun = false,
+): Promise<boolean> => {
 	const filename = `${dir}/tsconfig.json`;
 	const file = Bun.file(filename);
 	if (!(await file.exists())) return false;
@@ -146,6 +180,10 @@ const manageTsconfig = async (dir: string): Promise<boolean> => {
 		if (tsconfig.compilerOptions[key] === value) continue;
 		tsconfig.compilerOptions[key] = value;
 	}
+	if (dryRun) {
+		console.log(`🔍 [dry-run] Would update ${filename}`);
+		return true;
+	}
 	await Bun.write(file, JSON.stringify(tsconfig, null, 2));
 	await Bun.$`biome check --write --unsafe ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);
@@ -162,6 +200,7 @@ type PackageJson = {
 const managePackagejson = async (
 	dir: string,
 	isCSharp: boolean,
+	dryRun = false,
 ): Promise<boolean> => {
 	const filename = `${dir}/package.json`;
 	const file = Bun.file(filename);
@@ -221,6 +260,10 @@ const managePackagejson = async (
 		pkgJson.scripts[key] = value;
 	}
 	pkgJson.prettier = undefined;
+	if (dryRun) {
+		console.log(`🔍 [dry-run] Would update ${filename}`);
+		return true;
+	}
 	await Bun.write(file, JSON.stringify(pkgJson, null, 2));
 	await Bun.$`biome check --write --unsafe ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);

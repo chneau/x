@@ -22,8 +22,49 @@ const version = await getCurrentVersion();
 program.name("x").description("chneau's utility CLI").version(version);
 
 program
-	.option("-r, --recursive [number]", "Recursion level", Number.parseFloat)
 	.argument("[dir]", "Directory to manage", ".")
+	.option(
+		"-r, --recursive <number>",
+		"Recursion level (0-4)",
+		(val) => {
+			const parsed = Number.parseInt(val, 10);
+			if (Number.isNaN(parsed) || parsed < 0 || parsed > 4) {
+				throw new Error("Recursion level must be an integer between 0 and 4");
+			}
+			return parsed;
+		},
+		0,
+	)
+	.option(
+		"-d, --dry-run",
+		"Preview changes without modifying files or running commands",
+		false,
+	)
+	.action(command);
+
+program
+	.command("purify")
+	.description(
+		"Sanitize & modernize project configuration (package.json, tsconfig, gitignore)",
+	)
+	.argument("[dir]", "Directory to manage", ".")
+	.option(
+		"-r, --recursive <number>",
+		"Recursion level (0-4)",
+		(val) => {
+			const parsed = Number.parseInt(val, 10);
+			if (Number.isNaN(parsed) || parsed < 0 || parsed > 4) {
+				throw new Error("Recursion level must be an integer between 0 and 4");
+			}
+			return parsed;
+		},
+		0,
+	)
+	.option(
+		"-d, --dry-run",
+		"Preview changes without modifying files or running commands",
+		false,
+	)
 	.action(command);
 
 program.command("fmt").description("Format all files").action(commandFmt);
