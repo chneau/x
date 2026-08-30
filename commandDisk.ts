@@ -85,6 +85,61 @@ const getCleanupTargets = (home: string): CleanupTarget[] => [
 		description: ".NET global tool downloads",
 	},
 	{
+		name: "Homebrew Bottle Cache",
+		path: `${home}/.cache/Homebrew`,
+		description: "Cached Homebrew downloads and bottle tarballs",
+	},
+	{
+		name: "Goimports / Gopls Cache",
+		path: `${home}/.cache/goimports`,
+		description: "Go tooling and language server index cache",
+	},
+	{
+		name: "Pip Wheel Cache",
+		path: `${home}/.cache/pip`,
+		description: "Cached Python wheel packages",
+	},
+	{
+		name: "Node-Gyp Build Cache",
+		path: `${home}/.cache/node-gyp`,
+		description: "Cached node-gyp native build headers",
+	},
+	{
+		name: "Playwright Browser Binaries",
+		path: `${home}/.cache/ms-playwright`,
+		description: "Playwright headless browser downloads",
+	},
+	{
+		name: "Playwright Go Cache",
+		path: `${home}/.cache/ms-playwright-go`,
+		description: "Playwright Go driver browser downloads",
+	},
+	{
+		name: "Cypress Browser Cache",
+		path: `${home}/.cache/Cypress`,
+		description: "Cypress testing browser binaries",
+	},
+	{
+		name: "Yarn Cache",
+		path: `${home}/.cache/yarn`,
+		description: "Yarn package cache",
+	},
+	{
+		name: "Cargo Registry Cache",
+		path: `${home}/.cargo/registry/cache`,
+		description: "Cached Rust crate downloads (.crate files)",
+	},
+	{
+		name: "Cargo Git DB",
+		path: `${home}/.cargo/git/db`,
+		description: "Cached git dependencies for Cargo",
+	},
+	{
+		name: "pnpm Store",
+		path: `${home}/.local/share/pnpm/store`,
+		description: "Global pnpm content-addressable package store",
+	},
+	{
 		name: "VS Code Server Binaries",
 		path: `${home}/.vscode-server/bin`,
 		description: "Outdated remote VS Code server versions",
