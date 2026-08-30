@@ -118,15 +118,23 @@ export const commandDisk = async (options: DiskOptions) => {
 
 		console.log("\n=== Target Cleanup Directories ===");
 		for (const target of targets) {
-			const res = await $`du -sk ${target.path} 2>/dev/null`.quiet().nothrow().text();
+			const res = await $`du -sk ${target.path} 2>/dev/null`
+				.quiet()
+				.nothrow()
+				.text();
 			const sizeStr = res.split(/\s+/)[0];
 			const kb = Number.parseInt(sizeStr || "0", 10);
 			if (kb > 0) {
-				const humanRes = await $`du -sh ${target.path} 2>/dev/null`.quiet().nothrow().text();
+				const humanRes = await $`du -sh ${target.path} 2>/dev/null`
+					.quiet()
+					.nothrow()
+					.text();
 				const humanSize = humanRes.split(/\s+/)[0] || `${kb}K`;
 				totalFoundBytes += kb * 1024;
 				console.log(
-					`  • ${target.name.padEnd(26)} [${humanSize.padEnd(6)}]: ${target.path}`,
+					`  • ${target.name.padEnd(26)} [${humanSize.padEnd(
+						6,
+					)}]: ${target.path}`,
 				);
 
 				if (!options.dryRun) {
@@ -137,21 +145,33 @@ export const commandDisk = async (options: DiskOptions) => {
 
 		// Go cache cleaning
 		if (await commandExists("go")) {
-			const goCache = (await $`go env GOCACHE 2>/dev/null`.quiet().nothrow().text()).trim();
-			const goModCache = (await $`go env GOMODCACHE 2>/dev/null`.quiet().nothrow().text()).trim();
+			const goCache = (
+				await $`go env GOCACHE 2>/dev/null`.quiet().nothrow().text()
+			).trim();
+			const goModCache = (
+				await $`go env GOMODCACHE 2>/dev/null`.quiet().nothrow().text()
+			).trim();
 			let goKb = 0;
 			if (goCache) {
-				const s = (await $`du -sk ${goCache} 2>/dev/null`.quiet().nothrow().text()).split(/\s+/)[0];
+				const s = (
+					await $`du -sk ${goCache} 2>/dev/null`.quiet().nothrow().text()
+				).split(/\s+/)[0];
 				goKb += Number.parseInt(s || "0", 10);
 			}
 			if (goModCache) {
-				const s = (await $`du -sk ${goModCache} 2>/dev/null`.quiet().nothrow().text()).split(/\s+/)[0];
+				const s = (
+					await $`du -sk ${goModCache} 2>/dev/null`.quiet().nothrow().text()
+				).split(/\s+/)[0];
 				goKb += Number.parseInt(s || "0", 10);
 			}
 
 			if (goKb > 0) {
 				const mb = (goKb / 1024).toFixed(1);
-				console.log(`  • ${"Go Build & Mod Cache".padEnd(26)} [${(mb + "M").padEnd(6)}]: go clean`);
+				console.log(
+					`  • ${"Go Build & Mod Cache".padEnd(26)} [${(`${mb}M`).padEnd(
+						6,
+					)}]: go clean`,
+				);
 				if (!options.dryRun) {
 					await $`go clean -cache -modcache`.nothrow();
 				}
@@ -164,7 +184,9 @@ export const commandDisk = async (options: DiskOptions) => {
 			totalFoundBytes > 1024 * 1024 * 1024 ? `${totalGb} GB` : `${totalMb} MB`;
 
 		if (options.dryRun) {
-			console.log(`\n✨ Dry-run complete. Potential space to reclaim: ~${summarySize}`);
+			console.log(
+				`\n✨ Dry-run complete. Potential space to reclaim: ~${summarySize}`,
+			);
 			console.log("👉 Run `x disk --clean` to execute the cleanup.");
 		} else {
 			console.log(`\n🎉 Cleanup complete! Reclaimed up to ~${summarySize}.`);
@@ -214,5 +236,7 @@ export const commandDisk = async (options: DiskOptions) => {
 	}
 
 	// 5. Cleanup hint
-	console.log("\n💡 Tip: Run `x disk --dry-run` to preview cleanup or `x disk --clean` to automatically reclaim space.");
+	console.log(
+		"\n💡 Tip: Run `x disk --dry-run` to preview cleanup or `x disk --clean` to automatically reclaim space.",
+	);
 };
