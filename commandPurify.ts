@@ -33,7 +33,10 @@ type CommandOptions = {
 	dryRun?: boolean;
 };
 
-export const command = async (dir = ".", options: CommandOptions = {}) => {
+export const commandPurify = async (
+	dir = ".",
+	options: CommandOptions = {},
+) => {
 	const cwd = typeof dir === "string" && dir.trim().length > 0 ? dir : ".";
 	const recursive = options.recursive ?? 0;
 	if (recursive > 4) {

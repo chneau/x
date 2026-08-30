@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { $ } from "bun";
-import { command as commandPurify } from "./command";
+import { commandPurify } from "./commandPurify";
 import config from "./config.json";
 
 export const commandNew = async (

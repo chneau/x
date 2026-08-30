@@ -1,18 +1,18 @@
 #!/usr/bin/env bun
 import "./verboseShell";
 import { program } from "commander";
-import { command } from "./command";
-import { commandCleanPrs } from "./commandCleanPrs";
+import {
+	commandCleanShortcuts,
+	commandDeck,
+	commandDeckDisk,
+} from "./commandDeck";
 import { commandDeploy } from "./commandDeploy";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
 import { commandHelm } from "./commandHelm";
 import { commandNew } from "./commandNew";
-import {
-	commandCleanShortcuts,
-	commandSteamdeckDisk,
-	commandSteamdeckUpdate,
-} from "./commandSteamdeck";
+import { commandPrs } from "./commandPrs";
+import { commandPurify } from "./commandPurify";
 import { commandUpgrade } from "./commandUpgrade";
 import config from "./config.json";
 import { getCurrentVersion } from "./helpers";
@@ -44,7 +44,7 @@ program
 		"Preview changes without modifying files or running commands",
 		false,
 	)
-	.action(command);
+	.action(commandPurify);
 
 program
 	.command("fmt")
@@ -65,7 +65,7 @@ const prs = program
 		"Number of concurrent workers",
 		Number.parseInt,
 	)
-	.action(commandCleanPrs);
+	.action(commandPrs);
 
 prs
 	.command("clean")
@@ -79,16 +79,16 @@ prs
 		"Number of concurrent workers",
 		Number.parseInt,
 	)
-	.action(commandCleanPrs);
+	.action(commandPrs);
 
-const steamdeck = program
+const deck = program
 	.command("deck")
 	.description("Manage, clean, and update Steam Deck")
 	.option("-h, --host <host>", "SSH host name", "steamdeck")
 	.option("-s, --sudo-password <password>", "Sudo password for Steam Deck")
-	.action(commandSteamdeckUpdate);
+	.action(commandDeck);
 
-steamdeck
+deck
 	.command("shortcuts")
 	.description("Clean broken non-Steam shortcuts from shortcuts.vdf")
 	.option("-h, --host <host>", "SSH host name", "steamdeck")
@@ -96,13 +96,13 @@ steamdeck
 	.option("-d, --dry-run", "Preview broken shortcuts without deleting")
 	.action(commandCleanShortcuts);
 
-steamdeck
+deck
 	.command("disk")
 	.description("Inspect disk space usage and categories on Steam Deck")
 	.option("-h, --host <host>", "SSH host name", "steamdeck")
-	.action(commandSteamdeckDisk);
+	.action(commandDeckDisk);
 
-steamdeck
+deck
 	.command("update")
 	.description("Update Discover flatpaks, SteamOS, and Decky Loader")
 	.option("-h, --host <host>", "SSH host name", "steamdeck")
@@ -111,7 +111,7 @@ steamdeck
 	.option("--no-os", "Skip SteamOS update")
 	.option("--no-games", "Skip Steam game/runtime updates check")
 	.option("--no-decky", "Skip Decky Loader update")
-	.action(commandSteamdeckUpdate);
+	.action(commandDeck);
 
 program
 	.command("deploy")

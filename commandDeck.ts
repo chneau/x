@@ -297,7 +297,7 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 
 // ── Command: disk ─────────────────────────────────────────────────────────────
 
-export const commandSteamdeckDisk = async (options: SteamdeckOptions) => {
+export const commandDeckDisk = async (options: SteamdeckOptions) => {
 	const host = options.host || DEFAULT_HOST;
 	console.log(`🔍 Inspecting disk usage on ${host}...`);
 
@@ -367,7 +367,7 @@ export const commandSteamdeckDisk = async (options: SteamdeckOptions) => {
 
 // ── Command: update ───────────────────────────────────────────────────────────
 
-export const commandSteamdeckUpdate = async (options: UpdateOptions) => {
+export const commandDeck = async (options: UpdateOptions) => {
 	const host = options.host || DEFAULT_HOST;
 	const sudoPassword = options.sudoPassword;
 

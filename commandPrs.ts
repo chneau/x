@@ -82,7 +82,7 @@ const processPr = async (pr: PullRequest): Promise<string> => {
 	return `[SKIPPED OTHER AUTHOR (${author})] ${repo}#${num}: ${title}`;
 };
 
-export const commandCleanPrs = async (options: {
+export const commandPrs = async (options: {
 	owner?: string;
 	concurrency?: number;
 }) => {
