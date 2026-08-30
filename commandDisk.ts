@@ -233,15 +233,27 @@ export const commandDisk = async (options: DiskOptions) => {
 			}
 		}
 
-		// Docker system prune
+		// Homebrew cache and old formula prune
+		if (await commandExists("brew")) {
+			console.log(
+				`  • ${"Homebrew Cleanup".padEnd(26)} [${"prune".padEnd(
+					6,
+				)}]: brew cleanup -s --prune=all`,
+			);
+			if (!options.dryRun) {
+				await $`brew cleanup -s --prune=all`.quiet().nothrow();
+			}
+		}
+
+		// Docker system prune (all unused images + volumes)
 		if (await commandExists("docker")) {
 			console.log(
 				`  • ${"Docker System Prune".padEnd(26)} [${"prune".padEnd(
 					6,
-				)}]: docker system prune -f`,
+				)}]: docker system prune -af --volumes`,
 			);
 			if (!options.dryRun) {
-				await $`docker system prune -f`.quiet().nothrow();
+				await $`docker system prune -af --volumes`.quiet().nothrow();
 			}
 		}
 
