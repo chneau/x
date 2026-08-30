@@ -233,6 +233,50 @@ export const commandDisk = async (options: DiskOptions) => {
 			}
 		}
 
+		// Docker system prune
+		if (await commandExists("docker")) {
+			console.log(
+				`  • ${"Docker System Prune".padEnd(26)} [${"prune".padEnd(
+					6,
+				)}]: docker system prune -f`,
+			);
+			if (!options.dryRun) {
+				await $`docker system prune -f`.quiet().nothrow();
+			}
+		}
+
+		// Journalctl logs vacuum (systemd)
+		if (await commandExists("journalctl")) {
+			console.log(
+				`  • ${"Systemd Journal Logs".padEnd(26)} [${"vacuum".padEnd(
+					6,
+				)}]: journalctl --vacuum-time=3d`,
+			);
+			if (!options.dryRun) {
+				await $`journalctl --vacuum-time=3d 2>/dev/null`.quiet().nothrow();
+			}
+		}
+
+		// Clean old temporary files in /tmp (files older than 3 days or bun/npm build artifacts)
+		try {
+			const tmpSizeStr = (
+				await $`du -sk /tmp 2>/dev/null`.quiet().nothrow().text()
+			).split(/\s+/)[0];
+			const tmpKb = Number.parseInt(tmpSizeStr || "0", 10);
+			if (tmpKb > 1024 * 50) {
+				const tmpMb = (tmpKb / 1024).toFixed(1);
+				console.log(
+					`  • ${"/tmp Temporary Files".padEnd(26)} [${(`${tmpMb}M`).padEnd(
+						6,
+					)}]: /tmp build artifacts & stale files`,
+				);
+				if (!options.dryRun) {
+					// Safely delete stale temp files older than 2 days owned by the user or root temp leftovers
+					await $`find /tmp -mindepth 1 -maxdepth 1 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow();
+				}
+			}
+		} catch {}
+
 		const totalMb = (totalFoundBytes / (1024 * 1024)).toFixed(2);
 		const totalGb = (totalFoundBytes / (1024 * 1024 * 1024)).toFixed(2);
 		const summarySize =
