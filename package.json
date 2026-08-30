@@ -13,14 +13,14 @@
 		"check:clean": "rm -rf dist out build"
 	},
 	"dependencies": {
-		"cdk8s": "^2.70.96",
+		"cdk8s": "^2.70.98",
 		"cdk8s-plus-34": "^2.0.52",
 		"commander": "^15.0.0",
 		"p-queue": "^9.3.3",
-		"zod": "^4.4.3"
+		"zod": "^4.5.4"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.10",
+		"@biomejs/biome": "^2.5.11",
 		"@types/bun": "^1.4.0",
 		"typescript": "^7.0.2"
 	}
