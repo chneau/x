@@ -7,6 +7,7 @@ import {
 	commandDeckDisk,
 } from "./commandDeck";
 import { commandDeploy } from "./commandDeploy";
+import { commandDisk } from "./commandDisk";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
 import { commandHelm } from "./commandHelm";
@@ -131,6 +132,27 @@ program
 	.command("upgrade")
 	.description("Upgrade x CLI to the latest version")
 	.action(commandUpgrade);
+
+program
+	.command("disk")
+	.description("Analyze disk space usage and clean caches in home directory")
+	.option(
+		"-c, --clean",
+		"Automatically clean reclaimable caches and temporary files",
+		false,
+	)
+	.option(
+		"-d, --dry-run",
+		"Preview space that will be reclaimed without deleting",
+		false,
+	)
+	.option(
+		"-t, --top <number>",
+		"Number of largest files to display in inspection mode",
+		(val) => Number.parseInt(val, 10),
+		15,
+	)
+	.action(commandDisk);
 
 program
 	.command("doctor")
