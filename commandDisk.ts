@@ -1,5 +1,6 @@
 import { $ } from "bun";
 import { commandExists } from "./helpers";
+import { commandDiskWindows } from "./windows/commandDiskWindows";
 
 type DiskOptions = {
 	clean?: boolean;
@@ -157,6 +158,11 @@ const getCleanupTargets = (home: string): CleanupTarget[] => [
 ];
 
 export const commandDisk = async (options: DiskOptions) => {
+	if (process.platform === "win32") {
+		await commandDiskWindows(options);
+		return;
+	}
+
 	const home = Bun.env.HOME || "/home/c";
 	const topCount = options.top || 15;
 	const shouldClean = options.clean || options.dryRun;

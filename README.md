@@ -112,6 +112,22 @@ Performs async repo discovery, validates client dry-run (`--dry-run=client`) and
 server dry-run (`--dry-run=server`), and upgrades only if dry runs succeed (or
 reports failure details).
 
+### Disk Inspection & Cache Cleaning
+
+```bash
+# Linux / macOS
+x disk [-c|--clean] [-d|--dry-run] [-t|--top <count>]
+
+# Windows (native or via WSL with powershell.exe)
+x disk-windows [-c|--clean] [-d|--dry-run] [-t|--top <count>]
+```
+
+Analyzes disk space usage, lists largest files and directories, and cleans
+package / dev caches (Bun, UV, NPM, NuGet, Pip, Playwright, Puppeteer, Gradle,
+Go, Docker, Temp files, and Recycle Bin / Trash).
+
+### Development Environment Setup (Doctor)
+
 ```bash
 x doctor [-e|--email <email>] [-n|--name <name>] [--no-updates]
 ```

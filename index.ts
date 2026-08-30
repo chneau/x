@@ -18,6 +18,7 @@ import { commandPurify } from "./commandPurify";
 import { commandUpgrade } from "./commandUpgrade";
 import config from "./config.json";
 import { getCurrentVersion } from "./helpers";
+import { commandDiskWindows } from "./windows/commandDiskWindows";
 
 const version = await getCurrentVersion();
 
@@ -186,6 +187,29 @@ program
 		15,
 	)
 	.action(commandDisk);
+
+program
+	.command("disk-windows")
+	.description(
+		"Analyze disk space usage and clean caches in Windows (native or via WSL)",
+	)
+	.option(
+		"-c, --clean",
+		"Automatically clean reclaimable caches and temporary files",
+		false,
+	)
+	.option(
+		"-d, --dry-run",
+		"Preview space that will be reclaimed without deleting",
+		false,
+	)
+	.option(
+		"-t, --top <number>",
+		"Number of largest files to display in inspection mode",
+		(val) => Number.parseInt(val, 10),
+		15,
+	)
+	.action(commandDiskWindows);
 
 program
 	.command("doctor")
