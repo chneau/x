@@ -5,6 +5,7 @@ import { command } from "./command";
 import { commandDeploy } from "./commandDeploy";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
+import { commandHelm } from "./commandHelm";
 import { commandNew } from "./commandNew";
 import { commandUpgrade } from "./commandUpgrade";
 import config from "./config.json";
@@ -26,6 +27,14 @@ program
 	.description("Deploy to kubernetes")
 	.allowExcessArguments()
 	.action(commandDeploy);
+
+program
+	.command("helm")
+	.description("Manage and upgrade Helm charts in current kubernetes context")
+	.argument("[releases...]", "Specific release names to check or upgrade")
+	.option("-u, --upgrade", "Upgrade the releases if dry runs pass")
+	.option("-a, --all", "Check or upgrade all releases")
+	.action(commandHelm);
 
 program
 	.command("upgrade")

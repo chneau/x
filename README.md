@@ -71,7 +71,23 @@ Deploys to Kubernetes using JSON configuration (e.g., `.deploy.json`).
 - **Templates:** Generates a `.deploy.json` template if no configuration is
   found.
 
-### System Setup (Doctor)
+### Helm Chart Management
+
+```bash
+x helm [releases...] [-u|--upgrade] [-a|--all]
+```
+
+Scans and checks Helm charts in the current Kubernetes context:
+
+- **Check all releases**: `x helm`
+- **Check specific releases**: `x helm ingress-nginx` or
+  `x helm cert-manager harbor`
+- **Upgrade specific release**: `x helm ingress-nginx -u`
+- **Upgrade all passing releases**: `x helm -u -a`
+
+Performs async repo discovery, validates client dry-run (`--dry-run=client`) and
+server dry-run (`--dry-run=server`), and upgrades only if dry runs succeed (or
+reports failure details).
 
 ```bash
 x doctor [-e|--email <email>] [-n|--name <name>] [--no-updates]
