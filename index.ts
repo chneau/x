@@ -8,6 +8,11 @@ import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
 import { commandHelm } from "./commandHelm";
 import { commandNew } from "./commandNew";
+import {
+	commandCleanShortcuts,
+	commandSteamdeckDisk,
+	commandSteamdeckUpdate,
+} from "./commandSteamdeck";
 import { commandUpgrade } from "./commandUpgrade";
 import config from "./config.json";
 import { getCurrentVersion } from "./helpers";
@@ -36,6 +41,38 @@ program
 		Number.parseInt,
 	)
 	.action(commandCleanPrs);
+
+const steamdeck = program
+	.command("steamdeck")
+	.description("Manage, clean, and update Steam Deck")
+	.option("-h, --host <host>", "SSH host name", "steamdeck")
+	.option("-s, --sudo-password <password>", "Sudo password for Steam Deck")
+	.action(commandSteamdeckUpdate);
+
+steamdeck
+	.command("clean-shortcuts")
+	.description("Clean broken non-Steam shortcuts from shortcuts.vdf")
+	.option("-h, --host <host>", "SSH host name", "steamdeck")
+	.option("-p, --shortcuts-path <path>", "Custom shortcuts.vdf path")
+	.option("-d, --dry-run", "Preview broken shortcuts without deleting")
+	.action(commandCleanShortcuts);
+
+steamdeck
+	.command("disk")
+	.description("Inspect disk space usage and categories on Steam Deck")
+	.option("-h, --host <host>", "SSH host name", "steamdeck")
+	.action(commandSteamdeckDisk);
+
+steamdeck
+	.command("update")
+	.description("Update Discover flatpaks, SteamOS, and Decky Loader")
+	.option("-h, --host <host>", "SSH host name", "steamdeck")
+	.option("-s, --sudo-password <password>", "Sudo password for Steam Deck")
+	.option("--no-flatpaks", "Skip Flatpak/Discover updates")
+	.option("--no-os", "Skip SteamOS update")
+	.option("--no-games", "Skip Steam game/runtime updates check")
+	.option("--no-decky", "Skip Decky Loader update")
+	.action(commandSteamdeckUpdate);
 
 program
 	.command("deploy")
