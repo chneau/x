@@ -2,6 +2,7 @@
 import "./verboseShell";
 import { program } from "commander";
 import { command } from "./command";
+import { commandCleanPrs } from "./commandCleanPrs";
 import { commandDeploy } from "./commandDeploy";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
@@ -21,6 +22,20 @@ program
 	.action(command);
 
 program.command("fmt").description("Format all files").action(commandFmt);
+
+program
+	.command("clean-prs")
+	.description("Clean and merge/close open Renovate and Dependabot PRs")
+	.option(
+		"-o, --owner <owner>",
+		"GitHub owner / user (defaults to current gh user)",
+	)
+	.option(
+		"-c, --concurrency <number>",
+		"Number of concurrent workers",
+		Number.parseInt,
+	)
+	.action(commandCleanPrs);
 
 program
 	.command("deploy")
