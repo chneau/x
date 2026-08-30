@@ -10,6 +10,7 @@ import { commandDeploy } from "./commandDeploy";
 import { commandDisk } from "./commandDisk";
 import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
+import { commandGitclean } from "./commandGitclean";
 import { commandHelm } from "./commandHelm";
 import { commandNew } from "./commandNew";
 import { commandPrs } from "./commandPrs";
@@ -21,6 +22,38 @@ import { getCurrentVersion } from "./helpers";
 const version = await getCurrentVersion();
 
 program.name("x").description("chneau's utility CLI").version(version);
+
+program
+	.command("gitclean")
+	.description(
+		"Prune, repack, fetch prune, and clean git repositories in parallel",
+	)
+	.argument("[dir]", "Directory to search for git repositories", ".")
+	.option(
+		"-r, --recursive <number>",
+		"Recursion depth limit",
+		(val) => {
+			const parsed = Number.parseInt(val, 10);
+			if (Number.isNaN(parsed) || parsed < 0) {
+				throw new Error("Recursion depth must be a non-negative integer");
+			}
+			return parsed;
+		},
+		1,
+	)
+	.option(
+		"-c, --concurrency <number>",
+		"Number of concurrent workers",
+		(val) => {
+			const parsed = Number.parseInt(val, 10);
+			if (Number.isNaN(parsed) || parsed < 1) {
+				throw new Error("Concurrency must be a positive integer");
+			}
+			return parsed;
+		},
+		10,
+	)
+	.action(commandGitclean);
 
 program
 	.command("purify")

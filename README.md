@@ -32,6 +32,23 @@ Recursively scans directories (up to depth 4) to:
 - **Dry-run Mode:** Use `-d` / `--dry-run` to preview all actions safely without
   making changes.
 
+### Git Clean & Maintenance
+
+```bash
+x gitclean [dir] [-r|--recursive <depth>] [-c|--concurrency <workers>]
+```
+
+Finds git repositories in parallel (up to recursion depth) and performs full
+cleanup:
+
+- `git reflog expire --expire=now --all`
+- `git repack -ad`
+- `git prune`
+- `git fetch --prune --prune-tags`
+- `GIT_ASK_YESNO=false git clean -ffdx`
+
+Concurrency defaults to 10 workers, and recursion depth defaults to 1.
+
 ### Project Initialization
 
 ```bash
