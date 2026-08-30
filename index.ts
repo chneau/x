@@ -22,27 +22,6 @@ const version = await getCurrentVersion();
 program.name("x").description("chneau's utility CLI").version(version);
 
 program
-	.argument("[dir]", "Directory to manage", ".")
-	.option(
-		"-r, --recursive <number>",
-		"Recursion level (0-4)",
-		(val) => {
-			const parsed = Number.parseInt(val, 10);
-			if (Number.isNaN(parsed) || parsed < 0 || parsed > 4) {
-				throw new Error("Recursion level must be an integer between 0 and 4");
-			}
-			return parsed;
-		},
-		0,
-	)
-	.option(
-		"-d, --dry-run",
-		"Preview changes without modifying files or running commands",
-		false,
-	)
-	.action(command);
-
-program
 	.command("purify")
 	.description(
 		"Sanitize & modernize project configuration (package.json, tsconfig, gitignore)",
@@ -67,10 +46,29 @@ program
 	)
 	.action(command);
 
-program.command("fmt").description("Format all files").action(commandFmt);
-
 program
-	.command("clean-prs")
+	.command("fmt")
+	.description(
+		"Format code across all supported languages (Deno, Biome, Go, C#)",
+	)
+	.action(commandFmt);
+
+const prs = program
+	.command("prs")
+	.description("Manage GitHub pull requests (merge/close bot & dependency PRs)")
+	.option(
+		"-o, --owner <owner>",
+		"GitHub owner / user (defaults to current gh user)",
+	)
+	.option(
+		"-c, --concurrency <number>",
+		"Number of concurrent workers",
+		Number.parseInt,
+	)
+	.action(commandCleanPrs);
+
+prs
+	.command("clean")
 	.description("Clean and merge/close open Renovate and Dependabot PRs")
 	.option(
 		"-o, --owner <owner>",
@@ -84,14 +82,14 @@ program
 	.action(commandCleanPrs);
 
 const steamdeck = program
-	.command("steamdeck")
+	.command("deck")
 	.description("Manage, clean, and update Steam Deck")
 	.option("-h, --host <host>", "SSH host name", "steamdeck")
 	.option("-s, --sudo-password <password>", "Sudo password for Steam Deck")
 	.action(commandSteamdeckUpdate);
 
 steamdeck
-	.command("clean-shortcuts")
+	.command("shortcuts")
 	.description("Clean broken non-Steam shortcuts from shortcuts.vdf")
 	.option("-h, --host <host>", "SSH host name", "steamdeck")
 	.option("-p, --shortcuts-path <path>", "Custom shortcuts.vdf path")
@@ -117,7 +115,7 @@ steamdeck
 
 program
 	.command("deploy")
-	.description("Deploy to kubernetes")
+	.description("Deploy CDK8s Kubernetes manifests to cluster")
 	.allowExcessArguments()
 	.action(commandDeploy);
 
@@ -131,12 +129,14 @@ program
 
 program
 	.command("upgrade")
-	.description("Upgrade x to the latest version")
+	.description("Upgrade x CLI to the latest version")
 	.action(commandUpgrade);
 
 program
 	.command("doctor")
-	.description("Check the system for issues")
+	.description(
+		"Diagnose and repair development environment tools & git configs",
+	)
 	.option("-e, --email <email>", "Git email", config.git.defaultEmail)
 	.option("-n, --name <name>", "Git name", config.git.defaultName)
 	.option("--no-updates", "Skip system updates")
@@ -144,8 +144,9 @@ program
 
 program
 	.command("new")
-	.description("Create new bun project")
-	.option("-t, --template <template-name>", "Template name or git repo")
+	.description("Scaffold and initialize a new project")
+	.argument("[dir]", "Target directory for the new project", ".")
+	.option("-t, --template <template-name>", "Template name or git repository")
 	.action(commandNew);
 
 program.parse();

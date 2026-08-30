@@ -11,10 +11,12 @@ bun install -g @chneau/x
 
 ## Usage
 
-### Project Management
+Running `x` or `x --help` displays all available commands.
+
+### Project Sanitization & Modernization
 
 ```bash
-x [dir] [-r|--recursive <depth>]
+x purify [dir] [-r|--recursive <depth>] [-d|--dry-run]
 ```
 
 Recursively scans directories (up to depth 4) to:
@@ -27,27 +29,31 @@ Recursively scans directories (up to depth 4) to:
   projects.
 - **Auto-Maintenance:** Runs `bun run upgrade`, `bun run check`, and
   `bun run lint` automatically.
+- **Dry-run Mode:** Use `-d` / `--dry-run` to preview all actions safely without
+  making changes.
 
-### New Project
+### Project Initialization
 
 ```bash
-x new [-t|--template <template-name|repo>]
+x init [dir] [-t|--template <template-name|repo>]
+# Aliases: x create, x new
 ```
 
-Initializes a new Bun project in the current directory:
+Initializes a new project (in current directory or specified target `[dir]`):
 
 - **Template support:** If specified, fetches the template via `degit` (supports
   templates configured in config like `web` (`web-orpc`) / `web-hono` or a full
   git repository URL).
 - **Default init:** Otherwise, runs `bun init -y`.
-- **Scripts:** Sets up standard `package.json` scripts.
+- **Scripts & Standards:** Automatically runs `purify` to set up standard
+  scripts and configurations.
 - **Files:** Configures basic `README.md` and `.gitignore`.
-- **Enforcement:** Automatically runs `x` to enforce standards.
 
-### Formatting
+### Code Formatting
 
 ```bash
-x fmt
+x format
+# Alias: x fmt
 ```
 
 Formats files across different languages using:
