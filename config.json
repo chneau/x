@@ -4,7 +4,10 @@
 		"defaultEmail": "charles63500@gmail.com"
 	},
 	"templates": {
-		"web": "https://github.com/chneau/bun-hono-react-template",
+		"web": "https://github.com/chneau/bun-orpc-react-template",
+		"web-orpc": "https://github.com/chneau/bun-orpc-react-template",
+		"web-hono": "https://github.com/chneau/bun-hono-react-template",
+		"bun-orpc-react-template": "https://github.com/chneau/bun-orpc-react-template",
 		"bun-hono-react-template": "https://github.com/chneau/bun-hono-react-template"
 	},
 	"dotfiles": {

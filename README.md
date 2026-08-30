@@ -37,8 +37,8 @@ x new [-t|--template <template-name|repo>]
 Initializes a new Bun project in the current directory:
 
 - **Template support:** If specified, fetches the template via `degit` (supports
-  templates configured in config like `web` / `bun-hono-react-template` or a
-  full git repository URL).
+  templates configured in config like `web` (`web-orpc`) / `web-hono` or a full
+  git repository URL).
 - **Default init:** Otherwise, runs `bun init -y`.
 - **Scripts:** Sets up standard `package.json` scripts.
 - **Files:** Configures basic `README.md` and `.gitignore`.
