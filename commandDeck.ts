@@ -268,23 +268,11 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 	const newData = dumpVdf(good);
 	console.log(`Writing updated shortcuts to ${shortcutsPath}...`);
 
-	const proc = Bun.spawn(
-		[
-			"ssh",
-			"-o",
-			"ConnectTimeout=30",
-			"-o",
-			"BatchMode=yes",
-			host,
-			`cp ${shortcutsPath} ${shortcutsPath}.bak && cat > ${shortcutsPath}`,
-		],
-		{
-			stdin: newData,
-		},
-	);
-	const writeExit = await proc.exited;
+	const writeRes = await $`echo -n ${newData.toString(
+		"base64",
+	)} | base64 -d | ssh -o ConnectTimeout=30 -o BatchMode=yes ${host} ${`cp ${shortcutsPath} ${shortcutsPath}.bak && cat > ${shortcutsPath}`}`.nothrow();
 
-	if (writeExit !== 0) {
+	if (writeRes.exitCode !== 0) {
 		console.error("❌ Failed to write updated shortcuts.vdf");
 		process.exit(1);
 	}
