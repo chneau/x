@@ -15,24 +15,10 @@
 						"type": "string"
 					},
 					"username": {
-						"anyOf": [
-							{
-								"type": "string"
-							},
-							{
-								"type": "null"
-							}
-						]
+						"type": ["string", "null"]
 					},
 					"password": {
-						"anyOf": [
-							{
-								"type": "string"
-							},
-							{
-								"type": "null"
-							}
-						]
+						"type": ["string", "null"]
 					}
 				},
 				"required": ["hostname"]
