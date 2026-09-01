@@ -2,7 +2,7 @@ import { $ } from "bun";
 import config from "./config.json";
 import { commandExists } from "./helpers";
 
-type PkgType = "apt" | "brew" | "bun" | "custom" | "winget";
+type PkgType = "apt" | "brew" | "bun" | "custom" | "winget" | "uv" | "dotnet";
 
 export type Pkg = {
 	name: string;
@@ -32,6 +32,23 @@ const brewIt = (name: string, check?: string) =>
 const bunIt = (name: string, check?: string) =>
 	createPkg(name, "bun", () => $`bun install --force --global ${name}`, check);
 
+const uvIt = (name: string, check?: string) =>
+	createPkg(
+		name,
+		"uv",
+		() => $`uv tool install --force ${name}`.nothrow(),
+		check,
+	);
+
+const dotnetIt = (name: string, check?: string) =>
+	createPkg(
+		name,
+		"dotnet",
+		() =>
+			$`dotnet tool install --global ${name} || dotnet tool update --global ${name}`.nothrow(),
+		check,
+	);
+
 const aptPkgs: Pkg[] = config.packages.apt.map(aptIt);
 
 const brewPkgs: Pkg[] = config.packages.brew.map((pkg) =>
@@ -40,6 +57,14 @@ const brewPkgs: Pkg[] = config.packages.brew.map((pkg) =>
 
 const bunPkgsMapped: Pkg[] = config.packages.bun.map((pkg) =>
 	bunIt(pkg.name, "check" in pkg ? pkg.check : undefined),
+);
+
+const uvPkgs: Pkg[] = (config.packages.uv || []).map((pkg) =>
+	uvIt(pkg.name, "check" in pkg ? (pkg.check as string) : undefined),
+);
+
+const dotnetPkgs: Pkg[] = (config.packages.dotnet || []).map((pkg) =>
+	dotnetIt(pkg.name, "check" in pkg ? (pkg.check as string) : undefined),
 );
 
 const customPkgs: Pkg[] = config.packages.custom.map((pkg) =>
@@ -69,6 +94,18 @@ export const installBunPkgs = async (names: string[]) => {
 	await $`bun install --force --global ${names}`;
 };
 
+export const installUvPkgs = async (names: string[]) => {
+	for (const name of names) {
+		await $`uv tool install --force ${name}`.nothrow();
+	}
+};
+
+export const installDotnetPkgs = async (names: string[]) => {
+	for (const name of names) {
+		await $`dotnet tool install --global ${name} || dotnet tool update --global ${name}`.nothrow();
+	}
+};
+
 export const bunPkgs = bunPkgsMapped;
 
 export const pkgs: Pkg[] = [
@@ -76,4 +113,6 @@ export const pkgs: Pkg[] = [
 	...customPkgs,
 	...brewPkgs,
 	...bunPkgsMapped,
+	...uvPkgs,
+	...dotnetPkgs,
 ];

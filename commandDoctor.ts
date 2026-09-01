@@ -4,11 +4,20 @@ import {
 	type DoctorOptions,
 	doctorGitconfig,
 	doctorGithub,
+	doctorInotify,
 	doctorSsh,
+	doctorSshPermissions,
 	optionsSchema,
 } from "./doctorCommon";
 import { canSudo, commandExists, isRoot } from "./helpers";
-import { installAptPkgs, installBrewPkgs, installBunPkgs, pkgs } from "./pkgs";
+import {
+	installAptPkgs,
+	installBrewPkgs,
+	installBunPkgs,
+	installDotnetPkgs,
+	installUvPkgs,
+	pkgs,
+} from "./pkgs";
 import { commandDoctorWindows } from "./windows/commandDoctorWindows";
 
 if (process.platform !== "win32") {
@@ -73,6 +82,44 @@ const doctorUpdateSystem = async () => {
 	await $`bun upgrade`.nothrow();
 	await $`bun update --latest --force --global`.nothrow();
 
+	// UV and UV global tools
+	if (await commandExists("uv")) {
+		console.log("🕒 Updating uv & uv tools...");
+		await $`uv self update`.nothrow();
+		await $`uv tool upgrade --all`.nothrow();
+	}
+
+	// Deno
+	if (await commandExists("deno")) {
+		console.log("🕒 Updating deno...");
+		await $`deno upgrade`.nothrow();
+	}
+
+	// Rustup
+	if (await commandExists("rustup")) {
+		console.log("🕒 Updating rust toolchain...");
+		await $`rustup update`.nothrow();
+	}
+
+	// Dotnet global tools
+	if (await commandExists("dotnet")) {
+		console.log("🕒 Updating dotnet tools...");
+		const toolList = await $`dotnet tool list -g`.quiet().nothrow().text();
+		const lines = toolList.split("\n").slice(2);
+		for (const line of lines) {
+			const toolName = line.trim().split(/\s+/)[0];
+			if (toolName) {
+				await $`dotnet tool update --global ${toolName}`.nothrow();
+			}
+		}
+	}
+
+	// Kubectl Krew plugins
+	if (await commandExists("kubectl-krew")) {
+		console.log("🕒 Updating krew plugins...");
+		await $`kubectl krew upgrade`.nothrow();
+	}
+
 	console.log("✅ System updated");
 };
 
@@ -95,6 +142,8 @@ const doctorPkgs = async () => {
 	const aptToInstall = missing.filter((p) => p.type === "apt");
 	const brewToInstall = missing.filter((p) => p.type === "brew");
 	const bunToInstall = missing.filter((p) => p.type === "bun");
+	const uvToInstall = missing.filter((p) => p.type === "uv");
+	const dotnetToInstall = missing.filter((p) => p.type === "dotnet");
 	const customToInstall = missing.filter((p) => p.type === "custom");
 
 	// Batch Apt
@@ -135,6 +184,32 @@ const doctorPkgs = async () => {
 		} catch {
 			console.log(
 				`❌ Failed to install some bun packages: ${names.join(", ")}`,
+			);
+		}
+	}
+
+	// UV global tools
+	if (uvToInstall.length > 0) {
+		const names = uvToInstall.map((p) => p.name);
+		console.log(`🕒 Installing uv tool packages: ${names.join(", ")}...`);
+		try {
+			await installUvPkgs(names);
+			console.log(`✅ Installed uv tool packages: ${names.join(", ")}`);
+		} catch {
+			console.log(`❌ Failed to install some uv packages: ${names.join(", ")}`);
+		}
+	}
+
+	// Dotnet global tools
+	if (dotnetToInstall.length > 0) {
+		const names = dotnetToInstall.map((p) => p.name);
+		console.log(`🕒 Installing dotnet tool packages: ${names.join(", ")}...`);
+		try {
+			await installDotnetPkgs(names);
+			console.log(`✅ Installed dotnet tool packages: ${names.join(", ")}`);
+		} catch {
+			console.log(
+				`❌ Failed to install some dotnet packages: ${names.join(", ")}`,
 			);
 		}
 	}
@@ -210,8 +285,6 @@ const doctorUserGroups = () =>
 		() => $`sudo usermod -aG docker $USER`.nothrow(),
 	);
 
-// TODO: install dotnet
-
 const doctorZsh = async () => {
 	const whichZsh = (await $`which zsh`.text()).trim();
 	await checkLogFix(
@@ -242,9 +315,13 @@ const commandDoctorLinux = async (options: DoctorOptions) => {
 		doctorDotfiles(),
 		doctorPkgs().then(() =>
 			Promise.all([
-				doctorGitconfig(options).then(doctorSsh).then(doctorGithub),
+				doctorGitconfig(options)
+					.then(doctorSsh)
+					.then(doctorSshPermissions)
+					.then(doctorGithub),
 				doctorZsh(),
 				doctorDocker().then(doctorUserGroups),
+				doctorInotify(),
 			]),
 		),
 	]);

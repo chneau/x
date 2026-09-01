@@ -48,6 +48,63 @@ export const doctorSsh = async () => {
 	}
 };
 
+export const doctorSshPermissions = async () => {
+	if (process.platform === "win32") return;
+	const home = Bun.env.HOME;
+	if (!home) return;
+
+	try {
+		await $`chmod 700 ${home}/.ssh`.nothrow();
+		if (await Bun.file(`${home}/.ssh/id_rsa`).exists()) {
+			await $`chmod 600 ${home}/.ssh/id_rsa`.nothrow();
+		}
+		if (await Bun.file(`${home}/.ssh/id_rsa.pub`).exists()) {
+			await $`chmod 644 ${home}/.ssh/id_rsa.pub`.nothrow();
+		}
+		if (await Bun.file(`${home}/.ssh/authorized_keys`).exists()) {
+			await $`chmod 600 ${home}/.ssh/authorized_keys`.nothrow();
+		}
+		if (await Bun.file(`${home}/.ssh/config`).exists()) {
+			await $`chmod 600 ${home}/.ssh/config`.nothrow();
+		}
+		console.log("✅ SSH permissions verified");
+	} catch {
+		console.log("⚠️ Could not verify/set SSH permissions");
+	}
+};
+
+export const doctorInotify = async () => {
+	if (process.platform === "win32") return;
+	try {
+		const watches = (
+			await $`cat /proc/sys/fs/inotify/max_user_watches`
+				.quiet()
+				.nothrow()
+				.text()
+		).trim();
+		const instances = (
+			await $`cat /proc/sys/fs/inotify/max_user_instances`
+				.quiet()
+				.nothrow()
+				.text()
+		).trim();
+
+		const watchesNum = Number.parseInt(watches, 10);
+		const instancesNum = Number.parseInt(instances, 10);
+
+		if (watchesNum < 524288 || instancesNum < 524288) {
+			console.log("❌ inotify limits are below recommended values (524288)");
+			console.log("🕒 Updating inotify limits in /etc/sysctl.conf...");
+			await $`grep -Fxq "fs.inotify.max_user_watches=524288" /etc/sysctl.conf || echo "fs.inotify.max_user_watches=524288" | sudo tee -a /etc/sysctl.conf`.nothrow();
+			await $`grep -Fxq "fs.inotify.max_user_instances=524288" /etc/sysctl.conf || echo "fs.inotify.max_user_instances=524288" | sudo tee -a /etc/sysctl.conf`.nothrow();
+			await $`sudo sysctl -p`.nothrow();
+			console.log("✅ inotify limits updated");
+		} else {
+			console.log("✅ inotify limits are configured properly");
+		}
+	} catch {}
+};
+
 export const doctorGithub = async () => {
 	if (
 		await $`ssh -T -o "StrictHostKeyChecking no" git@github.com 2>&1`

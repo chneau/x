@@ -49,25 +49,47 @@
 			{ "name": "zsh" }
 		],
 		"bun": [
+			{ "name": "@anthropic-ai/claude-code", "check": "claude" },
 			{ "name": "@biomejs/biome", "check": "biome" },
 			{ "name": "@github/copilot", "check": "copilot" },
-			{ "name": "@google/gemini-cli", "check": "gemini" },
+			{ "name": "@google/jules", "check": "jules" },
 			{ "name": "@qwen-code/qwen-code", "check": "qwen" },
-			{ "name": "opencode-ai", "check": "opencode" },
+			{ "name": "@vegamo/deepcode-cli", "check": "deepcode" },
+			{ "name": "cline" },
 			{ "name": "concurrently" },
 			{ "name": "depcheck" },
 			{ "name": "fkill-cli", "check": "fkill" },
 			{ "name": "http-server" },
+			{ "name": "knip" },
 			{ "name": "live-server" },
 			{ "name": "nodemon" },
 			{ "name": "npm-check-updates" },
 			{ "name": "npm-check" },
+			{ "name": "opencode-ai", "check": "opencode" },
 			{ "name": "oxlint" },
 			{ "name": "prettier" },
+			{ "name": "reasonix" },
 			{ "name": "ts-unused-exports" },
 			{ "name": "tsx" },
 			{ "name": "typesync" },
 			{ "name": "ungit" }
+		],
+		"uv": [
+			{ "name": "bpytop" },
+			{ "name": "livereload" },
+			{ "name": "yt-dlp" }
+		],
+		"dotnet": [
+			{ "name": "CSharpier", "check": "csharpier" },
+			{
+				"name": "CentralisedPackageConverter",
+				"check": "central-pkg-converter"
+			},
+			{ "name": "PowerShell", "check": "pwsh" },
+			{ "name": "Roslynator.DotNet.Cli", "check": "roslynator" },
+			{ "name": "dotnet-ef" },
+			{ "name": "dotnet-outdated-tool", "check": "dotnet-outdated" },
+			{ "name": "dotnet-serve" }
 		],
 		"custom": [
 			{
@@ -89,6 +111,18 @@
 			{
 				"name": "dotnet",
 				"command": "curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0"
+			},
+			{
+				"name": "rtk",
+				"command": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh"
+			},
+			{
+				"name": "agy",
+				"command": "curl -fsSL https://antigravity.google/cli/install.sh | bash"
+			},
+			{
+				"name": "codex",
+				"command": "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh"
 			}
 		],
 		"winget": [
