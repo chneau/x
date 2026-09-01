@@ -142,7 +142,17 @@
 			{ "name": "Helm.Helm", "check": "helm" },
 			{ "name": "JanDeDobbeleer.OhMyPosh", "check": "oh-my-posh" },
 			{ "name": "aristocratos.btop", "check": "btop" },
-			{ "name": "Boyter.scc", "check": "scc" }
+			{ "name": "Boyter.scc", "check": "scc" },
+			{ "name": "GitHub.cli", "check": "gh" },
+			{ "name": "astral-sh.uv", "check": "uv" },
+			{ "name": "Microsoft.DotNet.SDK.10", "check": "dotnet" },
+			{ "name": "Docker.DockerDesktop", "check": "docker" },
+			{ "name": "sharkdp.hyperfine", "check": "hyperfine" },
+			{ "name": "hidetatz.kubecolor", "check": "kubecolor" },
+			{ "name": "stern.stern", "check": "stern" },
+			{ "name": "wagoodman.dive", "check": "dive" },
+			{ "name": "ahmetb.kubectx", "check": "kubectx" },
+			{ "name": "GnuWin32.Tree", "check": "tree" }
 		]
 	}
 }
