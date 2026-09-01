@@ -35,6 +35,7 @@
 				"check": "docker-color-output"
 			},
 			{ "name": "docker-compose" },
+			{ "name": "gh" },
 			{ "name": "go" },
 			{ "name": "graphviz", "check": "dot" },
 			{ "name": "helm" },
