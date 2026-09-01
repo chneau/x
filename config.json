@@ -24,11 +24,13 @@
 			"zsh",
 			"bash",
 			"tree",
-			"tmux"
+			"tmux",
+			"btop"
 		],
 		"brew": [
 			{ "name": "aichat" },
 			{ "name": "bpytop" },
+			{ "name": "btop" },
 			{ "name": "dive" },
 			{
 				"name": "dldash/core/docker-color-output",
@@ -47,6 +49,7 @@
 			{ "name": "node" },
 			{ "name": "openjdk", "check": "javac" },
 			{ "name": "pipx" },
+			{ "name": "scc" },
 			{ "name": "stern" },
 			{ "name": "tmux" },
 			{ "name": "zsh" }
@@ -137,7 +140,9 @@
 			{ "name": "Microsoft.VisualStudioCode", "check": "code" },
 			{ "name": "Kubernetes.kubectl", "check": "kubectl" },
 			{ "name": "Helm.Helm", "check": "helm" },
-			{ "name": "JanDeDobbeleer.OhMyPosh", "check": "oh-my-posh" }
+			{ "name": "JanDeDobbeleer.OhMyPosh", "check": "oh-my-posh" },
+			{ "name": "aristocratos.btop", "check": "btop" },
+			{ "name": "Boyter.scc", "check": "scc" }
 		]
 	}
 }
