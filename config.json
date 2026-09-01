@@ -23,7 +23,8 @@
 			"unzip",
 			"zsh",
 			"bash",
-			"tree"
+			"tree",
+			"tmux"
 		],
 		"brew": [
 			{ "name": "aichat" },
@@ -46,6 +47,7 @@
 			{ "name": "openjdk", "check": "javac" },
 			{ "name": "pipx" },
 			{ "name": "stern" },
+			{ "name": "tmux" },
 			{ "name": "zsh" }
 		],
 		"bun": [
