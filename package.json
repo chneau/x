@@ -13,8 +13,8 @@
 		"check:clean": "rm -rf dist out build"
 	},
 	"dependencies": {
-		"cdk8s": "^2.70.98",
-		"cdk8s-plus-34": "^2.0.52",
+		"cdk8s": "^2.70.100",
+		"cdk8s-plus-34": "^2.0.54",
 		"commander": "^15.0.0",
 		"p-queue": "^9.3.3",
 		"zod": "^4.5.4"
