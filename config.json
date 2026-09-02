@@ -61,6 +61,7 @@
 			{ "name": "@biomejs/biome", "check": "biome" },
 			{ "name": "@github/copilot", "check": "copilot" },
 			{ "name": "@google/jules", "check": "jules" },
+			{ "name": "@posthog/cli", "check": "posthog-cli" },
 			{ "name": "@qwen-code/qwen-code", "check": "qwen" },
 			{ "name": "@vegamo/deepcode-cli", "check": "deepcode" },
 			{ "name": "cf" },
