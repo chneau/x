@@ -203,6 +203,10 @@ export const createDeployment = async ({
 	});
 	const _service = deployment.exposeViaService({ name: image.imageName });
 
+	if (ingress !== "traefik") {
+		createIngresses(chart, _service, service.endpoints);
+	}
+
 	let yaml = app.synthYaml();
 	if (ingress === "traefik") {
 		const traefikYaml = createTraefikIngressRoutesYaml(
@@ -212,8 +216,6 @@ export const createDeployment = async ({
 			service.port,
 		);
 		yaml = `${yaml}\n---\n${traefikYaml}`;
-	} else {
-		createIngresses(chart, _service, service.endpoints);
 	}
 
 	return yaml;
