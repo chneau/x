@@ -2,6 +2,11 @@
 import "./verboseShell";
 import { program } from "commander";
 import {
+	commandCfmailList,
+	commandCfmailSet,
+	commandCfmailUnset,
+} from "./commandCfmail";
+import {
 	commandCleanShortcuts,
 	commandDeck,
 	commandDeckDisk,
@@ -227,5 +232,29 @@ program
 	.argument("[dir]", "Target directory for the new project", ".")
 	.option("-t, --template <template-name>", "Template name or git repository")
 	.action(commandNew);
+
+const cfmail = program
+	.command("cfmail")
+	.description("Manage Cloudflare Email Routing (zones & catch-all)");
+
+cfmail
+	.command("list")
+	.description("List domains and their email routing / catch-all status")
+	.action(commandCfmailList);
+
+cfmail
+	.command("set")
+	.description("Set a catch-all forwarding rule for a domain")
+	.argument("<domain>", "Domain name (e.g. neau.pro)")
+	.argument("<catchall>", "Rule keyword: catchall")
+	.argument("<target_email>", "Destination email to forward catch-all to")
+	.action(commandCfmailSet);
+
+cfmail
+	.command("unset")
+	.description("Disable the catch-all forwarding rule for a domain")
+	.argument("<domain>", "Domain name (e.g. neau.pro)")
+	.argument("<catchall>", "Rule keyword: catchall")
+	.action(commandCfmailUnset);
 
 program.parse();
