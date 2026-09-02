@@ -13,6 +13,7 @@
 		"check:clean": "rm -rf dist out build"
 	},
 	"dependencies": {
+		"@visioncortex/vtracer": "^1.0.0-alpha.4",
 		"cdk8s": "^2.70.100",
 		"cdk8s-plus-34": "^2.0.54",
 		"commander": "^15.0.0",

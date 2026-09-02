@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import "./verboseShell";
-import { program } from "commander";
+import { Option, program } from "commander";
 import {
 	commandCleanShortcuts,
 	commandDeck,
@@ -16,11 +16,28 @@ import { commandNew } from "./commandNew";
 import { commandPrs } from "./commandPrs";
 import { commandPurify } from "./commandPurify";
 import { commandUpgrade } from "./commandUpgrade";
+import { commandVtracer } from "./commandVtracer";
 import config from "./config.json";
 import { getCurrentVersion } from "./helpers";
 import { commandDiskWindows } from "./windows/commandDiskWindows";
 
 const version = await getCurrentVersion();
+
+/** Parse a stringy CLI value into a finite number or throw. */
+const parseNumber = (val: string) => {
+	const parsed = Number(val);
+	if (Number.isNaN(parsed)) {
+		throw new Error(`Expected a number, got "${val}"`);
+	}
+	return parsed;
+};
+
+/** Split a CLI list like "#fff,#000" into strings, trimming whitespace. */
+const parseList = (val: string) =>
+	val
+		.split(",")
+		.map((x) => x.trim())
+		.filter((x) => x.length > 0);
 
 program.name("x").description("chneau's utility CLI").version(version);
 
@@ -227,5 +244,125 @@ program
 	.argument("[dir]", "Target directory for the new project", ".")
 	.option("-t, --template <template-name>", "Template name or git repository")
 	.action(commandNew);
+
+program
+	.command("vtracer")
+	.description(
+		"Raster to vector (SVG) converter powered by @visioncortex/vtracer",
+	)
+	.argument("<input>", "Input image path (.png/.jpg/.gif/.bmp)")
+	.argument("[output]", "Output SVG path (defaults to <input>.svg)")
+	.addOption(
+		new Option(
+			"-p, --preset <preset>",
+			"Preset applied before other options",
+		).choices(["bw", "poster", "photo"]),
+	)
+	.addOption(
+		new Option(
+			"-c, --clustering <clustering>",
+			"Region forming algorithm",
+		).choices(["color-cluster", "bw", "watershed"]),
+	)
+	.addOption(
+		new Option(
+			"-l, --hierarchical <hierarchical>",
+			"Layer order for stacked regions",
+		).choices(["stacked", "cutout"]),
+	)
+	.addOption(
+		new Option("-m, --mode <mode>", "Output type").choices([
+			"pixel",
+			"polygon",
+			"spline",
+		]),
+	)
+	.option(
+		"--filter-speckle <number>",
+		"Filter out speckles smaller than this area (px²)",
+		parseNumber,
+	)
+	.option(
+		"--color-precision <number>",
+		"Color precision of the hierarchical clustering",
+		parseNumber,
+	)
+	.option(
+		"--layer-difference <number>",
+		"Layer difference of the hierarchical clustering",
+		parseNumber,
+	)
+	.option(
+		"--corner-threshold <number>",
+		"Corner threshold for polygon/spline mode",
+		parseNumber,
+	)
+	.option(
+		"--length-threshold <number>",
+		"Length threshold for polygon/spline mode",
+		parseNumber,
+	)
+	.option(
+		"--max-iterations <number>",
+		"Max iterations for spline fitting",
+		parseNumber,
+	)
+	.option(
+		"--splice-threshold <number>",
+		"Splice threshold for spline fitting",
+		parseNumber,
+	)
+	.option(
+		"--simplify <number>",
+		"Curve simplification tolerance in px (omit to disable; try 1-2.5)",
+		parseNumber,
+	)
+	.option(
+		"--path-precision <number>",
+		"Precision of path generation",
+		parseNumber,
+	)
+	.option(
+		"--palette <colors>",
+		'Fixed palette as a comma-separated list of #rrggbb, e.g. "#000,#fff"',
+		parseList,
+	)
+	.option(
+		"--max-colors <number>",
+		"Auto-quantize target color count",
+		parseNumber,
+	)
+	.option(
+		"--optimize <number>",
+		"Optimization level: 0=off, 1=quantize+simplify, 2=+shorthands/grouping",
+		parseNumber,
+	)
+	.option(
+		"--binary-threshold <number>",
+		"Binary mode fixed threshold (0-255); foreground is below it",
+		parseNumber,
+	)
+	.option("--adaptive", "Binary mode: use Bradley-Roth adaptive thresholding")
+	.option(
+		"--adaptive-window <number>",
+		"Adaptive threshold window side length in px (0 = auto)",
+		parseNumber,
+	)
+	.option(
+		"--adaptive-t <number>",
+		"Adaptive sensitivity (percent below local mean, default 15)",
+		parseNumber,
+	)
+	.option(
+		"--watershed-detail <number>",
+		"Watershed hierarchy cut level (default 128; higher = more regions)",
+		parseNumber,
+	)
+	.option(
+		"-v, --verbose",
+		"Print the conversion parameters being applied",
+		false,
+	)
+	.action(commandVtracer);
 
 program.parse();

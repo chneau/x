@@ -148,4 +148,46 @@ Sets up and maintains your development environment (Linux/Windows):
 x upgrade
 ```
 
+### Raster to Vector (SVG) Conversion
+
+```bash
+x vtracer <input> [output] [options]
+```
+
+Vectorizes a raster image (PNG/JPEG/GIF/BMP) into an SVG using
+`@visioncortex/vtracer`. The output defaults to `<input>.svg` (a `.svg`
+extension is appended automatically if omitted).
+
+```bash
+# File in, file out
+x vtracer in.png out.svg
+
+# Control the vectorization algorithm
+x vtracer in.jpg out.svg --clustering bw --mode polygon --hierarchical cutout
+
+# Use a preset
+x vtracer in.png --preset poster
+
+# Tune spline/polygon output
+x vtracer in.png out.svg --mode spline --simplify 1.5 --corner-threshold 1
+```
+
+Supported options (all optional, matching the underlying vtracer API):
+
+- `-p, --preset <preset>` – `bw`, `poster`, or `photo`.
+- `-c, --clustering <clustering>` – `color-cluster`, `bw`, or `watershed`.
+- `-l, --hierarchical <hierarchical>` – `stacked` or `cutout`.
+- `-m, --mode <mode>` – `pixel`, `polygon`, or `spline`.
+- `--filter-speckle <n>`, `--color-precision <n>`, `--layer-difference <n>`,
+  `--corner-threshold <n>`, `--length-threshold <n>`, `--max-iterations <n>`,
+  `--splice-threshold <n>`, `--path-precision <n>`, `--max-colors <n>`,
+  `--optimize <n>` – numeric tunables (see `x vtracer --help`).
+- `--simplify <px>` – curve simplification tolerance (1–2.5).
+- `--palette "#rrggbb,#rrggbb"` – fixed palette as a comma-separated list
+  (6-digit hex colors required).
+- `--binary-threshold <n>` (`0`–`255`), `--adaptive`, `--adaptive-window <n>`,
+  `--adaptive-t <n>` – binary mode controls.
+- `--watershed-detail <n>` – watershed hierarchy cut level.
+- `-v, --verbose` – print the resolved conversion parameters.
+
 Updates `x` to the latest version.
