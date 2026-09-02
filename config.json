@@ -29,6 +29,7 @@
 		],
 		"brew": [
 			{ "name": "aichat" },
+			{ "name": "azure-cli", "check": "az" },
 			{ "name": "bpytop" },
 			{ "name": "btop" },
 			{ "name": "dive" },
@@ -37,6 +38,7 @@
 				"check": "docker-color-output"
 			},
 			{ "name": "docker-compose" },
+			{ "name": "doctl" },
 			{ "name": "gh" },
 			{ "name": "go" },
 			{ "name": "graphviz", "check": "dot" },
@@ -152,7 +154,9 @@
 			{ "name": "stern.stern", "check": "stern" },
 			{ "name": "wagoodman.dive", "check": "dive" },
 			{ "name": "ahmetb.kubectx", "check": "kubectx" },
-			{ "name": "GnuWin32.Tree", "check": "tree" }
+			{ "name": "GnuWin32.Tree", "check": "tree" },
+			{ "name": "Microsoft.AzureCLI", "check": "az" },
+			{ "name": "DigitalOcean.doctl", "check": "doctl" }
 		]
 	}
 }
