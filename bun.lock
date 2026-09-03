@@ -6,6 +6,7 @@
       "dependencies": {
         "cdk8s": "^2.70.100",
         "cdk8s-plus-34": "^2.0.54",
+        "cloudflare": "^7.1.0",
         "commander": "^15.0.0",
         "p-queue": "^9.3.3",
         "zod": "^4.5.4",
@@ -85,6 +86,8 @@
     "cdk8s": ["cdk8s@2.70.100", "", { "dependencies": { "fast-json-patch": "^3.1.1", "follow-redirects": "^1.16.0", "yaml": "2.9.0" }, "peerDependencies": { "constructs": "^10" } }, "sha512-rBlYIFw4s1+b485iqEYyKwOr2DX0B4SS2otBhiWfqaXgMsGwnhKRYrYQ5EVFiqLdF7ypR2hlaszB9QyXSoI+ww=="],
 
     "cdk8s-plus-34": ["cdk8s-plus-34@2.0.54", "", { "dependencies": { "minimatch": "^9.0.9" }, "peerDependencies": { "cdk8s": "^2.68.11", "constructs": "^10.3.0" } }, "sha512-J/ZIlAlGeQdHoA4+/smpIKYIdH5e3HiN5T271auEdk896mH9a8Pz+20+TWpZL4fjf93l2g9c8+zdUMG3nb7FOw=="],
+
+    "cloudflare": ["cloudflare@7.1.0", "", { "bin": { "cloudflare": "bin/cli" } }, "sha512-eb6WtiAbhuqdWmBdVo6fuXQgEBkYjhOeujRDYLEUWEZIECuABvDLz2DUYTwpN/4KyFecM4JtMHgZn5prlFUjLg=="],
 
     "commander": ["commander@15.0.0", "", {}, "sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg=="],
 

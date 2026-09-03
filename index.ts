@@ -2,10 +2,15 @@
 import "./verboseShell";
 import { program } from "commander";
 import {
-	commandCfmailList,
-	commandCfmailSet,
-	commandCfmailUnset,
-} from "./commandCfmail";
+	commandCfDomainsList,
+	commandCfLogin,
+	commandCfLoginList,
+	commandCfLoginRemove,
+	commandCfLoginUse,
+	commandCfLogout,
+	commandCfMailforwardingList,
+	commandCfMailforwardingSet,
+} from "./commandCf";
 import {
 	commandCleanShortcuts,
 	commandDeck,
@@ -233,28 +238,74 @@ program
 	.option("-t, --template <template-name>", "Template name or git repository")
 	.action(commandNew);
 
-const cfmail = program
-	.command("cfmail")
-	.description("Manage Cloudflare Email Routing (zones & catch-all)");
+const cf = program
+	.command("cf")
+	.description("Manage a Cloudflare account (login, domains, mail forwarding)");
 
-cfmail
+// x cf login                          login by pasting credentials on stdin
+// x cf login list | use <id> | remove <id>
+const cfLogin = cf
+	.command("login")
+	.description(
+		"Authenticate to Cloudflare — pick an API Token, or the email + Global API key.\n" +
+			"Guided prompts in a terminal; piped secrets are auto-guessed.",
+	)
+	.action(commandCfLogin);
+
+cfLogin
 	.command("list")
-	.description("List domains and their email routing / catch-all status")
-	.action(commandCfmailList);
+	.description("List saved Cloudflare logins (marking the active one)")
+	.action(commandCfLoginList);
 
-cfmail
+cfLogin
+	.command("use")
+	.description("Switch which saved login is active")
+	.argument("<id>", "Login id from `x cf login list`")
+	.action(commandCfLoginUse);
+
+cfLogin
+	.command("remove")
+	.description("Delete a saved login")
+	.argument("<id>", "Login id from `x cf login list`")
+	.action(commandCfLoginRemove);
+
+cf.command("logout")
+	.description("Clear the active Cloudflare login")
+	.action(commandCfLogout);
+
+// x cf domains list
+const cfDomains = cf
+	.command("domains")
+	.description("Domains (zones) on the logged-in Cloudflare account");
+
+cfDomains
+	.command("list")
+	.description("List all domains associated with the logged-in account")
+	.action(commandCfDomainsList);
+
+// x cf mailforwarding list | set <domain> [<destination>]
+const cfMailforwarding = cf
+	.command("mailforwarding")
+	.description("Manage the catch-all mail forwarding rule of your domains");
+
+cfMailforwarding
+	.command("list")
+	.description(
+		"List each domain's mail forwarding target as <domain> -> <destination>",
+	)
+	.action(commandCfMailforwardingList);
+
+cfMailforwarding
 	.command("set")
-	.description("Set a catch-all forwarding rule for a domain")
-	.argument("<domain>", "Domain name (e.g. neau.pro)")
-	.argument("<catchall>", "Rule keyword: catchall")
-	.argument("<target_email>", "Destination email to forward catch-all to")
-	.action(commandCfmailSet);
-
-cfmail
-	.command("unset")
-	.description("Disable the catch-all forwarding rule for a domain")
-	.argument("<domain>", "Domain name (e.g. neau.pro)")
-	.argument("<catchall>", "Rule keyword: catchall")
-	.action(commandCfmailUnset);
+	.description(
+		"Set (or, without a destination, unset) a domain's mail forwarding. " +
+			"Needs the destination to be a verified Email Routing address.",
+	)
+	.argument("<domain>", "Domain name, e.g. neau.pro")
+	.argument(
+		"[destination]",
+		"Destination email to forward to; omit to unset the rule",
+	)
+	.action(commandCfMailforwardingSet);
 
 program.parse();

@@ -142,6 +142,42 @@ Sets up and maintains your development environment (Linux/Windows):
 - **Shell:** Configures Zsh as the default shell and ensures Docker group
   permissions.
 
+### Cloudflare (`cf`)
+
+```bash
+x cf login                       # paste credentials on stdin
+x cf login list                  # list saved logins
+x cf login use <id>              # switch active login
+x cf domains list                # list domains of the logged-in account
+x cf mailforwarding list         # list <domain> -> <destination>
+x cf mailforwarding set <domain> <destination>
+x cf mailforwarding set <domain> # unset the catch-all for <domain>
+x cf logout
+```
+
+Manages catch-all mail forwarding for your Cloudflare zones. Backed directly by
+the official `cloudflare` SDK — no external `cf`/`wrangler` binary is needed.
+
+When you run `x cf login` in a terminal it shows you what Cloudflare accepts and
+asks you to choose — **API Token** (one random string) or **Global API Key**
+(your Cloudflare account email plus the key). You can log in with several
+credentials at once; the newest one becomes active. Credentials are never
+printed back and are stored with your user's read/write permissions in
+`~/.config/x/cf.json`.
+
+You can also pipe secrets straight to stdin for scripting, e.g.
+`printf '<token>\n' | x cf login` (a line with no `@` is treated as an API
+token; an email line plus key lines as global keys). Credentials are stored in
+`~/.config/x/cf.json`.
+
+Need them from Cloudflare? Credentials are here:
+<https://dash.cloudflare.com/profile/api-tokens>.
+
+`x cf mailforwarding set <domain> <destination>` enables Email Routing on the
+domain then points its catch-all at `destination` (which must already be
+verified for Cloudflare Email Routing). Omitting `destination` disables the
+rule.
+
 ### Self Update
 
 ```bash
