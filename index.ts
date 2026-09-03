@@ -161,6 +161,16 @@ deck
 program
 	.command("deploy")
 	.description("Deploy CDK8s Kubernetes manifests to cluster")
+	.option(
+		"-d, --dry-run",
+		"Synthesize manifests without building Docker images or applying to Kubernetes",
+		false,
+	)
+	.option(
+		"-p, --print-yaml",
+		"Print synthesized YAML manifests to stdout",
+		false,
+	)
 	.allowExcessArguments()
 	.action(commandDeploy);
 

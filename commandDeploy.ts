@@ -91,10 +91,31 @@ const isDockerLoggedIn = async (hostname: string) => {
 	}
 };
 
-export const commandDeploy = async () => {
-	const args = Bun.argv.slice(3);
-	const jsonFiles = args.filter((arg) => arg.endsWith(".json"));
-	const filters = args.filter((arg) => !arg.endsWith(".json"));
+type DeployOptions = {
+	dryRun?: boolean;
+	printYaml?: boolean;
+};
+
+export const commandDeploy = async (options: DeployOptions = {}) => {
+	const dryRun = Boolean(
+		options.dryRun || Bun.argv.includes("-d") || Bun.argv.includes("--dry-run"),
+	);
+	const printYaml = Boolean(
+		options.printYaml ||
+			Bun.argv.includes("-p") ||
+			Bun.argv.includes("--print-yaml"),
+	);
+
+	const rawArgs = Bun.argv.slice(3);
+	const nonFlagArgs = rawArgs.filter(
+		(arg) =>
+			arg !== "-d" &&
+			arg !== "--dry-run" &&
+			arg !== "-p" &&
+			arg !== "--print-yaml",
+	);
+	const jsonFiles = nonFlagArgs.filter((arg) => arg.endsWith(".json"));
+	const filters = nonFlagArgs.filter((arg) => !arg.endsWith(".json"));
 	const isTargettingJsonFiles = jsonFiles.length > 0;
 	if (jsonFiles.length === 0) {
 		jsonFiles.push(
@@ -131,6 +152,8 @@ export const commandDeploy = async () => {
 					config: { ...parsed, services: { [serviceKey]: service } },
 					allServices: copy.services,
 					cwd: path.dirname(jsonFile),
+					dryRun,
+					printYaml,
 				}),
 			);
 		}
@@ -230,9 +253,17 @@ type DeployParams = {
 	config: Deploy;
 	allServices: Record<string, DeployService>;
 	cwd: string;
+	dryRun?: boolean;
+	printYaml?: boolean;
 };
 
-const deploy = async ({ config, cwd, allServices }: DeployParams) => {
+const deploy = async ({
+	config,
+	cwd,
+	allServices,
+	dryRun = false,
+	printYaml = false,
+}: DeployParams) => {
 	for (const [serviceAlias, _service] of Object.entries(config.services)) {
 		console.log(`🕒 Deploying ${serviceAlias}...`);
 		const service =
@@ -249,37 +280,40 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 			console.info(`❓ Registry ${image.registry} not found`);
 			continue;
 		}
-		if (registry.username && registry.password) {
-			const { hostname, username, password } = registry;
-			if (!loginPromises.has(hostname)) {
-				loginPromises.set(
-					hostname,
-					(async () => {
-						if (await isDockerLoggedIn(hostname)) {
-							console.log(`✅ Already logged in to ${hostname}`);
-							return;
-						}
-						console.log(`🔑 Logging in to ${hostname}...`);
-						await Bun.$`echo ${password} | docker login --username ${username} --password-stdin ${hostname}`;
-						console.log(`... ✅ Logged in to ${hostname}`);
-					})(),
+
+		if (!dryRun) {
+			if (registry.username && registry.password) {
+				const { hostname, username, password } = registry;
+				if (!loginPromises.has(hostname)) {
+					loginPromises.set(
+						hostname,
+						(async () => {
+							if (await isDockerLoggedIn(hostname)) {
+								console.log(`✅ Already logged in to ${hostname}`);
+								return;
+							}
+							console.log(`🔑 Logging in to ${hostname}...`);
+							await Bun.$`echo ${password} | docker login --username ${username} --password-stdin ${hostname}`;
+							console.log(`... ✅ Logged in to ${hostname}`);
+						})(),
+					);
+				}
+				await loginPromises.get(hostname);
+
+				const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
+
+				console.log(`🔨 Building ${imageFullName}...`);
+				const buildArgs = Object.entries(image.buildArgs).map(
+					([key, value]) => `--build-arg=${key}=${value}`,
 				);
+				const targetArg = image.target ? [`--target=${image.target}`] : [];
+				const buildContext = path.resolve(cwd, image.context);
+				const dockerfilePath = path.resolve(cwd, image.dockerfile);
+				await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`.cwd(
+					buildContext,
+				);
+				console.log(`... ✅ Built ${imageFullName}`);
 			}
-			await loginPromises.get(hostname);
-
-			const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
-
-			console.log(`🔨 Building ${imageFullName}...`);
-			const buildArgs = Object.entries(image.buildArgs).map(
-				([key, value]) => `--build-arg=${key}=${value}`,
-			);
-			const targetArg = image.target ? [`--target=${image.target}`] : [];
-			const buildContext = path.resolve(cwd, image.context);
-			const dockerfilePath = path.resolve(cwd, image.dockerfile);
-			await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`.cwd(
-				buildContext,
-			);
-			console.log(`... ✅ Built ${imageFullName}`);
 		}
 
 		console.log(`🔗 Creating deployment for ${serviceAlias}...`);
@@ -291,6 +325,15 @@ const deploy = async ({ config, cwd, allServices }: DeployParams) => {
 			ingress: service.ingress,
 		});
 		console.log(`... ✅ Created deployment for ${serviceAlias}`);
+
+		if (printYaml) {
+			console.log(deploymentYaml);
+		}
+
+		if (dryRun) {
+			console.log(`[dry-run] Skipping kubectl apply for ${serviceAlias}`);
+			continue;
+		}
 
 		console.log(`🚀 Deploying ${serviceAlias}...`);
 		const kubeEnv = {
