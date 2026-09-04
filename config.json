@@ -134,6 +134,10 @@
 			{
 				"name": "codex",
 				"command": "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh"
+			},
+			{
+				"name": "cursor",
+				"command": "curl -fsSL https://cursor.com/install | bash"
 			}
 		],
 		"winget": [
