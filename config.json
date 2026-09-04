@@ -70,6 +70,7 @@
 			{ "name": "depcheck" },
 			{ "name": "fkill-cli", "check": "fkill" },
 			{ "name": "http-server" },
+			{ "name": "jsdoc-scribe", "check": "gen-comments" },
 			{ "name": "knip" },
 			{ "name": "live-server" },
 			{ "name": "nodemon" },
