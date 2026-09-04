@@ -100,7 +100,8 @@
 			{ "name": "Roslynator.DotNet.Cli", "check": "roslynator" },
 			{ "name": "dotnet-ef" },
 			{ "name": "dotnet-outdated-tool", "check": "dotnet-outdated" },
-			{ "name": "dotnet-serve" }
+			{ "name": "dotnet-serve" },
+			{ "name": "dotnet-symbol" }
 		],
 		"custom": [
 			{
