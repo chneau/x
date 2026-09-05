@@ -66,6 +66,7 @@
 			{ "name": "@vegamo/deepcode-cli", "check": "deepcode" },
 			{ "name": "cf" },
 			{ "name": "cline" },
+			{ "name": "command-code" },
 			{ "name": "concurrently" },
 			{ "name": "depcheck" },
 			{ "name": "fkill-cli", "check": "fkill" },
