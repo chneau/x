@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { commandExists } from "./helpers";
+import { commandExists, formatBytes } from "./helpers";
 import { commandDiskWindows } from "./windows/commandDiskWindows";
 
 type DiskOptions = {
@@ -227,11 +227,10 @@ export const commandDisk = async (options: DiskOptions) => {
 			}
 
 			if (goKb > 0) {
-				const mb = (goKb / 1024).toFixed(1);
 				console.log(
-					`  • ${"Go Build & Mod Cache".padEnd(26)} [${(`${mb}M`).padEnd(
-						6,
-					)}]: go clean`,
+					`  • ${"Go Build & Mod Cache".padEnd(26)} [${formatBytes(
+						goKb * 1024,
+					).padEnd(6)}]: go clean`,
 				);
 				if (!options.dryRun) {
 					await $`go clean -cache -modcache`.nothrow();
@@ -282,11 +281,10 @@ export const commandDisk = async (options: DiskOptions) => {
 			).split(/\s+/)[0];
 			const tmpKb = Number.parseInt(tmpSizeStr || "0", 10);
 			if (tmpKb > 1024 * 50) {
-				const tmpMb = (tmpKb / 1024).toFixed(1);
 				console.log(
-					`  • ${"/tmp Temporary Files".padEnd(26)} [${(`${tmpMb}M`).padEnd(
-						6,
-					)}]: /tmp build artifacts & stale files`,
+					`  • ${"/tmp Temporary Files".padEnd(26)} [${formatBytes(
+						tmpKb * 1024,
+					).padEnd(6)}]: /tmp build artifacts & stale files`,
 				);
 				if (!options.dryRun) {
 					// Safely delete stale temp files older than 2 days owned by the user or root temp leftovers
@@ -295,10 +293,7 @@ export const commandDisk = async (options: DiskOptions) => {
 			}
 		} catch {}
 
-		const totalMb = (totalFoundBytes / (1024 * 1024)).toFixed(2);
-		const totalGb = (totalFoundBytes / (1024 * 1024 * 1024)).toFixed(2);
-		const summarySize =
-			totalFoundBytes > 1024 * 1024 * 1024 ? `${totalGb} GB` : `${totalMb} MB`;
+		const summarySize = formatBytes(totalFoundBytes);
 
 		if (options.dryRun) {
 			console.log(

@@ -1,11 +1,20 @@
-import { readdir, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { $ } from "bun";
-import PQueue from "p-queue";
+import { mapConcurrent, subdirectories } from "./helpers";
 
 type GitCleanOptions = {
 	recursive?: number;
 	concurrency?: number;
+};
+
+const isGitRepo = async (dir: string): Promise<boolean> => {
+	try {
+		await stat(join(dir, ".git"));
+		return true;
+	} catch {
+		return false;
+	}
 };
 
 /**
@@ -20,30 +29,17 @@ const findGitRepos = async (
 	currentDepth: number,
 	maxDepth: number,
 ): Promise<string[]> => {
-	const gitPath = join(dir, ".git");
-	try {
-		await stat(gitPath);
+	if (await isGitRepo(dir)) {
 		return [dir];
-	} catch {
-		// Not a git repo at this directory level
 	}
-
 	if (currentDepth >= maxDepth) {
 		return [];
 	}
-
-	const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
-
-	const subdirs = entries
-		.filter((entry) => entry.isDirectory())
-		.filter((entry) => !entry.name.startsWith("."))
-		.filter((entry) => entry.name !== "node_modules")
-		.map((entry) => join(dir, entry.name));
-
 	const results = await Promise.all(
-		subdirs.map((subdir) => findGitRepos(subdir, currentDepth + 1, maxDepth)),
+		(await subdirectories(dir)).map((subdir) =>
+			findGitRepos(subdir, currentDepth + 1, maxDepth),
+		),
 	);
-
 	return results.flat();
 };
 
@@ -84,8 +80,7 @@ export const commandGitclean = async (
 		`Found ${repos.length} git repo(s). Cleaning with concurrency ${concurrency}...`,
 	);
 
-	const queue = new PQueue({ concurrency });
-	await Promise.all(repos.map((repo) => queue.add(() => cleanGitRepo(repo))));
+	await mapConcurrent(repos, concurrency, cleanGitRepo);
 
 	console.log("🎉 Done cleaning all git repositories.");
 };

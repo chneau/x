@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import Cloudflare, { APIError } from "cloudflare";
+import { die } from "./helpers";
 
 /**
  * Cloudflare mini-CLI powering the `x cf` command.
@@ -84,19 +85,15 @@ const loggedInClient = async (): Promise<{
 }> => {
 	const store = await readStore();
 	if (store.logins.length === 0) {
-		console.error(
+		die(
 			"❌ No Cloudflare login found. Run `x cf login` first (paste an API token\n   or an <email> + <global api key> pair).",
 		);
-		process.exit(1);
 	}
 	const active =
 		(store.activeId && store.logins.find((l) => l.id === store.activeId)) ??
 		store.logins.at(-1);
 	if (!active) {
-		console.error(
-			"❌ Active Cloudflare login no longer exists. Run `x cf login`.",
-		);
-		process.exit(1);
+		die("❌ Active Cloudflare login no longer exists. Run `x cf login`.");
 	}
 	return { client: makeClient(active), login: active };
 };
@@ -129,8 +126,7 @@ const linesOf = (raw: string): string[] =>
 const parseCredentials = (raw: string): CredInput[] => {
 	const lines = linesOf(raw);
 	if (lines.length === 0) {
-		console.error("❌ No credentials provided. Paste the API keys into stdin.");
-		process.exit(1);
+		die("❌ No credentials provided. Paste the API keys into stdin.");
 	}
 
 	const emails = lines.filter(isEmail);
@@ -138,15 +134,13 @@ const parseCredentials = (raw: string): CredInput[] => {
 
 	if (emails.length > 0) {
 		if (keys.length === 0) {
-			console.error("❌ Found an email but no matching API key.");
-			process.exit(1);
+			die("❌ Found an email but no matching API key.");
 		}
 		if (emails.length === 1) {
 			// a single email with one or many global keys for that account
 			const email = emails[0];
 			if (!email) {
-				console.error("❌ Missing email.");
-				process.exit(1);
+				die("❌ Missing email.");
 			}
 			return keys.map((apiKey) => ({
 				kind: "apiKey" as const,
@@ -159,8 +153,7 @@ const parseCredentials = (raw: string): CredInput[] => {
 		return emails.map((apiEmail, i) => {
 			const apiKey = keys[i];
 			if (!apiKey) {
-				console.error(`❌ Missing global API key for email ${apiEmail}.`);
-				process.exit(1);
+				die(`❌ Missing global API key for email ${apiEmail}.`);
 			}
 			return {
 				kind: "apiKey" as const,
@@ -371,8 +364,7 @@ export const commandCfLoginUse = async (id: string) => {
 	const store = await readStore();
 	const found = store.logins.find((l) => l.id === id);
 	if (!found) {
-		console.error(`❌ No login with id '${id}'. See \`x cf login list\`.`);
-		process.exit(1);
+		die(`❌ No login with id '${id}'. See \`x cf login list\`.`);
 	}
 	store.activeId = id;
 	await writeStore(store);
@@ -384,8 +376,7 @@ export const commandCfLoginRemove = async (id: string) => {
 	const before = store.logins.length;
 	store.logins = store.logins.filter((l) => l.id !== id);
 	if (store.logins.length === before) {
-		console.error(`❌ No login with id '${id}'.`);
-		process.exit(1);
+		die(`❌ No login with id '${id}'.`);
 	}
 	if (store.activeId === id) store.activeId = store.logins.at(-1)?.id;
 	await writeStore(store);
@@ -517,9 +508,10 @@ const ensureEmailRoutingOn = async (client: Cloudflare, zoneId: string) => {
 	try {
 		await client.emailRouting.enable({ zone_id: zoneId, body: {} });
 	} catch (err) {
-		console.error(`❌ Could not enable Email Routing on this domain.`);
-		if (err instanceof Error && err.message) console.error(`   ${err.message}`);
-		process.exit(1);
+		die(
+			"❌ Could not enable Email Routing on this domain.",
+			err instanceof Error ? err.message : undefined,
+		);
 	}
 };
 
@@ -530,8 +522,7 @@ export const commandCfMailforwardingSet = async (
 	const { client } = await loggedInClient();
 	const zone = await findZone(client, domain);
 	if (!zone) {
-		console.error(`❌ Domain '${domain}' not found in the logged-in account.`);
-		process.exit(1);
+		die(`❌ Domain '${domain}' not found in the logged-in account.`);
 	}
 
 	if (!destination) {
@@ -554,11 +545,10 @@ export const commandCfMailforwardingSet = async (
 				`✅ Unset mail forwarding for ${zone.name} (catch-all disabled).`,
 			);
 		} catch (err) {
-			console.error(`❌ Could not unset mail forwarding for ${zone.name}.`);
-			if (err instanceof Error && err.message) {
-				console.error(`   ${err.message}`);
-			}
-			process.exit(1);
+			die(
+				`❌ Could not unset mail forwarding for ${zone.name}.`,
+				err instanceof Error ? err.message : undefined,
+			);
 		}
 		return;
 	}
@@ -576,11 +566,10 @@ export const commandCfMailforwardingSet = async (
 		});
 		console.log(`✅ Mail forward set: ${zone.name} -> ${destination}`);
 	} catch (err) {
-		console.error(`❌ Could not set mail forwarding for ${zone.name}.`);
-		console.error(
-			"   Ensure the destination address is verified for Email Routing.",
+		die(
+			`❌ Could not set mail forwarding for ${zone.name}.\n` +
+				"   Ensure the destination address is verified for Email Routing.",
+			err instanceof Error ? err.message : undefined,
 		);
-		if (err instanceof Error && err.message) console.error(`   ${err.message}`);
-		process.exit(1);
 	}
 };

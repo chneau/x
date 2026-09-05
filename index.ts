@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import "./verboseShell";
-import { program } from "commander";
+import { type Command, InvalidArgumentError, program } from "commander";
 import {
 	commandCfDomainsList,
 	commandCfLogin,
@@ -34,6 +34,62 @@ const version = await getCurrentVersion();
 
 program.name("x").description("chneau's utility CLI").version(version);
 
+/** Commander option parser: integer in [min, max], else a clean error. */
+const intOption =
+	(message: string, min: number, max = Number.MAX_SAFE_INTEGER) =>
+	(value: string) => {
+		const parsed = Number.parseInt(value, 10);
+		if (Number.isNaN(parsed) || parsed < min || parsed > max) {
+			throw new InvalidArgumentError(message);
+		}
+		return parsed;
+	};
+
+const nonNegativeInt = intOption(
+	"Recursion depth must be a non-negative integer",
+	0,
+);
+const positiveInt = intOption("Concurrency must be a positive integer", 1);
+const purifyLevel = intOption(
+	"Recursion level must be an integer between 0 and 4",
+	0,
+	4,
+);
+const topCount = intOption("Top count must be a positive integer", 1);
+
+/** Options shared by `x prs` and its `clean` subcommand. */
+const addPrsOptions = (cmd: Command) =>
+	cmd
+		.option(
+			"-o, --owner <owner>",
+			"GitHub owner / user (defaults to current gh user)",
+		)
+		.option(
+			"-c, --concurrency <number>",
+			"Number of concurrent workers",
+			positiveInt,
+		);
+
+/** Options shared by `x disk` and `x disk-windows`. */
+const addDiskOptions = (cmd: Command) =>
+	cmd
+		.option(
+			"-c, --clean",
+			"Automatically clean reclaimable caches and temporary files",
+			false,
+		)
+		.option(
+			"-d, --dry-run",
+			"Preview space that will be reclaimed without deleting",
+			false,
+		)
+		.option(
+			"-t, --top <number>",
+			"Number of largest files to display in inspection mode",
+			topCount,
+			15,
+		);
+
 program
 	.command("gitclean")
 	.description(
@@ -43,25 +99,13 @@ program
 	.option(
 		"-r, --recursive <number>",
 		"Recursion depth limit",
-		(val) => {
-			const parsed = Number.parseInt(val, 10);
-			if (Number.isNaN(parsed) || parsed < 0) {
-				throw new Error("Recursion depth must be a non-negative integer");
-			}
-			return parsed;
-		},
+		nonNegativeInt,
 		1,
 	)
 	.option(
 		"-c, --concurrency <number>",
 		"Number of concurrent workers",
-		(val) => {
-			const parsed = Number.parseInt(val, 10);
-			if (Number.isNaN(parsed) || parsed < 1) {
-				throw new Error("Concurrency must be a positive integer");
-			}
-			return parsed;
-		},
+		positiveInt,
 		10,
 	)
 	.action(commandGitclean);
@@ -72,18 +116,7 @@ program
 		"Sanitize & modernize project configuration (package.json, tsconfig, gitignore)",
 	)
 	.argument("[dir]", "Directory to manage", ".")
-	.option(
-		"-r, --recursive <number>",
-		"Recursion level (0-4)",
-		(val) => {
-			const parsed = Number.parseInt(val, 10);
-			if (Number.isNaN(parsed) || parsed < 0 || parsed > 4) {
-				throw new Error("Recursion level must be an integer between 0 and 4");
-			}
-			return parsed;
-		},
-		0,
-	)
+	.option("-r, --recursive <number>", "Recursion level (0-4)", purifyLevel, 0)
 	.option(
 		"-d, --dry-run",
 		"Preview changes without modifying files or running commands",
@@ -98,33 +131,20 @@ program
 	)
 	.action(commandFmt);
 
-const prs = program
-	.command("prs")
-	.description("Manage GitHub pull requests (merge/close bot & dependency PRs)")
-	.option(
-		"-o, --owner <owner>",
-		"GitHub owner / user (defaults to current gh user)",
-	)
-	.option(
-		"-c, --concurrency <number>",
-		"Number of concurrent workers",
-		Number.parseInt,
-	)
-	.action(commandPrs);
+const prs = addPrsOptions(
+	program
+		.command("prs")
+		.description(
+			"Manage GitHub pull requests (merge/close bot & dependency PRs)",
+		),
+);
+prs.action(commandPrs);
 
-prs
-	.command("clean")
-	.description("Clean and merge/close open Renovate and Dependabot PRs")
-	.option(
-		"-o, --owner <owner>",
-		"GitHub owner / user (defaults to current gh user)",
-	)
-	.option(
-		"-c, --concurrency <number>",
-		"Number of concurrent workers",
-		Number.parseInt,
-	)
-	.action(commandPrs);
+addPrsOptions(
+	prs
+		.command("clean")
+		.description("Clean and merge/close open Renovate and Dependabot PRs"),
+).action(commandPrs);
 
 const deck = program
 	.command("deck")
@@ -171,7 +191,7 @@ program
 		"Print synthesized YAML manifests to stdout",
 		false,
 	)
-	.allowExcessArguments()
+	.argument("[files...]", "Deploy JSON file(s) and/or service name filter(s)")
 	.action(commandDeploy);
 
 program
@@ -187,49 +207,19 @@ program
 	.description("Upgrade x CLI to the latest version")
 	.action(commandUpgrade);
 
-program
-	.command("disk")
-	.description("Analyze disk space usage and clean caches in home directory")
-	.option(
-		"-c, --clean",
-		"Automatically clean reclaimable caches and temporary files",
-		false,
-	)
-	.option(
-		"-d, --dry-run",
-		"Preview space that will be reclaimed without deleting",
-		false,
-	)
-	.option(
-		"-t, --top <number>",
-		"Number of largest files to display in inspection mode",
-		(val) => Number.parseInt(val, 10),
-		15,
-	)
-	.action(commandDisk);
+addDiskOptions(
+	program
+		.command("disk")
+		.description("Analyze disk space usage and clean caches in home directory"),
+).action(commandDisk);
 
-program
-	.command("disk-windows")
-	.description(
-		"Analyze disk space usage and clean caches in Windows (native or via WSL)",
-	)
-	.option(
-		"-c, --clean",
-		"Automatically clean reclaimable caches and temporary files",
-		false,
-	)
-	.option(
-		"-d, --dry-run",
-		"Preview space that will be reclaimed without deleting",
-		false,
-	)
-	.option(
-		"-t, --top <number>",
-		"Number of largest files to display in inspection mode",
-		(val) => Number.parseInt(val, 10),
-		15,
-	)
-	.action(commandDiskWindows);
+addDiskOptions(
+	program
+		.command("disk-windows")
+		.description(
+			"Analyze disk space usage and clean caches in Windows (native or via WSL)",
+		),
+).action(commandDiskWindows);
 
 program
 	.command("doctor")

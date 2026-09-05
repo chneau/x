@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import { die, formatBytes } from "./helpers";
 
 type SteamdeckOptions = {
 	host?: string;
@@ -26,29 +27,29 @@ const DEFAULT_DECKY_BIN = "/home/deck/homebrew/services/PluginLoader";
 const DEFAULT_DECKY_INSTALLER =
 	"https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_release.sh";
 
+const SSH_OPTS = "-o ConnectTimeout=30 -o BatchMode=yes";
+
 const sshRun = async (host: string, cmd: string, timeoutSec = 60) =>
-	await $`timeout ${timeoutSec}s ssh -o ConnectTimeout=30 -o BatchMode=yes ${host} ${cmd}`
+	await $`timeout ${timeoutSec}s ssh ${SSH_OPTS} ${host} ${cmd}`
 		.quiet()
 		.nothrow();
 
 const sshText = async (host: string, cmd: string, timeoutSec = 60) =>
 	(
-		await $`timeout ${timeoutSec}s ssh -o ConnectTimeout=30 -o BatchMode=yes ${host} ${cmd}`
+		await $`timeout ${timeoutSec}s ssh ${SSH_OPTS} ${host} ${cmd}`
 			.quiet()
 			.text()
 	).trim();
 
-const humanBytes = (n: number) => {
-	const units = ["B", "KB", "MB", "GB", "TB"];
-	let size = n;
-	for (const unit of units) {
-		if (size < 1024) {
-			return `${size.toFixed(size < 10 && unit !== "B" ? 1 : 0)} ${unit}`;
-		}
-		size /= 1024;
-	}
-	return `${size.toFixed(1)} PB`;
-};
+/** Stream `content` into `remotePath` over ssh, backing up the previous file. */
+const sshWriteFile = async (
+	host: string,
+	remotePath: string,
+	content: Uint8Array,
+) =>
+	await $`echo -n ${Buffer.from(content).toString(
+		"base64",
+	)} | base64 -d | ssh ${SSH_OPTS} ${host} ${`cp ${remotePath} ${remotePath}.bak && cat > ${remotePath}`}`.nothrow();
 
 // ── VDF Binary Reader & Parser ────────────────────────────────────────────────
 
@@ -200,23 +201,17 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 
 	const testConn = await sshRun(host, "echo ok", 10);
 	if (testConn.exitCode !== 0) {
-		console.error(
+		die(
 			`❌ Cannot connect to ${host}. Make sure SSH is enabled on Steam Deck.`,
 		);
-		process.exit(1);
 	}
 
-	const rawShortcuts =
-		await $`timeout 30s ssh -o ConnectTimeout=30 -o BatchMode=yes ${host} "cat ${shortcutsPath}"`
-			.quiet()
-			.nothrow();
-
+	const rawShortcuts = await sshRun(host, `cat ${shortcutsPath}`, 30);
 	if (rawShortcuts.exitCode !== 0) {
-		console.error(`❌ Cannot read shortcuts from ${shortcutsPath}`);
-		process.exit(1);
+		die(`❌ Cannot read shortcuts from ${shortcutsPath}`);
 	}
 
-	const entries = parseVdf(new Uint8Array(rawShortcuts.stdout));
+	const entries = parseVdf(rawShortcuts.stdout);
 	if (entries.length === 0) {
 		console.log("No shortcuts found.");
 		return;
@@ -268,13 +263,9 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 	const newData = dumpVdf(good);
 	console.log(`Writing updated shortcuts to ${shortcutsPath}...`);
 
-	const writeRes = await $`echo -n ${newData.toString(
-		"base64",
-	)} | base64 -d | ssh -o ConnectTimeout=30 -o BatchMode=yes ${host} ${`cp ${shortcutsPath} ${shortcutsPath}.bak && cat > ${shortcutsPath}`}`.nothrow();
-
+	const writeRes = await sshWriteFile(host, shortcutsPath, newData);
 	if (writeRes.exitCode !== 0) {
-		console.error("❌ Failed to write updated shortcuts.vdf");
-		process.exit(1);
+		die("❌ Failed to write updated shortcuts.vdf");
 	}
 
 	console.log(
@@ -296,10 +287,9 @@ export const commandDeckDisk = async (options: SteamdeckOptions) => {
 	);
 
 	if (!dfOut) {
-		console.error(
+		die(
 			`❌ Cannot connect to ${host}. Make sure the Deck is awake and SSH is enabled.`,
 		);
-		process.exit(1);
 	}
 
 	console.log("\n=== Filesystem Overview ===");
@@ -333,7 +323,7 @@ export const commandDeckDisk = async (options: SteamdeckOptions) => {
 		const out = await sshText(host, `du -sk ${cat.path} 2>/dev/null | tail -1`);
 		const kb = parseInt(out.split(/\s+/)[0] || "0", 10);
 		if (kb > 0) {
-			console.log(`  • ${cat.name.padEnd(16)}: ${humanBytes(kb * 1024)}`);
+			console.log(`  • ${cat.name.padEnd(16)}: ${formatBytes(kb * 1024)}`);
 		}
 	}
 
@@ -363,10 +353,9 @@ export const commandDeck = async (options: UpdateOptions) => {
 
 	const testConn = await sshRun(host, "echo ok", 10);
 	if (testConn.exitCode !== 0) {
-		console.error(
+		die(
 			`❌ Cannot connect to ${host}. Make sure SSH is enabled on Steam Deck.`,
 		);
-		process.exit(1);
 	}
 
 	// 1. Flatpaks
@@ -460,7 +449,7 @@ export const commandDeck = async (options: UpdateOptions) => {
 			console.log(`Found ${pendingGames.length} pending downloads:`);
 			for (const g of pendingGames) {
 				console.log(
-					`  • ${g.name} (${g.appid}) -> ${humanBytes(g.remaining)} remaining`,
+					`  • ${g.name} (${g.appid}) -> ${formatBytes(g.remaining)} remaining`,
 				);
 			}
 		}

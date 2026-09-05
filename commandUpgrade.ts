@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { fetchLatestVersion, getCurrentVersion } from "./helpers";
+import { die, fetchLatestVersion, getCurrentVersion } from "./helpers";
 
 export const commandUpgrade = async () => {
 	const latestVersion = await fetchLatestVersion();
@@ -29,10 +29,9 @@ export const commandUpgrade = async () => {
 		}
 	}
 	if (!success) {
-		console.error(
+		die(
 			`❌ Failed to update to version ${latestVersion} after ${maxRetries} attempts`,
 		);
-		process.exit(1);
 	}
 	console.log(`✅ Updated to version ${latestVersion}`);
 };

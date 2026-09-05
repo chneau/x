@@ -96,26 +96,15 @@ type DeployOptions = {
 	printYaml?: boolean;
 };
 
-export const commandDeploy = async (options: DeployOptions = {}) => {
-	const dryRun = Boolean(
-		options.dryRun || Bun.argv.includes("-d") || Bun.argv.includes("--dry-run"),
-	);
-	const printYaml = Boolean(
-		options.printYaml ||
-			Bun.argv.includes("-p") ||
-			Bun.argv.includes("--print-yaml"),
-	);
+export const commandDeploy = async (
+	files: string[] = [],
+	options: DeployOptions = {},
+) => {
+	const dryRun = Boolean(options.dryRun);
+	const printYaml = Boolean(options.printYaml);
 
-	const rawArgs = Bun.argv.slice(3);
-	const nonFlagArgs = rawArgs.filter(
-		(arg) =>
-			arg !== "-d" &&
-			arg !== "--dry-run" &&
-			arg !== "-p" &&
-			arg !== "--print-yaml",
-	);
-	const jsonFiles = nonFlagArgs.filter((arg) => arg.endsWith(".json"));
-	const filters = nonFlagArgs.filter((arg) => !arg.endsWith(".json"));
+	const jsonFiles = files.filter((arg) => arg.endsWith(".json"));
+	const filters = files.filter((arg) => !arg.endsWith(".json"));
 	const isTargettingJsonFiles = jsonFiles.length > 0;
 	if (jsonFiles.length === 0) {
 		jsonFiles.push(

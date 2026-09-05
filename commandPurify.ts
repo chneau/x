@@ -1,32 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { cpus } from "node:os";
-import PQueue from "p-queue";
 import type { ZodAny, z } from "zod";
-
-const getDirectories = async (path = ".") =>
-	(await readdir(path, { withFileTypes: true }))
-		.filter((x) => x.isDirectory())
-		.filter((x) => !x.name.startsWith("."))
-		.filter((x) => !x.name.includes("node_modules"))
-		.filter((x) => !x.name.includes(".git"))
-		.map((x) => `${path}/${x.name}`);
-
-const getDirectoriesDeep = async (path = ".", level = 0) => {
-	const result = [path];
-	if (level <= 0) return result;
-
-	let currentLevel = [path];
-	for (let i = 0; i < level; i++) {
-		const dirsPerParent = await Promise.all(
-			currentLevel.map((dir) => getDirectories(dir).catch(() => [])),
-		);
-		const nextLevel = dirsPerParent.flat();
-		if (nextLevel.length === 0) break;
-		result.push(...nextLevel);
-		currentLevel = nextLevel;
-	}
-	return result;
-};
+import { mapConcurrent, walkDirectories } from "./helpers";
 
 type CommandOptions = {
 	recursive?: number;
@@ -39,23 +14,16 @@ export const commandPurify = async (
 ) => {
 	const cwd = typeof dir === "string" && dir.trim().length > 0 ? dir : ".";
 	const recursive = options.recursive ?? 0;
-	if (recursive > 4) {
-		console.error("👁️ Recursion level is too high (maximum allowed is 4)");
-		process.exit(1);
-	}
 	const isDryRun = Boolean(options.dryRun);
 	if (isDryRun) {
 		console.log(
 			"🔍 Running in dry-run mode (no files or scripts will be modified/executed)",
 		);
 	}
-	const directories = await getDirectoriesDeep(cwd, recursive);
-	const queue = new PQueue({ concurrency: Math.max(cpus().length * 2, 2) });
-	await Promise.all(
-		directories.map((d) =>
-			queue.add(() => purify(d, isDryRun).catch(console.error)),
-		),
-	).catch(console.error);
+	const directories = await walkDirectories(cwd, recursive);
+	await mapConcurrent(directories, Math.max(cpus().length * 2, 2), (d) =>
+		purify(d, isDryRun).catch(console.error),
+	);
 };
 
 const isCSharpProject = async (dir: string): Promise<boolean> => {

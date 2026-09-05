@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import { die } from "./helpers";
 
 type HelmRelease = {
 	name: string;
@@ -48,7 +49,7 @@ const c = {
 };
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequence stripping
-const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
+const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, ""); // oxlint-disable-line no-control-regex
 
 const pad = (str: string, length: number) => {
 	const visibleLength = stripAnsi(str).length;
@@ -82,8 +83,7 @@ export const commandHelm = async (
 ) => {
 	const helmCheck = await $`which helm`.quiet().nothrow();
 	if (helmCheck.exitCode !== 0) {
-		console.error("❌ helm command not found in PATH");
-		process.exit(1);
+		die("❌ helm command not found in PATH");
 	}
 
 	const context = (
@@ -106,8 +106,7 @@ export const commandHelm = async (
 	try {
 		releases = JSON.parse(releasesJson);
 	} catch {
-		console.error("❌ Failed to parse helm releases output");
-		process.exit(1);
+		die("❌ Failed to parse helm releases output");
 	}
 
 	if (!releases || releases.length === 0) {

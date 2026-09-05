@@ -11,7 +11,9 @@ import {
 } from "./doctorCommon";
 import { canSudo, commandExists, isRoot } from "./helpers";
 import {
+	findMissing,
 	installAptPkgs,
+	installBatch,
 	installBrewPkgs,
 	installBunPkgs,
 	installDotnetPkgs,
@@ -124,12 +126,7 @@ const doctorUpdateSystem = async () => {
 };
 
 const doctorPkgs = async () => {
-	const missing = await Promise.all(
-		pkgs.map(async (pkg) => ({
-			pkg,
-			exists: await pkg.check(),
-		})),
-	).then((results) => results.filter((r) => !r.exists).map((r) => r.pkg));
+	const missing = await findMissing(pkgs);
 
 	if (missing.length === 0) {
 		console.log("✅ All packages are installed");
@@ -139,83 +136,17 @@ const doctorPkgs = async () => {
 	console.log("❌ Some packages are not installed");
 	console.table(missing.map((p) => ({ name: p.name, type: p.type })));
 
-	const aptToInstall = missing.filter((p) => p.type === "apt");
-	const brewToInstall = missing.filter((p) => p.type === "brew");
-	const bunToInstall = missing.filter((p) => p.type === "bun");
-	const uvToInstall = missing.filter((p) => p.type === "uv");
-	const dotnetToInstall = missing.filter((p) => p.type === "dotnet");
-	const customToInstall = missing.filter((p) => p.type === "custom");
+	const byType = (type: (typeof pkgs)[number]["type"]) =>
+		missing.filter((p) => p.type === type);
 
-	// Batch Apt
-	if (aptToInstall.length > 0) {
-		const names = aptToInstall.map((p) => p.name);
-		console.log(`🕒 Batch installing apt packages: ${names.join(", ")}...`);
-		try {
-			await installAptPkgs(names);
-			console.log(`✅ Installed apt packages: ${names.join(", ")}`);
-		} catch {
-			console.log(
-				`❌ Failed to install some apt packages: ${names.join(", ")}`,
-			);
-		}
-	}
-
-	// Batch Brew
-	if (brewToInstall.length > 0) {
-		const names = brewToInstall.map((p) => p.name);
-		console.log(`🕒 Batch installing brew packages: ${names.join(", ")}...`);
-		try {
-			await installBrewPkgs(names);
-			console.log(`✅ Installed brew packages: ${names.join(", ")}`);
-		} catch {
-			console.log(
-				`❌ Failed to install some brew packages: ${names.join(", ")}`,
-			);
-		}
-	}
-
-	// Batch Bun
-	if (bunToInstall.length > 0) {
-		const names = bunToInstall.map((p) => p.name);
-		console.log(`🕒 Batch installing bun packages: ${names.join(", ")}...`);
-		try {
-			await installBunPkgs(names);
-			console.log(`✅ Installed bun packages: ${names.join(", ")}`);
-		} catch {
-			console.log(
-				`❌ Failed to install some bun packages: ${names.join(", ")}`,
-			);
-		}
-	}
-
-	// UV global tools
-	if (uvToInstall.length > 0) {
-		const names = uvToInstall.map((p) => p.name);
-		console.log(`🕒 Installing uv tool packages: ${names.join(", ")}...`);
-		try {
-			await installUvPkgs(names);
-			console.log(`✅ Installed uv tool packages: ${names.join(", ")}`);
-		} catch {
-			console.log(`❌ Failed to install some uv packages: ${names.join(", ")}`);
-		}
-	}
-
-	// Dotnet global tools
-	if (dotnetToInstall.length > 0) {
-		const names = dotnetToInstall.map((p) => p.name);
-		console.log(`🕒 Installing dotnet tool packages: ${names.join(", ")}...`);
-		try {
-			await installDotnetPkgs(names);
-			console.log(`✅ Installed dotnet tool packages: ${names.join(", ")}`);
-		} catch {
-			console.log(
-				`❌ Failed to install some dotnet packages: ${names.join(", ")}`,
-			);
-		}
-	}
+	await installBatch("apt", byType("apt"), installAptPkgs);
+	await installBatch("brew", byType("brew"), installBrewPkgs);
+	await installBatch("bun", byType("bun"), installBunPkgs);
+	await installBatch("uv tool", byType("uv"), installUvPkgs);
+	await installBatch("dotnet tool", byType("dotnet"), installDotnetPkgs);
 
 	// Individual Custom installs
-	for (const pkg of customToInstall) {
+	for (const pkg of byType("custom")) {
 		console.log(`🕒 Installing custom package ${pkg.name}...`);
 		await pkg
 			.install()

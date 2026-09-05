@@ -1,6 +1,5 @@
 import { $ } from "bun";
-import PQueue from "p-queue";
-import { commandExists } from "./helpers";
+import { commandExists, die, mapConcurrent } from "./helpers";
 
 type PullRequest = {
 	number: number;
@@ -87,16 +86,14 @@ export const commandPrs = async (options: {
 	concurrency?: number;
 }) => {
 	if (!(await commandExists("gh"))) {
-		console.error("❌ 'gh' (GitHub CLI) is not installed or not in PATH.");
-		process.exit(1);
+		die("❌ 'gh' (GitHub CLI) is not installed or not in PATH.");
 	}
 
 	const owner = options.owner || (await getGhUser());
 	if (!owner) {
-		console.error(
+		die(
 			"❌ Could not determine GitHub owner. Please log in with `gh auth login` or specify --owner <user>.",
 		);
-		process.exit(1);
 	}
 
 	const maxWorkers = options.concurrency ?? 10;
@@ -112,18 +109,13 @@ export const commandPrs = async (options: {
 		`\nFound ${prs.length} open PRs. Processing concurrently (workers=${maxWorkers})...`,
 	);
 
-	const queue = new PQueue({ concurrency: maxWorkers });
-	await Promise.all(
-		prs.map((pr) =>
-			queue.add(async () => {
-				try {
-					const result = await processPr(pr);
-					console.log(`  ${result}`);
-				} catch (e) {
-					console.error(`  [ERROR] ${e}`);
-				}
-			}),
-		),
-	);
+	await mapConcurrent(prs, maxWorkers, async (pr) => {
+		try {
+			const result = await processPr(pr);
+			console.log(`  ${result}`);
+		} catch (e) {
+			console.error(`  [ERROR] ${e}`);
+		}
+	});
 	console.log("All PRs processed.");
 };

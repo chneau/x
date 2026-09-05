@@ -116,3 +116,30 @@ export const pkgs: Pkg[] = [
 	...uvPkgs,
 	...dotnetPkgs,
 ];
+
+/** Packages in `pkgs` that are not currently installed. */
+export const findMissing = async (pkgs: Pkg[]): Promise<Pkg[]> => {
+	const results = await Promise.all(
+		pkgs.map(async (pkg) => ({ pkg, exists: await pkg.check() })),
+	);
+	return results.filter((r) => !r.exists).map((r) => r.pkg);
+};
+
+/** Batch-install `toInstall` via `install`, logging progress and failures. */
+export const installBatch = async (
+	label: string,
+	toInstall: Pkg[],
+	install: (names: string[]) => Promise<unknown>,
+) => {
+	if (toInstall.length === 0) return;
+	const names = toInstall.map((p) => p.name);
+	console.log(`🕒 Batch installing ${label} packages: ${names.join(", ")}...`);
+	try {
+		await install(names);
+		console.log(`✅ Installed ${label} packages: ${names.join(", ")}`);
+	} catch {
+		console.log(
+			`❌ Failed to install some ${label} packages: ${names.join(", ")}`,
+		);
+	}
+};

@@ -17,7 +17,6 @@
 		"cdk8s-plus-34": "^2.0.54",
 		"cloudflare": "^7.1.0",
 		"commander": "^15.0.0",
-		"p-queue": "^9.3.3",
 		"zod": "^4.5.4"
 	},
 	"devDependencies": {
