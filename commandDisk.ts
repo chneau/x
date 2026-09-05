@@ -1,4 +1,11 @@
 import { $ } from "bun";
+import {
+	analyzeDisk,
+	type CleanupTarget,
+	cleanupTargets,
+	dirSizeBytes,
+	logCleanupSummary,
+} from "./diskCommon";
 import { commandExists, formatBytes } from "./helpers";
 import { commandDiskWindows } from "./windows/commandDiskWindows";
 
@@ -6,12 +13,6 @@ type DiskOptions = {
 	clean?: boolean;
 	dryRun?: boolean;
 	top?: number;
-};
-
-type CleanupTarget = {
-	name: string;
-	path: string;
-	description: string;
 };
 
 const getCleanupTargets = (home: string): CleanupTarget[] => [
@@ -174,35 +175,13 @@ export const commandDisk = async (options: DiskOptions) => {
 				: "🧹 Cleaning up caches and reclaimable space...",
 		);
 
-		const targets = getCleanupTargets(home);
-		let totalFoundBytes = 0;
-
 		console.log("\n=== Target Cleanup Directories ===");
-		for (const target of targets) {
-			const res = await $`du -sk ${target.path} 2>/dev/null`
-				.quiet()
-				.nothrow()
-				.text();
-			const sizeStr = res.split(/\s+/)[0];
-			const kb = Number.parseInt(sizeStr || "0", 10);
-			if (kb > 0) {
-				const humanRes = await $`du -sh ${target.path} 2>/dev/null`
-					.quiet()
-					.nothrow()
-					.text();
-				const humanSize = humanRes.split(/\s+/)[0] || `${kb}K`;
-				totalFoundBytes += kb * 1024;
-				console.log(
-					`  • ${target.name.padEnd(26)} [${humanSize.padEnd(
-						6,
-					)}]: ${target.path}`,
-				);
-
-				if (!options.dryRun) {
-					await $`rm -rf ${target.path}`.nothrow();
-				}
-			}
-		}
+		const targets = getCleanupTargets(home);
+		const totalFoundBytes = await cleanupTargets(
+			targets,
+			Boolean(options.dryRun),
+			(target) => $`rm -rf ${target.path}`.nothrow(),
+		);
 
 		// Go cache cleaning
 		if (await commandExists("go")) {
@@ -212,25 +191,14 @@ export const commandDisk = async (options: DiskOptions) => {
 			const goModCache = (
 				await $`go env GOMODCACHE 2>/dev/null`.quiet().nothrow().text()
 			).trim();
-			let goKb = 0;
-			if (goCache) {
-				const s = (
-					await $`du -sk ${goCache} 2>/dev/null`.quiet().nothrow().text()
-				).split(/\s+/)[0];
-				goKb += Number.parseInt(s || "0", 10);
-			}
-			if (goModCache) {
-				const s = (
-					await $`du -sk ${goModCache} 2>/dev/null`.quiet().nothrow().text()
-				).split(/\s+/)[0];
-				goKb += Number.parseInt(s || "0", 10);
-			}
-
-			if (goKb > 0) {
+			const goBytes =
+				(goCache ? await dirSizeBytes(goCache) : 0) +
+				(goModCache ? await dirSizeBytes(goModCache) : 0);
+			if (goBytes > 0) {
 				console.log(
-					`  • ${"Go Build & Mod Cache".padEnd(26)} [${formatBytes(
-						goKb * 1024,
-					).padEnd(6)}]: go clean`,
+					`  • ${"Go Build & Mod Cache".padEnd(
+						26,
+					)} [${formatBytes(goBytes).padEnd(8)}]: go clean`,
 				);
 				if (!options.dryRun) {
 					await $`go clean -cache -modcache`.nothrow();
@@ -241,9 +209,9 @@ export const commandDisk = async (options: DiskOptions) => {
 		// Homebrew cache and old formula prune
 		if (await commandExists("brew")) {
 			console.log(
-				`  • ${"Homebrew Cleanup".padEnd(26)} [${"prune".padEnd(
-					6,
-				)}]: brew cleanup -s --prune=all`,
+				`  • ${"Homebrew Cleanup".padEnd(
+					26,
+				)} [${"prune".padEnd(8)}]: brew cleanup -s --prune=all`,
 			);
 			if (!options.dryRun) {
 				await $`brew cleanup -s --prune=all`.quiet().nothrow();
@@ -253,9 +221,9 @@ export const commandDisk = async (options: DiskOptions) => {
 		// Docker system prune (all unused images + volumes)
 		if (await commandExists("docker")) {
 			console.log(
-				`  • ${"Docker System Prune".padEnd(26)} [${"prune".padEnd(
-					6,
-				)}]: docker system prune -af --volumes`,
+				`  • ${"Docker System Prune".padEnd(
+					26,
+				)} [${"prune".padEnd(8)}]: docker system prune -af --volumes`,
 			);
 			if (!options.dryRun) {
 				await $`docker system prune -af --volumes`.quiet().nothrow();
@@ -265,89 +233,37 @@ export const commandDisk = async (options: DiskOptions) => {
 		// Journalctl logs vacuum (systemd)
 		if (await commandExists("journalctl")) {
 			console.log(
-				`  • ${"Systemd Journal Logs".padEnd(26)} [${"vacuum".padEnd(
-					6,
-				)}]: journalctl --vacuum-time=3d`,
+				`  • ${"Systemd Journal Logs".padEnd(
+					26,
+				)} [${"vacuum".padEnd(8)}]: journalctl --vacuum-time=3d`,
 			);
 			if (!options.dryRun) {
 				await $`journalctl --vacuum-time=3d 2>/dev/null`.quiet().nothrow();
 			}
 		}
 
-		// Clean old temporary files in /tmp (files older than 3 days or bun/npm build artifacts)
-		try {
-			const tmpSizeStr = (
-				await $`du -sk /tmp 2>/dev/null`.quiet().nothrow().text()
-			).split(/\s+/)[0];
-			const tmpKb = Number.parseInt(tmpSizeStr || "0", 10);
-			if (tmpKb > 1024 * 50) {
-				console.log(
-					`  • ${"/tmp Temporary Files".padEnd(26)} [${formatBytes(
-						tmpKb * 1024,
-					).padEnd(6)}]: /tmp build artifacts & stale files`,
-				);
-				if (!options.dryRun) {
-					// Safely delete stale temp files older than 2 days owned by the user or root temp leftovers
-					await $`find /tmp -mindepth 1 -maxdepth 1 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow();
-				}
-			}
-		} catch {}
-
-		const summarySize = formatBytes(totalFoundBytes);
-
-		if (options.dryRun) {
+		// Clean old temporary files in /tmp (files older than 2 days or bun/npm build artifacts)
+		const tmpBytes = await dirSizeBytes("/tmp");
+		if (tmpBytes > 1024 * 1024 * 50) {
 			console.log(
-				`\n✨ Dry-run complete. Potential space to reclaim: ~${summarySize}`,
+				`  • ${"/tmp Temporary Files".padEnd(26)} [${formatBytes(
+					tmpBytes,
+				).padEnd(8)}]: /tmp build artifacts & stale files`,
 			);
-			console.log("👉 Run `x disk --clean` to execute the cleanup.");
-		} else {
-			console.log(`\n🎉 Cleanup complete! Reclaimed up to ~${summarySize}.`);
+			if (!options.dryRun) {
+				await $`find /tmp -mindepth 1 -maxdepth 1 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow();
+			}
 		}
+
+		logCleanupSummary(Boolean(options.dryRun), totalFoundBytes, "x disk");
 		return;
 	}
 
 	console.log(`🔍 Analyzing disk space in "${home}"...`);
 
-	// 1. Filesystem Overview
-	console.log("\n=== 1. Filesystem Overview ===");
-	try {
-		const df = await $`df -h ${home}`.text();
-		console.log(df.trim());
-	} catch {
-		console.log("Could not run df on home directory.");
-	}
+	await analyzeDisk(home, { top: topCount });
 
-	// 2. High-level Breakdown in Home Directory
-	console.log(`\n=== 2. Directory Breakdown in ${home} ===`);
-	try {
-		const duCmd = `du -hd 1 ${home} 2>/dev/null | sort -h`;
-		const duOut = await $`bash -c ${duCmd}`.text();
-		console.log(duOut.trim() || "No directories found / permission denied.");
-	} catch {
-		console.log("Failed to inspect directory breakdown.");
-	}
-
-	// 3. Top Hidden Directories/Caches in Home
-	console.log(`\n=== 3. Top Hidden/Config Dirs in ${home} ===`);
-	try {
-		const duHiddenCmd = `du -hd 1 ${home}/.* 2>/dev/null | sort -h | tail -n 15`;
-		const duHiddenOut = await $`bash -c ${duHiddenCmd}`.text();
-		console.log(duHiddenOut.trim() || "None");
-	} catch {
-		console.log("Failed to inspect hidden directories.");
-	}
-
-	// 4. Largest Files in Home
-	console.log(`\n=== 4. Top ${topCount} Largest Files (>50M) in ${home} ===`);
-	try {
-		const findFilesCmd = `find ${home} -xdev -type f -size +50M -exec ls -lh {} + 2>/dev/null | awk '{ print $5, $9 }' | sort -hr | head -n ${topCount}`;
-		const filesOut = await $`bash -c ${findFilesCmd}`.text();
-		console.log(filesOut.trim() || "No files > 50M found.");
-	} catch {
-		console.log("Failed to search large files.");
-	}
-
-	// 5. Cleanup hint
+	// Cleanup hint
 	console.log(
 		"\n💡 Tip: Run `x disk --dry-run` to preview cleanup or `x disk --clean` to automatically reclaim space.",
 	);

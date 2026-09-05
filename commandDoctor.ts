@@ -7,6 +7,7 @@ import {
 	doctorInotify,
 	doctorSsh,
 	doctorSshPermissions,
+	logDoctorStart,
 	optionsSchema,
 } from "./doctorCommon";
 import { canSudo, commandExists, isRoot } from "./helpers";
@@ -232,15 +233,7 @@ const doctorZsh = async () => {
 };
 
 const commandDoctorLinux = async (options: DoctorOptions) => {
-	console.log("🔍 Running doctor (Linux)...");
-	console.log(
-		"⚙️  email =",
-		options.email,
-		", name =",
-		options.name,
-		", updates =",
-		options.updates,
-	);
+	logDoctorStart("Linux", options);
 	await Promise.all([doctorRoot(), doctorSudo()]);
 	await Promise.all([
 		doctorDotfiles(),

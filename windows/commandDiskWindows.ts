@@ -1,6 +1,12 @@
-import { readdir, rm, stat } from "node:fs/promises";
+import { readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { $ } from "bun";
+import {
+	analyzeDisk,
+	cleanupTargets,
+	dirSizeBytes,
+	logCleanupSummary,
+} from "../diskCommon";
 import { commandExists, formatBytes } from "../helpers";
 
 type DiskWindowsOptions = {
@@ -15,6 +21,8 @@ type WindowsCleanupTarget = {
 	base: "userprofile" | "localappdata" | "appdata" | "temp";
 	description: string;
 };
+
+type ResolvedWindowsTarget = WindowsCleanupTarget & { path: string };
 
 const WINDOWS_TARGETS: WindowsCleanupTarget[] = [
 	{
@@ -264,17 +272,6 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
 	return null;
 };
 
-const getDirSizeInBytes = async (path: string): Promise<number> => {
-	try {
-		const out = await $`du -sk ${path} 2>/dev/null`.quiet().nothrow().text();
-		const sizeStr = out.split(/\s+/)[0];
-		const kb = Number.parseInt(sizeStr || "0", 10);
-		return Number.isNaN(kb) ? 0 : kb * 1024;
-	} catch {
-		return 0;
-	}
-};
-
 export const commandDiskWindows = async (options: DiskWindowsOptions) => {
 	const dirs = await resolveWindowsDirs();
 
@@ -312,61 +309,38 @@ export const commandDiskWindows = async (options: DiskWindowsOptions) => {
 		);
 
 		console.log("\n=== Target Windows Cleanup Directories ===");
-		let totalBytes = 0;
-
-		for (const target of WINDOWS_TARGETS) {
-			const fullPath = getFullPath(target);
-			try {
-				await stat(fullPath);
-			} catch {
-				continue;
-			}
-
-			const bytes = await getDirSizeInBytes(fullPath);
-			if (bytes > 0) {
-				totalBytes += bytes;
-				const formatted = formatBytes(bytes);
-				console.log(
-					`  • ${target.name.padEnd(26)} [${formatted.padEnd(8)}]: ${fullPath}`,
-				);
-
-				if (!options.dryRun) {
-					if (target.base === "temp") {
-						// Clean temp files older than 2 days
-						await $`find ${fullPath} -mindepth 1 -maxdepth 2 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow();
-					} else {
-						await rm(fullPath, { recursive: true, force: true }).catch(
-							() => {},
-						);
-					}
-				}
-			}
-		}
+		const targets: ResolvedWindowsTarget[] = WINDOWS_TARGETS.map((target) => ({
+			...target,
+			path: getFullPath(target),
+		}));
+		const totalBytes = await cleanupTargets(
+			targets,
+			Boolean(options.dryRun),
+			(target) =>
+				target.base === "temp"
+					? $`find ${target.path} -mindepth 1 -maxdepth 2 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow()
+					: rm(target.path, { recursive: true, force: true }).catch(() => {}),
+		);
 
 		// Go cache on Windows drive
 		const goCache = join(localAppData, "go-build");
 		const goModCache = join(userProfile, "go/pkg/mod");
-		let goBytes = 0;
-		if (
-			await Bun.file(goCache)
+		const goBytes =
+			((await Bun.file(goCache)
 				.exists()
-				.catch(() => false)
-		) {
-			goBytes += await getDirSizeInBytes(goCache);
-		}
-		if (
-			await Bun.file(goModCache)
+				.catch(() => false))
+				? await dirSizeBytes(goCache)
+				: 0) +
+			((await Bun.file(goModCache)
 				.exists()
-				.catch(() => false)
-		) {
-			goBytes += await getDirSizeInBytes(goModCache);
-		}
+				.catch(() => false))
+				? await dirSizeBytes(goModCache)
+				: 0);
 		if (goBytes > 0) {
-			const formatted = formatBytes(goBytes);
 			console.log(
-				`  • ${"Go Build & Mod Cache".padEnd(26)} [${formatted.padEnd(
-					8,
-				)}]: ${goCache}`,
+				`  • ${"Go Build & Mod Cache".padEnd(
+					26,
+				)} [${formatBytes(goBytes).padEnd(8)}]: ${goCache}`,
 			);
 			if (!options.dryRun) {
 				await rm(goCache, { recursive: true, force: true }).catch(() => {});
@@ -376,74 +350,28 @@ export const commandDiskWindows = async (options: DiskWindowsOptions) => {
 		// Empty Windows Recycle Bin if powershell/cmd is available
 		if (await commandExists("powershell.exe")) {
 			console.log(
-				`  • ${"Windows Recycle Bin".padEnd(26)} [${"clean".padEnd(
-					8,
-				)}]: Clear-RecycleBin`,
+				`  • ${"Windows Recycle Bin".padEnd(
+					26,
+				)} [${"clean".padEnd(8)}]: Clear-RecycleBin`,
 			);
 			if (!options.dryRun) {
 				await $`powershell.exe -NoProfile -NonInteractive -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"`.nothrow();
 			}
 		}
 
-		const totalFormatted = formatBytes(totalBytes);
-		if (options.dryRun) {
-			console.log(
-				`\n✨ Dry-run complete. Potential space to reclaim: ~${totalFormatted}`,
-			);
-			console.log("👉 Run `x disk-windows --clean` to execute the cleanup.");
-		} else {
-			console.log(`\n🎉 Cleanup complete! Reclaimed up to ~${totalFormatted}.`);
-		}
+		logCleanupSummary(Boolean(options.dryRun), totalBytes, "x disk-windows");
 		return;
 	}
 
 	console.log(`\n🔍 Analyzing Windows disk space for "${userProfile}"...`);
 
-	// 1. Filesystem Overview (Drives)
-	console.log("\n=== 1. Windows Drive Overview ===");
-	try {
-		const df = await $`df -h ${userProfile}`.quiet().nothrow().text();
-		console.log(df.trim() || "Drive overview unavailable.");
-	} catch {
-		console.log("Drive overview unavailable.");
-	}
+	await analyzeDisk(userProfile, {
+		top: topCount,
+		extraDirs: [localAppData],
+		limitBreakdown: true,
+	});
 
-	// 2. High-level Breakdown in User Profile
-	console.log(`\n=== 2. Directory Breakdown in ${userProfile} ===`);
-	try {
-		const duCmd = `du -hd 1 ${userProfile} 2>/dev/null | sort -h | tail -n 15`;
-		const duOut = await $`bash -c ${duCmd}`.quiet().nothrow().text();
-		console.log(duOut.trim() || "No directories found / permission denied.");
-	} catch {
-		console.log("Failed to inspect directory breakdown.");
-	}
-
-	// 3. Top Hidden/Config Dirs in User Profile
-	console.log(`\n=== 3. Top AppData / Hidden Dirs in ${userProfile} ===`);
-	try {
-		const duHiddenCmd = `du -hd 1 ${userProfile}/.* ${localAppData} 2>/dev/null | sort -h | tail -n 15`;
-		const duHiddenOut = await $`bash -c ${duHiddenCmd}`
-			.quiet()
-			.nothrow()
-			.text();
-		console.log(duHiddenOut.trim() || "None");
-	} catch {
-		console.log("Failed to inspect hidden/AppData directories.");
-	}
-
-	// 4. Largest Files in UserProfile
-	console.log(
-		`\n=== 4. Top ${topCount} Largest Files (>50MB) in ${userProfile} ===`,
-	);
-	try {
-		const findFilesCmd = `find ${userProfile} -xdev -type f -size +50M -exec ls -lh {} + 2>/dev/null | awk '{ print $5, $9 }' | sort -hr | head -n ${topCount}`;
-		const filesOut = await $`bash -c ${findFilesCmd}`.quiet().nothrow().text();
-		console.log(filesOut.trim() || "No files > 50MB found.");
-	} catch {
-		console.log("Failed to search large files.");
-	}
-
-	// 5. Cleanup hint
+	// Cleanup hint
 	console.log(
 		"\n💡 Tip: Run `x disk-windows --dry-run` to preview cleanup or `x disk-windows --clean` to automatically reclaim space.",
 	);

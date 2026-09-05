@@ -125,6 +125,22 @@ const manageGitignore = async (
 	return true;
 };
 
+/** Serialize `data`, write it, then let biome reformat the file. */
+const writeManagedJson = async (
+	file: ReturnType<typeof Bun.file>,
+	data: unknown,
+	dryRun: boolean,
+) => {
+	const filename = file.name ?? "";
+	if (dryRun) {
+		console.log(`🔍 [dry-run] Would update ${filename}`);
+		return;
+	}
+	await Bun.write(file, `${JSON.stringify(data, null, 2)}\n`);
+	await Bun.$`biome check --write --unsafe ${filename}`.nothrow();
+	console.log(`✅ Done with ${filename}`);
+};
+
 const manageTsconfig = async (
 	dir: string,
 	dryRun = false,
@@ -151,13 +167,7 @@ const manageTsconfig = async (
 		if (tsconfig.compilerOptions[key] === value) continue;
 		tsconfig.compilerOptions[key] = value;
 	}
-	if (dryRun) {
-		console.log(`🔍 [dry-run] Would update ${filename}`);
-		return true;
-	}
-	await Bun.write(file, JSON.stringify(tsconfig, null, 2));
-	await Bun.$`biome check --write --unsafe ${filename}`.nothrow();
-	console.log(`✅ Done with ${filename}`);
+	await writeManagedJson(file, tsconfig, dryRun);
 	return true;
 };
 
@@ -231,12 +241,6 @@ const managePackagejson = async (
 		pkgJson.scripts[key] = value;
 	}
 	pkgJson.prettier = undefined;
-	if (dryRun) {
-		console.log(`🔍 [dry-run] Would update ${filename}`);
-		return true;
-	}
-	await Bun.write(file, JSON.stringify(pkgJson, null, 2));
-	await Bun.$`biome check --write --unsafe ${filename}`.nothrow();
-	console.log(`✅ Done with ${filename}`);
+	await writeManagedJson(file, pkgJson, dryRun);
 	return true;
 };

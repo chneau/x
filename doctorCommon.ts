@@ -54,23 +54,37 @@ export const doctorSshPermissions = async () => {
 	if (!home) return;
 
 	try {
-		await $`chmod 700 ${home}/.ssh`.nothrow();
-		if (await Bun.file(`${home}/.ssh/id_rsa`).exists()) {
-			await $`chmod 600 ${home}/.ssh/id_rsa`.nothrow();
-		}
-		if (await Bun.file(`${home}/.ssh/id_rsa.pub`).exists()) {
-			await $`chmod 644 ${home}/.ssh/id_rsa.pub`.nothrow();
-		}
-		if (await Bun.file(`${home}/.ssh/authorized_keys`).exists()) {
-			await $`chmod 600 ${home}/.ssh/authorized_keys`.nothrow();
-		}
-		if (await Bun.file(`${home}/.ssh/config`).exists()) {
-			await $`chmod 600 ${home}/.ssh/config`.nothrow();
+		const chmods: Array<[string, string]> = [
+			[".ssh", "700"],
+			[".ssh/id_rsa", "600"],
+			[".ssh/id_rsa.pub", "644"],
+			[".ssh/authorized_keys", "600"],
+			[".ssh/config", "600"],
+		];
+		for (const [file, mode] of chmods) {
+			if (await Bun.file(`${home}/${file}`).exists()) {
+				await $`chmod ${mode} ${home}/${file}`.nothrow();
+			}
 		}
 		console.log("✅ SSH permissions verified");
 	} catch {
 		console.log("⚠️ Could not verify/set SSH permissions");
 	}
+};
+
+export const logDoctorStart = (
+	platform: "Linux" | "Windows",
+	options: DoctorOptions,
+) => {
+	console.log(`🔍 Running doctor (${platform})...`);
+	console.log(
+		"⚙️  email =",
+		options.email,
+		", name =",
+		options.name,
+		", updates =",
+		options.updates,
+	);
 };
 
 export const doctorInotify = async () => {

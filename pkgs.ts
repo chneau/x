@@ -11,6 +11,9 @@ export type Pkg = {
 	install: () => Promise<unknown>;
 };
 
+/** A package entry from config.json; `check` overrides the binary name tested. */
+type ConfigPkg = { name: string; check?: string };
+
 const createPkg = (
 	name: string,
 	type: PkgType,
@@ -23,49 +26,43 @@ const createPkg = (
 	install,
 });
 
-const aptIt = (name: string) =>
-	createPkg(name, "apt", () => $`sudo apt install -y ${name}`);
+/** Install command for a single package name per tool. */
+const installers: Record<
+	Exclude<PkgType, "custom" | "winget">,
+	(name: string) => Promise<unknown>
+> = {
+	apt: (name) => $`sudo apt install -y ${name}`,
+	brew: (name) => $`brew install ${name}`,
+	bun: (name) => $`bun install --force --global ${name}`,
+	uv: (name) => $`uv tool install --force ${name}`.nothrow(),
+	dotnet: (name) =>
+		$`dotnet tool install --global ${name} || dotnet tool update --global ${name}`.nothrow(),
+};
 
-const brewIt = (name: string, check?: string) =>
-	createPkg(name, "brew", () => $`brew install ${name}`, check);
+/** Build the `Pkg` list for a config section, e.g. `makePkgs("apt", config.packages.apt)`. */
+const makePkgs = (
+	type: keyof typeof installers,
+	list: readonly (ConfigPkg | string)[],
+): Pkg[] =>
+	list.map((pkg) => {
+		const name = typeof pkg === "string" ? pkg : pkg.name;
+		return createPkg(
+			name,
+			type,
+			() => installers[type](name),
+			typeof pkg === "string" ? undefined : pkg.check,
+		);
+	});
 
-const bunIt = (name: string, check?: string) =>
-	createPkg(name, "bun", () => $`bun install --force --global ${name}`, check);
+const aptPkgs = makePkgs("apt", config.packages.apt);
 
-const uvIt = (name: string, check?: string) =>
-	createPkg(
-		name,
-		"uv",
-		() => $`uv tool install --force ${name}`.nothrow(),
-		check,
-	);
+const brewPkgs = makePkgs("brew", config.packages.brew);
 
-const dotnetIt = (name: string, check?: string) =>
-	createPkg(
-		name,
-		"dotnet",
-		() =>
-			$`dotnet tool install --global ${name} || dotnet tool update --global ${name}`.nothrow(),
-		check,
-	);
+const bunPkgsMapped = makePkgs("bun", config.packages.bun);
 
-const aptPkgs: Pkg[] = config.packages.apt.map(aptIt);
+const uvPkgs = makePkgs("uv", config.packages.uv ?? []);
 
-const brewPkgs: Pkg[] = config.packages.brew.map((pkg) =>
-	brewIt(pkg.name, "check" in pkg ? pkg.check : undefined),
-);
-
-const bunPkgsMapped: Pkg[] = config.packages.bun.map((pkg) =>
-	bunIt(pkg.name, "check" in pkg ? pkg.check : undefined),
-);
-
-const uvPkgs: Pkg[] = (config.packages.uv || []).map((pkg) =>
-	uvIt(pkg.name, "check" in pkg ? (pkg.check as string) : undefined),
-);
-
-const dotnetPkgs: Pkg[] = (config.packages.dotnet || []).map((pkg) =>
-	dotnetIt(pkg.name, "check" in pkg ? (pkg.check as string) : undefined),
-);
+const dotnetPkgs = makePkgs("dotnet", config.packages.dotnet ?? []);
 
 const customPkgs: Pkg[] = config.packages.custom.map((pkg) =>
 	createPkg(
@@ -82,6 +79,13 @@ const customPkgs: Pkg[] = config.packages.custom.map((pkg) =>
 	),
 );
 
+/** Install `names` one by one with the per-tool installer. */
+const sequential =
+	(install: (name: string) => Promise<unknown>) => async (names: string[]) => {
+		for (const name of names) await install(name);
+	};
+
+// apt/brew/bun batch their whole list into a single command.
 export const installAptPkgs = async (names: string[]) => {
 	await $`sudo apt install -y ${names}`;
 };
@@ -94,17 +98,9 @@ export const installBunPkgs = async (names: string[]) => {
 	await $`bun install --force --global ${names}`;
 };
 
-export const installUvPkgs = async (names: string[]) => {
-	for (const name of names) {
-		await $`uv tool install --force ${name}`.nothrow();
-	}
-};
+export const installUvPkgs = sequential(installers.uv);
 
-export const installDotnetPkgs = async (names: string[]) => {
-	for (const name of names) {
-		await $`dotnet tool install --global ${name} || dotnet tool update --global ${name}`.nothrow();
-	}
-};
+export const installDotnetPkgs = sequential(installers.dotnet);
 
 export const bunPkgs = bunPkgsMapped;
 

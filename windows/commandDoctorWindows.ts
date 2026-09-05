@@ -4,6 +4,7 @@ import {
 	doctorGitconfig,
 	doctorGithub,
 	doctorSsh,
+	logDoctorStart,
 } from "../doctorCommon";
 import { findMissing, installBatch, installBunPkgs } from "../pkgs";
 import { windowsPackages } from "./windowsPkgs";
@@ -47,15 +48,7 @@ const doctorPkgs = async () => {
 };
 
 export const commandDoctorWindows = async (options: DoctorOptions) => {
-	console.log("🔍 Running doctor (Windows)...");
-	console.log(
-		"⚙️  email =",
-		options.email,
-		", name =",
-		options.name,
-		", updates =",
-		options.updates,
-	);
+	logDoctorStart("Windows", options);
 
 	await doctorPkgs();
 	await doctorGitconfig(options);
