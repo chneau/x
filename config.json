@@ -69,6 +69,7 @@
 			{ "name": "concurrently" },
 			{ "name": "depcheck" },
 			{ "name": "fkill-cli", "check": "fkill" },
+			{ "name": "freebuff" },
 			{ "name": "http-server" },
 			{ "name": "jsdoc-scribe", "check": "gen-comments" },
 			{ "name": "knip" },
