@@ -112,6 +112,22 @@ Performs async repo discovery, validates client dry-run (`--dry-run=client`) and
 server dry-run (`--dry-run=server`), and upgrades only if dry runs succeed (or
 reports failure details).
 
+### Kubernetes Cleanup
+
+```bash
+x kclean [-A|--all-namespaces] [-y|--yes]
+```
+
+Cleans up leftover Kubernetes objects in the current context:
+
+- **Zero-replica ReplicaSets** (`spec.replicas == 0`)
+- **Failed Pods** (`status.phase=Failed`)
+- **Succeeded Pods** (`status.phase=Succeeded`)
+
+Defaults to a **dry run** that only lists what would be deleted; re-run with
+`--yes` to actually delete. Use `-A`/`--all-namespaces` to operate across every
+namespace instead of just the current one.
+
 ### Disk Inspection & Cache Cleaning
 
 ```bash

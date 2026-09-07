@@ -22,6 +22,7 @@ import { commandDoctor } from "./commandDoctor";
 import { commandFmt } from "./commandFmt";
 import { commandGitclean } from "./commandGitclean";
 import { commandHelm } from "./commandHelm";
+import { commandKclean } from "./commandKclean";
 import { commandNew } from "./commandNew";
 import { commandPrs } from "./commandPrs";
 import { commandPurify } from "./commandPurify";
@@ -201,6 +202,23 @@ program
 	.option("-u, --upgrade", "Upgrade the releases if dry runs pass")
 	.option("-a, --all", "Check or upgrade all releases")
 	.action(commandHelm);
+
+program
+	.command("kclean")
+	.description(
+		"Clean zero-replica ReplicaSets and failed/succeeded Pods in the current context",
+	)
+	.option(
+		"-A, --all-namespaces",
+		"Clean across all namespaces instead of the current one",
+		false,
+	)
+	.option(
+		"-y, --yes",
+		"Actually delete (runs in dry-run mode by default)",
+		false,
+	)
+	.action(commandKclean);
 
 program
 	.command("upgrade")
