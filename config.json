@@ -146,6 +146,14 @@
 			{
 				"name": "pi",
 				"command": "curl -fsSL https://pi.dev/install.sh | sh"
+			},
+			{
+				"name": "kilo",
+				"command": "curl -fsSL https://kilo.ai/cli/install | bash"
+			},
+			{
+				"name": "hermes",
+				"command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash"
 			}
 		],
 		"winget": [
