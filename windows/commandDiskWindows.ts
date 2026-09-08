@@ -5,9 +5,12 @@ import {
 	analyzeDisk,
 	cleanupTargets,
 	dirSizeBytes,
+	logCleanupStep,
 	logCleanupSummary,
+	sharedCleanupTargets,
+	type WindowsBase,
 } from "../diskCommon";
-import { commandExists, formatBytes } from "../helpers";
+import { commandExists } from "../helpers";
 
 type DiskWindowsOptions = {
 	clean?: boolean;
@@ -15,138 +18,12 @@ type DiskWindowsOptions = {
 	top?: number;
 };
 
-type WindowsCleanupTarget = {
+type ResolvedWindowsTarget = {
 	name: string;
-	relativePath: string;
-	base: "userprofile" | "localappdata" | "appdata" | "temp";
+	base: WindowsBase;
+	path: string;
 	description: string;
 };
-
-type ResolvedWindowsTarget = WindowsCleanupTarget & { path: string };
-
-const WINDOWS_TARGETS: WindowsCleanupTarget[] = [
-	{
-		name: "Bun Package Cache",
-		base: "userprofile",
-		relativePath: ".bun/install/cache",
-		description: "Downloaded bun package tarballs and cache",
-	},
-	{
-		name: "Bun Global node_modules",
-		base: "userprofile",
-		relativePath: ".bun/install/global/node_modules",
-		description: "Installed global node modules",
-	},
-	{
-		name: "UV Python Cache",
-		base: "localappdata",
-		relativePath: "uv/cache",
-		description: "UV Python package cache",
-	},
-	{
-		name: "NPM Cache",
-		base: "appdata",
-		relativePath: "npm-cache",
-		description: "NPM package download cache",
-	},
-	{
-		name: "NPM NPX Cache",
-		base: "localappdata",
-		relativePath: "npm-cache/_npx",
-		description: "Temporary binaries executed via npx",
-	},
-	{
-		name: "NuGet Packages Cache",
-		base: "userprofile",
-		relativePath: ".nuget/packages",
-		description: "Cached .NET nuget packages",
-	},
-	{
-		name: "NuGet HTTP Cache",
-		base: "localappdata",
-		relativePath: "NuGet/v3-cache",
-		description: "NuGet HTTP response cache",
-	},
-	{
-		name: "Pip Cache",
-		base: "localappdata",
-		relativePath: "pip/cache",
-		description: "Cached Python wheel packages",
-	},
-	{
-		name: "Cargo Registry Cache",
-		base: "userprofile",
-		relativePath: ".cargo/registry/cache",
-		description: "Cached Rust crate downloads (.crate files)",
-	},
-	{
-		name: "Cargo Git DB",
-		base: "userprofile",
-		relativePath: ".cargo/git/db",
-		description: "Cached git dependencies for Cargo",
-	},
-	{
-		name: "pnpm Store",
-		base: "localappdata",
-		relativePath: "pnpm/store",
-		description: "Global pnpm content-addressable package store",
-	},
-	{
-		name: "Yarn Cache",
-		base: "localappdata",
-		relativePath: "Yarn/Cache",
-		description: "Yarn package cache",
-	},
-	{
-		name: "Cypress Cache",
-		base: "localappdata",
-		relativePath: "Cypress/Cache",
-		description: "Cypress testing browser binaries",
-	},
-	{
-		name: "Playwright Cache",
-		base: "localappdata",
-		relativePath: "ms-playwright",
-		description: "Playwright headless browser downloads",
-	},
-	{
-		name: "Puppeteer Cache",
-		base: "localappdata",
-		relativePath: "puppeteer",
-		description: "Puppeteer browser downloads",
-	},
-	{
-		name: "Gradle Caches",
-		base: "userprofile",
-		relativePath: ".gradle/caches",
-		description: "Gradle build dependency cache",
-	},
-	{
-		name: "Gradle Wrapper Dists",
-		base: "userprofile",
-		relativePath: ".gradle/wrapper/dists",
-		description: "Downloaded Gradle binaries",
-	},
-	{
-		name: ".NET Tool Store",
-		base: "userprofile",
-		relativePath: ".dotnet/tools/.store",
-		description: ".NET global tool downloads",
-	},
-	{
-		name: "Winget Package Cache",
-		base: "localappdata",
-		relativePath:
-			"Packages/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe/LocalState/DiagOutputDir",
-		description: "Winget diagnostic logs and package outputs",
-	},
-	{
-		name: "Temp Files",
-		base: "temp",
-		relativePath: "",
-		description: "Windows User Temp directory",
-	},
-];
 
 const isWsl = async (): Promise<boolean> => {
 	if (process.platform === "win32") return false;
@@ -285,13 +162,18 @@ export const commandDiskWindows = async (options: DiskWindowsOptions) => {
 	const { userProfile, localAppData, appData, temp, isWslMode } = dirs;
 	const topCount = options.top || 15;
 	const shouldClean = options.clean || options.dryRun;
+	const dryRun = Boolean(options.dryRun);
 
-	const getFullPath = (target: WindowsCleanupTarget): string => {
-		let baseDir = userProfile;
-		if (target.base === "localappdata") baseDir = localAppData;
-		if (target.base === "appdata") baseDir = appData;
-		if (target.base === "temp") baseDir = temp;
-		return target.relativePath ? join(baseDir, target.relativePath) : baseDir;
+	const getFullPath = (base: WindowsBase, relativePath: string): string => {
+		const baseDir =
+			base === "userprofile"
+				? userProfile
+				: base === "localappdata"
+					? localAppData
+					: base === "appdata"
+						? appData
+						: temp;
+		return relativePath ? join(baseDir, relativePath) : baseDir;
 	};
 
 	console.log(
@@ -303,23 +185,27 @@ export const commandDiskWindows = async (options: DiskWindowsOptions) => {
 
 	if (shouldClean) {
 		console.log(
-			options.dryRun
+			dryRun
 				? "\n🔍 [DRY-RUN] Previewing Windows cleanup targets..."
 				: "\n🧹 Cleaning up Windows caches and reclaimable space...",
 		);
 
 		console.log("\n=== Target Windows Cleanup Directories ===");
-		const targets: ResolvedWindowsTarget[] = WINDOWS_TARGETS.map((target) => ({
-			...target,
-			path: getFullPath(target),
-		}));
-		const totalBytes = await cleanupTargets(
-			targets,
-			Boolean(options.dryRun),
-			(target) =>
-				target.base === "temp"
-					? $`find ${target.path} -mindepth 1 -maxdepth 2 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow()
-					: rm(target.path, { recursive: true, force: true }).catch(() => {}),
+		const targets: ResolvedWindowsTarget[] = sharedCleanupTargets
+			.filter((t) => t.windows !== undefined)
+			.map((t) => ({
+				name: t.name,
+				base: t.windows?.base ?? "userprofile",
+				path: getFullPath(
+					t.windows?.base ?? "userprofile",
+					t.windows?.path ?? "",
+				),
+				description: t.description,
+			}));
+		const totalBytes = await cleanupTargets(targets, dryRun, (target) =>
+			target.base === "temp"
+				? $`find ${target.path} -mindepth 1 -maxdepth 2 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow()
+				: rm(target.path, { recursive: true, force: true }).catch(() => {}),
 		);
 
 		// Go cache on Windows drive
@@ -337,29 +223,25 @@ export const commandDiskWindows = async (options: DiskWindowsOptions) => {
 				? await dirSizeBytes(goModCache)
 				: 0);
 		if (goBytes > 0) {
-			console.log(
-				`  • ${"Go Build & Mod Cache".padEnd(
-					26,
-				)} [${formatBytes(goBytes).padEnd(8)}]: ${goCache}`,
-			);
-			if (!options.dryRun) {
+			await logCleanupStep("Go Build & Mod Cache", "go clean", goCache, dryRun);
+			if (!dryRun) {
 				await rm(goCache, { recursive: true, force: true }).catch(() => {});
 			}
 		}
 
 		// Empty Windows Recycle Bin if powershell/cmd is available
 		if (await commandExists("powershell.exe")) {
-			console.log(
-				`  • ${"Windows Recycle Bin".padEnd(
-					26,
-				)} [${"clean".padEnd(8)}]: Clear-RecycleBin`,
+			await logCleanupStep(
+				"Windows Recycle Bin",
+				"clean",
+				"Clear-RecycleBin",
+				dryRun,
+				() =>
+					$`powershell.exe -NoProfile -NonInteractive -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"`.nothrow(),
 			);
-			if (!options.dryRun) {
-				await $`powershell.exe -NoProfile -NonInteractive -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"`.nothrow();
-			}
 		}
 
-		logCleanupSummary(Boolean(options.dryRun), totalBytes, "x disk-windows");
+		logCleanupSummary(dryRun, totalBytes, "x disk-windows");
 		return;
 	}
 

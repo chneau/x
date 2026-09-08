@@ -49,6 +49,27 @@ export const formatBytes = (bytes: number): string => {
 	return `${value.toFixed(decimals)} ${units[unit] ?? "B"}`;
 };
 
+// ANSI color helpers
+export const c = {
+	reset: "\x1b[0m",
+	bold: "\x1b[1m",
+	dim: "\x1b[2m",
+	green: "\x1b[32m",
+	yellow: "\x1b[33m",
+	red: "\x1b[31m",
+	cyan: "\x1b[36m",
+	gray: "\x1b[90m",
+};
+
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequence stripping
+export const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, ""); // oxlint-disable-line no-control-regex
+
+/** Pad to a visible width, ignoring ANSI escape sequences. */
+export const pad = (str: string, length: number) => {
+	const padLength = Math.max(0, length - stripAnsi(str).length);
+	return str + " ".repeat(padLength);
+};
+
 /** Runs `fn` over `items` with at most `concurrency` promises in flight at once. */
 export const mapConcurrent = async <T, R>(
 	items: readonly T[],
@@ -61,9 +82,7 @@ export const mapConcurrent = async <T, R>(
 		while (next < items.length) {
 			const index = next;
 			next += 1;
-			const item = items[index];
-			if (item === undefined) continue;
-			results[index] = await fn(item);
+			results[index] = await fn(items[index] as T);
 		}
 	};
 	await Promise.all(

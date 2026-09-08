@@ -58,7 +58,7 @@ const aptPkgs = makePkgs("apt", config.packages.apt);
 
 const brewPkgs = makePkgs("brew", config.packages.brew);
 
-const bunPkgsMapped = makePkgs("bun", config.packages.bun);
+export const bunPkgs = makePkgs("bun", config.packages.bun);
 
 const uvPkgs = makePkgs("uv", config.packages.uv ?? []);
 
@@ -102,13 +102,11 @@ export const installUvPkgs = sequential(installers.uv);
 
 export const installDotnetPkgs = sequential(installers.dotnet);
 
-export const bunPkgs = bunPkgsMapped;
-
 export const pkgs: Pkg[] = [
 	...aptPkgs,
 	...customPkgs,
 	...brewPkgs,
-	...bunPkgsMapped,
+	...bunPkgs,
 	...uvPkgs,
 	...dotnetPkgs,
 ];

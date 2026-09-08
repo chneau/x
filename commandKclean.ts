@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { commandExists, die, mapConcurrent } from "./helpers";
+import { c, commandExists, die, mapConcurrent } from "./helpers";
 
 type KcleanOptions = {
 	allNamespaces?: boolean;
@@ -21,18 +21,6 @@ type CleanEntry = {
 type K8sObject = {
 	spec?: { replicas?: number };
 	metadata?: { name?: string; namespace?: string };
-};
-
-// ANSI color helpers
-const c = {
-	reset: "\x1b[0m",
-	bold: "\x1b[1m",
-	dim: "\x1b[2m",
-	green: "\x1b[32m",
-	yellow: "\x1b[33m",
-	red: "\x1b[31m",
-	cyan: "\x1b[36m",
-	gray: "\x1b[90m",
 };
 
 /** Runs a kubectl command and parses its `-o json` output (empty on failure). */

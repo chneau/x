@@ -246,6 +246,25 @@ type DeployParams = {
 	printYaml?: boolean;
 };
 
+/** Log in to a docker registry once per hostname (shared across services). */
+const dockerLogin = (hostname: string, username: string, password: string) => {
+	if (!loginPromises.has(hostname)) {
+		loginPromises.set(
+			hostname,
+			(async () => {
+				if (await isDockerLoggedIn(hostname)) {
+					console.log(`✅ Already logged in to ${hostname}`);
+					return;
+				}
+				console.log(`🔑 Logging in to ${hostname}...`);
+				await Bun.$`echo ${password} | docker login --username ${username} --password-stdin ${hostname}`;
+				console.log(`... ✅ Logged in to ${hostname}`);
+			})(),
+		);
+	}
+	return loginPromises.get(hostname);
+};
+
 const deploy = async ({
 	config,
 	cwd,
@@ -270,39 +289,27 @@ const deploy = async ({
 			continue;
 		}
 
+		const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
+
 		if (!dryRun) {
 			if (registry.username && registry.password) {
-				const { hostname, username, password } = registry;
-				if (!loginPromises.has(hostname)) {
-					loginPromises.set(
-						hostname,
-						(async () => {
-							if (await isDockerLoggedIn(hostname)) {
-								console.log(`✅ Already logged in to ${hostname}`);
-								return;
-							}
-							console.log(`🔑 Logging in to ${hostname}...`);
-							await Bun.$`echo ${password} | docker login --username ${username} --password-stdin ${hostname}`;
-							console.log(`... ✅ Logged in to ${hostname}`);
-						})(),
-					);
-				}
-				await loginPromises.get(hostname);
-
-				const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
-
-				console.log(`🔨 Building ${imageFullName}...`);
-				const buildArgs = Object.entries(image.buildArgs).map(
-					([key, value]) => `--build-arg=${key}=${value}`,
+				await dockerLogin(
+					registry.hostname,
+					registry.username,
+					registry.password,
 				);
-				const targetArg = image.target ? [`--target=${image.target}`] : [];
-				const buildContext = path.resolve(cwd, image.context);
-				const dockerfilePath = path.resolve(cwd, image.dockerfile);
-				await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`.cwd(
-					buildContext,
-				);
-				console.log(`... ✅ Built ${imageFullName}`);
 			}
+			console.log(`🔨 Building ${imageFullName}...`);
+			const buildArgs = Object.entries(image.buildArgs).map(
+				([key, value]) => `--build-arg=${key}=${value}`,
+			);
+			const targetArg = image.target ? [`--target=${image.target}`] : [];
+			const buildContext = path.resolve(cwd, image.context);
+			const dockerfilePath = path.resolve(cwd, image.dockerfile);
+			await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`.cwd(
+				buildContext,
+			);
+			console.log(`... ✅ Built ${imageFullName}`);
 		}
 
 		console.log(`🔗 Creating deployment for ${serviceAlias}...`);

@@ -110,10 +110,22 @@ const describeLogin = (login: StoredLogin): string =>
 /** Collect all non-empty trimmed input lines. */
 const linesOf = (raw: string): string[] =>
 	raw
-		.replace(/^\s+|\s+$/g, "")
 		.split("\n")
 		.map((l) => l.trim())
-		.filter((l) => l.length > 0);
+		.filter(Boolean);
+
+const tokenInput = (apiToken: string): CredInput => ({
+	kind: "token",
+	apiToken,
+	label: masked(apiToken),
+});
+
+const apiKeyInput = (apiEmail: string, apiKey: string): CredInput => ({
+	kind: "apiKey",
+	apiKey,
+	apiEmail,
+	label: `${apiEmail} / ${masked(apiKey)}`,
+});
 
 /**
  * Auto-guess credentials from pasted stdin.
@@ -142,12 +154,7 @@ const parseCredentials = (raw: string): CredInput[] => {
 			if (!email) {
 				die("❌ Missing email.");
 			}
-			return keys.map((apiKey) => ({
-				kind: "apiKey" as const,
-				apiKey,
-				apiEmail: email,
-				label: `${email} / ${masked(apiKey)}`,
-			}));
+			return keys.map((apiKey) => apiKeyInput(email, apiKey));
 		}
 		// multiple emails: pair each email with its api key, line by line
 		return emails.map((apiEmail, i) => {
@@ -155,21 +162,12 @@ const parseCredentials = (raw: string): CredInput[] => {
 			if (!apiKey) {
 				die(`❌ Missing global API key for email ${apiEmail}.`);
 			}
-			return {
-				kind: "apiKey" as const,
-				apiKey,
-				apiEmail,
-				label: `${apiEmail} / ${masked(apiKey)}`,
-			};
+			return apiKeyInput(apiEmail, apiKey);
 		});
 	}
 
 	// No email -> each line is an API token.
-	return keys.map((apiToken) => ({
-		kind: "token" as const,
-		apiToken,
-		label: masked(apiToken),
-	}));
+	return keys.map(tokenInput);
 };
 
 type CredInput =
@@ -280,11 +278,7 @@ const interactiveLogin = async () => {
 				"\nPaste your API Token (or leave blank / 'q' to finish): ",
 			);
 			if (!token || token.toLowerCase() === "q") break;
-			inputs.push({
-				kind: "token",
-				apiToken: token,
-				label: `api-token ${masked(token)}`,
-			});
+			inputs.push(tokenInput(token));
 		}
 	} else {
 		const email = await askQuestion(
@@ -303,12 +297,7 @@ const interactiveLogin = async () => {
 				`\nPaste a Global API Key for ${email} (blank / 'q' to finish): `,
 			);
 			if (!key || key.toLowerCase() === "q") break;
-			inputs.push({
-				kind: "apiKey",
-				apiKey: key,
-				apiEmail: email,
-				label: `${email} / ${masked(key)}`,
-			});
+			inputs.push(apiKeyInput(email, key));
 		}
 	}
 

@@ -147,31 +147,36 @@ addPrsOptions(
 		.description("Clean and merge/close open Renovate and Dependabot PRs"),
 ).action(commandPrs);
 
-const deck = program
-	.command("deck")
-	.description("Manage, clean, and update Steam Deck")
-	.option("-h, --host <host>", "SSH host name", "steamdeck")
+/** Options shared by `x deck` and its subcommands. */
+const addHostOption = (cmd: Command) =>
+	cmd.option("-h, --host <host>", "SSH host name", "steamdeck");
+
+const deck = addHostOption(
+	program.command("deck").description("Manage, clean, and update Steam Deck"),
+)
 	.option("-s, --sudo-password <password>", "Sudo password for Steam Deck")
 	.action(commandDeck);
 
-deck
-	.command("shortcuts")
-	.description("Clean broken non-Steam shortcuts from shortcuts.vdf")
-	.option("-h, --host <host>", "SSH host name", "steamdeck")
+addHostOption(
+	deck
+		.command("shortcuts")
+		.description("Clean broken non-Steam shortcuts from shortcuts.vdf"),
+)
 	.option("-p, --shortcuts-path <path>", "Custom shortcuts.vdf path")
 	.option("-d, --dry-run", "Preview broken shortcuts without deleting")
 	.action(commandCleanShortcuts);
 
-deck
-	.command("disk")
-	.description("Inspect disk space usage and categories on Steam Deck")
-	.option("-h, --host <host>", "SSH host name", "steamdeck")
-	.action(commandDeckDisk);
+addHostOption(
+	deck
+		.command("disk")
+		.description("Inspect disk space usage and categories on Steam Deck"),
+).action(commandDeckDisk);
 
-deck
-	.command("update")
-	.description("Update Discover flatpaks, SteamOS, and Decky Loader")
-	.option("-h, --host <host>", "SSH host name", "steamdeck")
+addHostOption(
+	deck
+		.command("update")
+		.description("Update Discover flatpaks, SteamOS, and Decky Loader"),
+)
 	.option("-s, --sudo-password <password>", "Sudo password for Steam Deck")
 	.option("--no-flatpaks", "Skip Flatpak/Discover updates")
 	.option("--no-os", "Skip SteamOS update")

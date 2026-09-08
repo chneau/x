@@ -34,12 +34,11 @@ const sshRun = async (host: string, cmd: string, timeoutSec = 60) =>
 		.quiet()
 		.nothrow();
 
-const sshText = async (host: string, cmd: string, timeoutSec = 60) =>
-	(
-		await $`timeout ${timeoutSec}s ssh ${SSH_OPTS} ${host} ${cmd}`
-			.quiet()
-			.text()
-	).trim();
+const sshText = async (host: string, cmd: string, timeoutSec = 60) => {
+	const res = await sshRun(host, cmd, timeoutSec);
+	if (res.exitCode !== 0) return "";
+	return res.stdout.toString().trim();
+};
 
 /** Stream `content` into `remotePath` over ssh, backing up the previous file. */
 const sshWriteFile = async (
@@ -296,27 +295,12 @@ export const commandDeckDisk = async (options: SteamdeckOptions) => {
 	console.log(dfOut);
 
 	console.log("\n=== Category Breakdown ===");
+	// Each path is measured separately (later entries overlap earlier ones).
 	const categories = [
-		{
-			name: "Steam Games",
-			path: "/home/deck/.local/share/Steam/steamapps",
-		},
-		{
-			name: "Steam Runtime",
-			path: "/home/deck/.local/share/Steam",
-		},
-		{
-			name: "Flatpaks",
-			path: "/home/deck/.var/app /var/lib/flatpak",
-		},
-		{
-			name: "Home Dir",
-			path: "/home/deck",
-		},
-		{
-			name: "Var",
-			path: "/var",
-		},
+		{ name: "Steam Games", path: "/home/deck/.local/share/Steam/steamapps" },
+		{ name: "Flatpaks", path: "/home/deck/.var/app /var/lib/flatpak" },
+		{ name: "Home Dir", path: "/home/deck" },
+		{ name: "Var", path: "/var" },
 	];
 
 	for (const cat of categories) {

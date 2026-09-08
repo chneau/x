@@ -38,6 +38,20 @@ const fetchOpenPrs = async (
 	}
 };
 
+/** Close a PR (deleting its branch when possible), retrying without. */
+const closePr = async (
+	url: string,
+): Promise<{ ok: boolean; stderr: string }> => {
+	let res = await $`gh pr close ${url} --delete-branch`.quiet().nothrow();
+	if (res.exitCode !== 0) {
+		res = await $`gh pr close ${url}`.quiet().nothrow();
+	}
+	return {
+		ok: res.exitCode === 0,
+		stderr: res.stderr.toString().trim().slice(0, 60),
+	};
+};
+
 const processPr = async (pr: PullRequest): Promise<string> => {
 	const url = pr.url ?? "";
 	const repo = pr.repository?.nameWithOwner ?? "";
@@ -46,15 +60,10 @@ const processPr = async (pr: PullRequest): Promise<string> => {
 	const author = (pr.author?.login ?? "").toLowerCase();
 
 	if (author.includes("renovate")) {
-		let res = await $`gh pr close ${url} --delete-branch`.quiet().nothrow();
-		if (res.exitCode !== 0) {
-			res = await $`gh pr close ${url}`.quiet().nothrow();
-		}
-		if (res.exitCode === 0) {
-			return `[RENOVATE CLOSED] ${repo}#${num}: ${title}`;
-		}
-		const stderr = res.stderr.toString().trim().slice(0, 60);
-		return `[RENOVATE FAILED CLOSE] ${repo}#${num} (${stderr}): ${title}`;
+		const { ok, stderr } = await closePr(url);
+		return ok
+			? `[RENOVATE CLOSED] ${repo}#${num}: ${title}`
+			: `[RENOVATE FAILED CLOSE] ${repo}#${num} (${stderr}): ${title}`;
 	}
 
 	if (author.includes("dependabot")) {
@@ -66,16 +75,10 @@ const processPr = async (pr: PullRequest): Promise<string> => {
 				return `[DEPENDABOT MERGED] ${repo}#${num} (${flag}): ${title}`;
 			}
 		}
-
-		let res = await $`gh pr close ${url} --delete-branch`.quiet().nothrow();
-		if (res.exitCode !== 0) {
-			res = await $`gh pr close ${url}`.quiet().nothrow();
-		}
-		if (res.exitCode === 0) {
-			return `[DEPENDABOT CLOSED] ${repo}#${num} (Unmergeable): ${title}`;
-		}
-		const stderr = res.stderr.toString().trim().slice(0, 60);
-		return `[DEPENDABOT FAILED CLOSE] ${repo}#${num} (${stderr}): ${title}`;
+		const { ok, stderr } = await closePr(url);
+		return ok
+			? `[DEPENDABOT CLOSED] ${repo}#${num} (Unmergeable): ${title}`
+			: `[DEPENDABOT FAILED CLOSE] ${repo}#${num} (${stderr}): ${title}`;
 	}
 
 	return `[SKIPPED OTHER AUTHOR (${author})] ${repo}#${num}: ${title}`;

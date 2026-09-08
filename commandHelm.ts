@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { die } from "./helpers";
+import { c, die, pad, stripAnsi } from "./helpers";
 
 type HelmRelease = {
 	name: string;
@@ -20,43 +20,6 @@ type HelmSearchItem = {
 
 type CheckStatus = "pending" | "running" | "success" | "error" | "skipped";
 
-type ReleaseState = {
-	name: string;
-	namespace: string;
-	currentChart: string;
-	currentVersion: string;
-	targetChart: string;
-	targetVersion: string;
-	clientDryRun: CheckStatus;
-	clientError?: string;
-	serverDryRun: CheckStatus;
-	serverError?: string;
-	upgradeStatus: CheckStatus;
-	upgradeError?: string;
-};
-
-// ANSI color helpers
-const c = {
-	reset: "\x1b[0m",
-	bold: "\x1b[1m",
-	dim: "\x1b[2m",
-	green: "\x1b[32m",
-	yellow: "\x1b[33m",
-	red: "\x1b[31m",
-	cyan: "\x1b[36m",
-	gray: "\x1b[90m",
-	magenta: "\x1b[35m",
-};
-
-// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequence stripping
-const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, ""); // oxlint-disable-line no-control-regex
-
-const pad = (str: string, length: number) => {
-	const visibleLength = stripAnsi(str).length;
-	const padLength = Math.max(0, length - visibleLength);
-	return str + " ".repeat(padLength);
-};
-
 const formatStatus = (status: CheckStatus): string => {
 	switch (status) {
 		case "pending":
@@ -70,6 +33,21 @@ const formatStatus = (status: CheckStatus): string => {
 		case "skipped":
 			return `${c.gray}⏭️  skipped${c.reset}`;
 	}
+};
+
+type ReleaseState = {
+	name: string;
+	namespace: string;
+	currentChart: string;
+	currentVersion: string;
+	targetChart: string;
+	targetVersion: string;
+	clientDryRun: CheckStatus;
+	clientError?: string;
+	serverDryRun: CheckStatus;
+	serverError?: string;
+	upgradeStatus: CheckStatus;
+	upgradeError?: string;
 };
 
 type HelmOptions = {
