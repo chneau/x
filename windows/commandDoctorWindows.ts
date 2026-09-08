@@ -42,7 +42,9 @@ const doctorPkgs = async () => {
 			console.log(`✅ Installed ${pkg.name}`);
 		} catch (error) {
 			console.log(`❌ Failed to install ${pkg.name}`);
-			console.error(`   ${error instanceof Error ? error.message : String(error)}`);
+			console.error(
+				`   ${error instanceof Error ? error.message : String(error)}`,
+			);
 		}
 	}
 

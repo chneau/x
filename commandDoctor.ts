@@ -11,12 +11,7 @@ import {
 	optionsSchema,
 } from "./doctorCommon";
 import { canSudo, commandExists, isRoot } from "./helpers";
-import {
-	findMissing,
-	installCustomPkgs,
-	installPkgs,
-	pkgs,
-} from "./pkgs";
+import { findMissing, installCustomPkgs, installPkgs, pkgs } from "./pkgs";
 import { commandDoctorWindows } from "./windows/commandDoctorWindows";
 
 if (process.platform !== "win32") {
