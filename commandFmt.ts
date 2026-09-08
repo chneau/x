@@ -44,12 +44,12 @@ const formatters: { files: string[]; cmd: string }[] = [
 	// Ruby
 	{
 		files: ["*.rb", "Gemfile"],
-		cmd: "rubocop --auto-correct --quiet",
+		cmd: "rubocop --autocorrect .",
 	},
-	// Shell scripts
+	// Shell scripts (tabs are shfmt's default indent)
 	{
 		files: ["*.sh"],
-		cmd: "shfmt -w -i=tab $(git ls-files '*.sh')",
+		cmd: "shfmt -w .",
 	},
 	// SQL
 	{
