@@ -1,6 +1,10 @@
 #!/usr/bin/env bun
 import "./utils/verboseShell";
-import { type Command, InvalidArgumentError, program } from "commander";
+import {
+	type Command,
+	InvalidArgumentError,
+	program,
+} from "@commander-js/extra-typings";
 import {
 	commandCfDomainsList,
 	commandCfLogin,

@@ -13,6 +13,7 @@
 		"check:clean": "rm -rf dist out build"
 	},
 	"dependencies": {
+		"@commander-js/extra-typings": "^15.0.0",
 		"cdk8s": "^2.70.101",
 		"cdk8s-plus-34": "^2.0.55",
 		"cloudflare": "^7.1.0",
