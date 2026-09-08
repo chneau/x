@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { commandExists, die, mapConcurrent } from "./helpers";
+import { die, ensureCommand, mapConcurrent } from "./helpers";
 
 type PullRequest = {
 	number: number;
@@ -88,9 +88,10 @@ export const commandPrs = async (options: {
 	owner?: string;
 	concurrency?: number;
 }) => {
-	if (!(await commandExists("gh"))) {
-		die("❌ 'gh' (GitHub CLI) is not installed or not in PATH.");
-	}
+	await ensureCommand(
+		"gh",
+		"❌ 'gh' (GitHub CLI) is not installed or not in PATH.",
+	);
 
 	const owner = options.owner || (await getGhUser());
 	if (!owner) {

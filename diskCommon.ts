@@ -2,6 +2,13 @@ import { join } from "node:path";
 import { $ } from "bun";
 import { formatBytes } from "./helpers";
 
+/** Options shared by `x disk` and `x disk-windows`. */
+export type DiskOptions = {
+	clean?: boolean;
+	dryRun?: boolean;
+	top?: number;
+};
+
 /** A directory that `x disk` / `x disk-windows` can size and remove. */
 export type CleanupTarget = {
 	name: string;

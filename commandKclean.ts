@@ -1,5 +1,6 @@
 import { $ } from "bun";
-import { c, commandExists, die, mapConcurrent } from "./helpers";
+import { c, ensureCommand, mapConcurrent } from "./helpers";
+import { kubectlContext, printContextBanner } from "./kubeCommon";
 
 type KcleanOptions = {
 	allNamespaces?: boolean;
@@ -141,18 +142,14 @@ export const commandKclean = async (options: KcleanOptions = {}) => {
 	const allNamespaces = Boolean(options.allNamespaces);
 	const yes = Boolean(options.yes);
 
-	if (!(await commandExists("kubectl"))) {
-		die("❌ kubectl command not found in PATH");
-	}
+	await ensureCommand("kubectl");
 
-	const context = (
-		await $`kubectl config current-context`.text().catch(() => "unknown")
-	).trim();
+	const context = await kubectlContext();
 
-	console.log(
-		`${c.bold}🧹 Kube Clean [Context: ${c.cyan}${context}${c.reset}${
-			allNamespaces ? ` ${c.dim}/ all namespaces${c.reset}` : ""
-		}]${c.reset}\n`,
+	printContextBanner(
+		"🧹 Kube Clean",
+		context,
+		allNamespaces ? "/ all namespaces" : "",
 	);
 
 	const entries = await buildEntries(allNamespaces);

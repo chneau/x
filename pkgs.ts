@@ -26,17 +26,17 @@ const createPkg = (
 	install,
 });
 
-/** Install command for a single package name per tool. */
+/** Install command per tool; a `string[]` installs the whole list in one command. */
 const installers: Record<
 	Exclude<PkgType, "custom" | "winget">,
-	(name: string) => Promise<unknown>
+	(names: string | string[]) => Promise<unknown>
 > = {
-	apt: (name) => $`sudo apt install -y ${name}`,
-	brew: (name) => $`brew install ${name}`,
-	bun: (name) => $`bun install --force --global ${name}`,
-	uv: (name) => $`uv tool install --force ${name}`.nothrow(),
-	dotnet: (name) =>
-		$`dotnet tool install --global ${name} || dotnet tool update --global ${name}`.nothrow(),
+	apt: (names) => $`sudo apt install -y ${names}`,
+	brew: (names) => $`brew install ${names}`,
+	bun: (names) => $`bun install --force --global ${names}`,
+	uv: (names) => $`uv tool install --force ${names}`.nothrow(),
+	dotnet: (names) =>
+		$`dotnet tool install --global ${names} || dotnet tool update --global ${names}`.nothrow(),
 };
 
 /** Build the `Pkg` list for a config section, e.g. `makePkgs("apt", config.packages.apt)`. */
@@ -85,22 +85,16 @@ const sequential =
 		for (const name of names) await install(name);
 	};
 
-// apt/brew/bun batch their whole list into a single command.
-export const installAptPkgs = async (names: string[]) => {
-	await $`sudo apt install -y ${names}`;
-};
-
-export const installBrewPkgs = async (names: string[]) => {
-	await $`brew install ${names}`;
-};
-
-export const installBunPkgs = async (names: string[]) => {
-	await $`bun install --force --global ${names}`;
-};
-
 export const installUvPkgs = sequential(installers.uv);
 
 export const installDotnetPkgs = sequential(installers.dotnet);
+
+// apt/brew/bun batch their whole list into a single command.
+export const installAptPkgs = (names: string[]) => installers.apt(names);
+
+export const installBrewPkgs = (names: string[]) => installers.brew(names);
+
+export const installBunPkgs = (names: string[]) => installers.bun(names);
 
 export const pkgs: Pkg[] = [
 	...aptPkgs,

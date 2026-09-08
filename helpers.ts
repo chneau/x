@@ -16,6 +16,11 @@ export const commandExists = async (cmd: string) => {
 	return (await shell.quiet().nothrow()).exitCode === 0;
 };
 
+/** Exit with `msg` when `cmd` is missing from PATH. */
+export const ensureCommand = async (cmd: string, msg?: string) => {
+	if (!(await commandExists(cmd))) die(msg ?? `❌ '${cmd}' not found in PATH`);
+};
+
 export const isRoot = async () => (await $`id -u`.text()).trim() === "0";
 
 export const canSudo = async () =>

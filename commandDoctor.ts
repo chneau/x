@@ -62,6 +62,74 @@ const doctorSudo = async () => {
 	}
 };
 
+type UpdateStep = {
+	label: string;
+	/** Omit when the tool check is unnecessary (e.g. bundled tools). */
+	check?: string;
+	run: () => Promise<unknown>;
+};
+
+/** Tool updates, applied uniformly over the table. */
+const updateSteps: UpdateStep[] = [
+	{
+		label: "brew",
+		run: async () => {
+			const brew = (await commandExists("brew"))
+				? "brew"
+				: "/home/linuxbrew/.linuxbrew/bin/brew";
+			if (await Bun.file(brew).exists()) {
+				await $`${brew} update`.nothrow();
+				await $`${brew} upgrade`.nothrow();
+				await $`${brew} cleanup`.nothrow();
+			}
+		},
+	},
+	{
+		label: "bun",
+		run: async () => {
+			await $`bun upgrade`.nothrow();
+			await $`bun update --latest --force --global`.nothrow();
+		},
+	},
+	{
+		label: "uv & uv tools",
+		check: "uv",
+		run: async () => {
+			await $`uv self update`.nothrow();
+			await $`uv tool upgrade --all`.nothrow();
+		},
+	},
+	{
+		label: "deno",
+		check: "deno",
+		run: () => $`deno upgrade`.nothrow(),
+	},
+	{
+		label: "rust toolchain",
+		check: "rustup",
+		run: () => $`rustup update`.nothrow(),
+	},
+	{
+		label: "dotnet tools",
+		check: "dotnet",
+		run: async () => {
+			const toolList = await $`dotnet tool list -g`.quiet().nothrow().text();
+			const lines = toolList.split("\n").slice(2);
+			for (const line of lines) {
+				const toolName = line.trim().split(/\s+/)[0];
+				if (toolName) {
+					await $`dotnet tool update --global ${toolName}`.nothrow();
+				}
+			}
+		},
+	},
+	{
+		label: "krew plugins",
+		check: "kubectl-krew",
+		run: () => $`kubectl krew upgrade`.nothrow(),
+	},
+];
+
 const doctorUpdateSystem = async () => {
 	console.log("🕒 Updating system...");
 
@@ -71,56 +139,10 @@ const doctorUpdateSystem = async () => {
 	await $`sudo apt autoremove -y`.nothrow();
 	await $`sudo apt autoclean -y`.nothrow();
 
-	// Brew
-	const brew = (await commandExists("brew"))
-		? "brew"
-		: "/home/linuxbrew/.linuxbrew/bin/brew";
-	if (await Bun.file(brew).exists()) {
-		await $`${brew} update`.nothrow();
-		await $`${brew} upgrade`.nothrow();
-		await $`${brew} cleanup`.nothrow();
-	}
-
-	// Bun
-	await $`bun upgrade`.nothrow();
-	await $`bun update --latest --force --global`.nothrow();
-
-	// UV and UV global tools
-	if (await commandExists("uv")) {
-		console.log("🕒 Updating uv & uv tools...");
-		await $`uv self update`.nothrow();
-		await $`uv tool upgrade --all`.nothrow();
-	}
-
-	// Deno
-	if (await commandExists("deno")) {
-		console.log("🕒 Updating deno...");
-		await $`deno upgrade`.nothrow();
-	}
-
-	// Rustup
-	if (await commandExists("rustup")) {
-		console.log("🕒 Updating rust toolchain...");
-		await $`rustup update`.nothrow();
-	}
-
-	// Dotnet global tools
-	if (await commandExists("dotnet")) {
-		console.log("🕒 Updating dotnet tools...");
-		const toolList = await $`dotnet tool list -g`.quiet().nothrow().text();
-		const lines = toolList.split("\n").slice(2);
-		for (const line of lines) {
-			const toolName = line.trim().split(/\s+/)[0];
-			if (toolName) {
-				await $`dotnet tool update --global ${toolName}`.nothrow();
-			}
-		}
-	}
-
-	// Kubectl Krew plugins
-	if (await commandExists("kubectl-krew")) {
-		console.log("🕒 Updating krew plugins...");
-		await $`kubectl krew upgrade`.nothrow();
+	for (const step of updateSteps) {
+		if (step.check && !(await commandExists(step.check))) continue;
+		console.log(`🕒 Updating ${step.label}...`);
+		await step.run();
 	}
 
 	console.log("✅ System updated");

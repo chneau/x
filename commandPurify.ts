@@ -41,10 +41,9 @@ const isCSharpProject = async (dir: string): Promise<boolean> => {
 
 const purify = async (dir: string, dryRun = false) => {
 	console.log(`🚀 Managing files in ${dir}`);
-	await removeFileIfExists(dir, "package-lock.json", dryRun).catch(
-		console.error,
-	);
-	await removeFileIfExists(dir, "yarn.lock", dryRun).catch(console.error);
+	for (const lockfile of ["package-lock.json", "yarn.lock"]) {
+		await removeFileIfExists(dir, lockfile, dryRun).catch(console.error);
+	}
 	const isCSharp = await isCSharpProject(dir);
 	const packageJsonExists = await managePackagejson(
 		dir,
@@ -141,6 +140,19 @@ const writeManagedJson = async (
 	console.log(`✅ Done with ${filename}`);
 };
 
+/** Fill in `expected` defaults on `target`, keeping existing values `keep` accepts. */
+const applyDefaults = (
+	target: Record<string, unknown>,
+	expected: Record<string, unknown>,
+	keep?: (existing: unknown) => boolean,
+) => {
+	for (const [key, value] of Object.entries(expected)) {
+		if (target[key] === value) continue;
+		if (keep?.(target[key])) continue;
+		target[key] = value;
+	}
+};
+
 const manageTsconfig = async (
 	dir: string,
 	dryRun = false,
@@ -163,10 +175,7 @@ const manageTsconfig = async (
 		resolveJsonModule: true,
 		esModuleInterop: true,
 	};
-	for (const [key, value] of Object.entries(expected)) {
-		if (tsconfig.compilerOptions[key] === value) continue;
-		tsconfig.compilerOptions[key] = value;
-	}
+	applyDefaults(tsconfig.compilerOptions, expected);
 	await writeManagedJson(file, tsconfig, dryRun);
 	return true;
 };
@@ -227,19 +236,14 @@ const managePackagejson = async (
 				lint: "tsc --noEmit",
 				all: "bun run --sequential --no-exit-on-error upgrade check",
 			};
-	for (const [key, value] of Object.entries(expected)) {
-		if (
-			typeof pkgJson.scripts?.[key] === "string" &&
-			pkgJson.scripts[key].includes("bun") &&
-			(pkgJson.scripts[key].includes("--filter") ||
-				pkgJson.scripts[key].includes("--cwd"))
-		) {
-			continue;
-		}
-		if (pkgJson.scripts?.[key] === value) continue;
-		pkgJson.scripts ??= {};
-		pkgJson.scripts[key] = value;
-	}
+	applyDefaults(pkgJson.scripts ?? {}, expected, (existing) => {
+		const script =
+			typeof existing === "string" ? existing : JSON.stringify(existing);
+		return (
+			script.includes("bun") &&
+			(script.includes("--filter") || script.includes("--cwd"))
+		);
+	});
 	pkgJson.prettier = undefined;
 	await writeManagedJson(file, pkgJson, dryRun);
 	return true;

@@ -1,5 +1,6 @@
 import { $ } from "bun";
-import { c, die, pad, stripAnsi } from "./helpers";
+import { c, die, ensureCommand, pad, stripAnsi } from "./helpers";
+import { kubectlContext, printContextBanner } from "./kubeCommon";
 
 type HelmRelease = {
 	name: string;
@@ -59,25 +60,18 @@ export const commandHelm = async (
 	releasesFilter: string[],
 	options: HelmOptions,
 ) => {
-	const helmCheck = await $`which helm`.quiet().nothrow();
-	if (helmCheck.exitCode !== 0) {
-		die("❌ helm command not found in PATH");
-	}
+	await ensureCommand("helm", "❌ helm command not found in PATH");
 
-	const context = (
-		await $`kubectl config current-context`.text().catch(() => "unknown")
-	).trim();
+	const context = await kubectlContext();
 
-	console.log(
-		`${c.bold}☸️  Helm Chart Manager [Context: ${c.cyan}${context}${c.reset}${c.bold}]${c.reset}\n`,
-	);
+	printContextBanner("☸️  Helm Chart Manager", context);
 
-	const [releasesJson] = await Promise.all([
-		$`helm list -A -o json`.text().catch(() => "[]"),
+	const [, releasesJson] = await Promise.all([
 		$`helm repo update`
 			.quiet()
 			.nothrow()
 			.catch(() => null),
+		$`helm list -A -o json`.text().catch(() => "[]"),
 	]);
 
 	let releases: HelmRelease[] = [];
@@ -155,6 +149,37 @@ export const commandHelm = async (
 	].join(" ");
 
 	// Asynchronously process each release
+	type StepKey = "clientDryRun" | "serverDryRun" | "upgradeStatus";
+	const errorKey: Record<
+		StepKey,
+		"clientError" | "serverError" | "upgradeError"
+	> = {
+		clientDryRun: "clientError",
+		serverDryRun: "serverError",
+		upgradeStatus: "upgradeError",
+	};
+
+	/** Run one `helm upgrade` phase (dry-run or real), recording status on `row`. */
+	const runStep = async (
+		row: ReleaseState,
+		key: StepKey,
+		extraArgs: string[],
+	): Promise<boolean> => {
+		row[key] = "running";
+		const res =
+			await $`helm upgrade ${row.name} ${row.targetChart} -n ${row.namespace} --reuse-values ${extraArgs}`
+				.quiet()
+				.nothrow();
+		if (res.exitCode === 0) {
+			row[key] = "success";
+			return true;
+		}
+		row[key] = "error";
+		row[errorKey[key]] =
+			res.stderr.toString().trim() || res.stdout.toString().trim();
+		return false;
+	};
+
 	const processRelease = async (row: ReleaseState) => {
 		const baseChart = row.targetChart;
 
@@ -178,61 +203,22 @@ export const commandHelm = async (
 			// keep fallback
 		}
 
-		// 2. Client dry run
-		row.clientDryRun = "running";
-		const clientRes =
-			await $`helm upgrade ${row.name} ${row.targetChart} -n ${row.namespace} --reuse-values --dry-run=client`
-				.quiet()
-				.nothrow();
-
-		if (clientRes.exitCode === 0) {
-			row.clientDryRun = "success";
-		} else {
-			row.clientDryRun = "error";
-			row.clientError =
-				clientRes.stderr.toString().trim() ||
-				clientRes.stdout.toString().trim();
+		// 2. Client dry run (server dry run & upgrade are skipped on failure)
+		if (!(await runStep(row, "clientDryRun", ["--dry-run=client"]))) {
 			row.serverDryRun = "skipped";
 			row.upgradeStatus = "skipped";
 			return;
 		}
 
-		// 3. Server dry run
-		row.serverDryRun = "running";
-		const serverRes =
-			await $`helm upgrade ${row.name} ${row.targetChart} -n ${row.namespace} --reuse-values --dry-run=server`
-				.quiet()
-				.nothrow();
-
-		if (serverRes.exitCode === 0) {
-			row.serverDryRun = "success";
-		} else {
-			row.serverDryRun = "error";
-			row.serverError =
-				serverRes.stderr.toString().trim() ||
-				serverRes.stdout.toString().trim();
+		// 3. Server dry run (upgrade is skipped on failure)
+		if (!(await runStep(row, "serverDryRun", ["--dry-run=server"]))) {
 			row.upgradeStatus = "skipped";
 			return;
 		}
 
 		// 4. Upgrade if requested
 		if (shouldUpgrade) {
-			row.upgradeStatus = "running";
-			const upgradeRes =
-				await $`helm upgrade ${row.name} ${row.targetChart} -n ${row.namespace} --reuse-values --rollback-on-failure`
-					.quiet()
-					.nothrow();
-
-			if (upgradeRes.exitCode === 0) {
-				row.upgradeStatus = "success";
-			} else {
-				row.upgradeStatus = "error";
-				row.upgradeError =
-					upgradeRes.stderr.toString().trim() ||
-					upgradeRes.stdout.toString().trim();
-			}
-		} else {
-			row.upgradeStatus = "pending";
+			await runStep(row, "upgradeStatus", ["--rollback-on-failure"]);
 		}
 	};
 

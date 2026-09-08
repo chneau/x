@@ -34,6 +34,20 @@ const sshRun = async (host: string, cmd: string, timeoutSec = 60) =>
 		.quiet()
 		.nothrow();
 
+/** Die unless an SSH connection to `host` succeeds. */
+const ensureSsh = async (host: string) => {
+	const testConn = await sshRun(host, "echo ok", 10);
+	if (testConn.exitCode !== 0) {
+		die(
+			`❌ Cannot connect to ${host}. Make sure SSH is enabled on Steam Deck.`,
+		);
+	}
+};
+
+/** Pipe the sudo password into `sudo -S <cmd>` when one is provided. */
+const sudoRun = (cmd: string, sudoPassword?: string) =>
+	sudoPassword ? `echo ${JSON.stringify(sudoPassword)} | sudo -S ${cmd}` : cmd;
+
 const sshText = async (host: string, cmd: string, timeoutSec = 60) => {
 	const res = await sshRun(host, cmd, timeoutSec);
 	if (res.exitCode !== 0) return "";
@@ -198,12 +212,7 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 
 	console.log(`🔍 Checking Steam Deck (${host}) for broken shortcuts...`);
 
-	const testConn = await sshRun(host, "echo ok", 10);
-	if (testConn.exitCode !== 0) {
-		die(
-			`❌ Cannot connect to ${host}. Make sure SSH is enabled on Steam Deck.`,
-		);
-	}
+	await ensureSsh(host);
 
 	const rawShortcuts = await sshRun(host, `cat ${shortcutsPath}`, 30);
 	if (rawShortcuts.exitCode !== 0) {
@@ -335,12 +344,7 @@ export const commandDeck = async (options: UpdateOptions) => {
 
 	console.log(`🚀 Starting Steam Deck updater for ${host}...`);
 
-	const testConn = await sshRun(host, "echo ok", 10);
-	if (testConn.exitCode !== 0) {
-		die(
-			`❌ Cannot connect to ${host}. Make sure SSH is enabled on Steam Deck.`,
-		);
-	}
+	await ensureSsh(host);
 
 	// 1. Flatpaks
 	if (options.flatpaks !== false) {
@@ -354,12 +358,12 @@ export const commandDeck = async (options: UpdateOptions) => {
 			console.log("✅ Flatpaks are up to date.");
 		} else {
 			console.log("Updating Flatpaks...");
-			let cmd = "flatpak update --user -y";
-			if (sudoPassword) {
-				cmd += `; echo ${JSON.stringify(
-					sudoPassword,
-				)} | sudo -S flatpak update --system -y`;
-			}
+			const cmd = sudoPassword
+				? `flatpak update --user -y; ${sudoRun(
+						"flatpak update --system -y",
+						sudoPassword,
+					)}`
+				: "flatpak update --user -y";
 			const res = await sshRun(host, cmd, 300);
 			if (res.exitCode === 0) {
 				console.log("✅ Flatpaks updated.");
@@ -465,12 +469,13 @@ export const commandDeck = async (options: UpdateOptions) => {
 				console.log("✅ Decky Loader is up to date.");
 			} else {
 				console.log("Updating Decky Loader...");
-				let installCmd = `curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`;
-				if (sudoPassword) {
-					installCmd = `echo ${JSON.stringify(
-						sudoPassword,
-					)} | sudo -S true 2>/dev/null && curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`;
-				}
+				// prime the sudo credential cache first when a password is provided
+				const installCmd = sudoPassword
+					? `${sudoRun(
+							"true 2>/dev/null",
+							sudoPassword,
+						)} && curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`
+					: `curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`;
 				const res = await sshRun(host, installCmd, 120);
 				if (res.exitCode === 0) {
 					console.log("✅ Decky updated.");

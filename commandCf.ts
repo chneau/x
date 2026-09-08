@@ -103,6 +103,15 @@ const describeLogin = (login: StoredLogin): string =>
 		? `api-token ${masked(login.apiToken)}`
 		: `global key (${login.apiEmail}) ${masked(login.apiKey)}`;
 
+/** Find a stored login by id, or exit with a hint. */
+const requireLogin = (store: CfStore, id: string): StoredLogin => {
+	const found = store.logins.find((l) => l.id === id);
+	if (!found) {
+		die(`❌ No login with id '${id}'. See \`x cf login list\`.`);
+	}
+	return found;
+};
+
 // ---------------------------------------------------------------------------
 // x cf login
 // ---------------------------------------------------------------------------
@@ -351,22 +360,16 @@ export const commandCfLoginList = async () => {
 
 export const commandCfLoginUse = async (id: string) => {
 	const store = await readStore();
-	const found = store.logins.find((l) => l.id === id);
-	if (!found) {
-		die(`❌ No login with id '${id}'. See \`x cf login list\`.`);
-	}
-	store.activeId = id;
+	const found = requireLogin(store, id);
+	store.activeId = found.id;
 	await writeStore(store);
-	console.log(`✅ Active login is now ${id} (${describeLogin(found)}).`);
+	console.log(`✅ Active login is now ${found.id} (${describeLogin(found)}).`);
 };
 
 export const commandCfLoginRemove = async (id: string) => {
 	const store = await readStore();
-	const before = store.logins.length;
+	requireLogin(store, id);
 	store.logins = store.logins.filter((l) => l.id !== id);
-	if (store.logins.length === before) {
-		die(`❌ No login with id '${id}'.`);
-	}
 	if (store.activeId === id) store.activeId = store.logins.at(-1)?.id;
 	await writeStore(store);
 	await commandCfLoginList();
@@ -393,12 +396,8 @@ const listZones = async (client: Cloudflare) => {
 
 const findZone = async (client: Cloudflare, wanted: string) => {
 	const target = wanted.toLowerCase().replace(/^\./, "");
-	for await (const zone of client.zones.list()) {
-		if ((zone.name ?? "").toLowerCase() === target) {
-			return { id: zone.id, name: zone.name ?? zone.id };
-		}
-	}
-	return null;
+	const zones = await listZones(client);
+	return zones.find((z) => (z.name ?? "").toLowerCase() === target) ?? null;
 };
 
 type CatchAllRule = {

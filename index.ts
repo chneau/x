@@ -50,13 +50,13 @@ const nonNegativeInt = intOption(
 	"Recursion depth must be a non-negative integer",
 	0,
 );
-const positiveInt = intOption("Concurrency must be a positive integer", 1);
+const positiveInt = (field: string) =>
+	intOption(`${field} must be a positive integer`, 1);
 const purifyLevel = intOption(
 	"Recursion level must be an integer between 0 and 4",
 	0,
 	4,
 );
-const topCount = intOption("Top count must be a positive integer", 1);
 
 /** Options shared by `x prs` and its `clean` subcommand. */
 const addPrsOptions = (cmd: Command) =>
@@ -68,7 +68,7 @@ const addPrsOptions = (cmd: Command) =>
 		.option(
 			"-c, --concurrency <number>",
 			"Number of concurrent workers",
-			positiveInt,
+			positiveInt("Concurrency"),
 		);
 
 /** Options shared by `x disk` and `x disk-windows`. */
@@ -87,7 +87,7 @@ const addDiskOptions = (cmd: Command) =>
 		.option(
 			"-t, --top <number>",
 			"Number of largest files to display in inspection mode",
-			topCount,
+			positiveInt("Top count"),
 			15,
 		);
 
@@ -106,7 +106,7 @@ program
 	.option(
 		"-c, --concurrency <number>",
 		"Number of concurrent workers",
-		positiveInt,
+		positiveInt("Concurrency"),
 		10,
 	)
 	.action(commandGitclean);
@@ -151,11 +151,14 @@ addPrsOptions(
 const addHostOption = (cmd: Command) =>
 	cmd.option("-h, --host <host>", "SSH host name", "steamdeck");
 
-const deck = addHostOption(
-	program.command("deck").description("Manage, clean, and update Steam Deck"),
-)
-	.option("-s, --sudo-password <password>", "Sudo password for Steam Deck")
-	.action(commandDeck);
+const addSudoOption = (cmd: Command) =>
+	cmd.option("-s, --sudo-password <password>", "Sudo password for Steam Deck");
+
+const deck = addSudoOption(
+	addHostOption(
+		program.command("deck").description("Manage, clean, and update Steam Deck"),
+	),
+).action(commandDeck);
 
 addHostOption(
 	deck
@@ -172,12 +175,13 @@ addHostOption(
 		.description("Inspect disk space usage and categories on Steam Deck"),
 ).action(commandDeckDisk);
 
-addHostOption(
-	deck
-		.command("update")
-		.description("Update Discover flatpaks, SteamOS, and Decky Loader"),
+addSudoOption(
+	addHostOption(
+		deck
+			.command("update")
+			.description("Update Discover flatpaks, SteamOS, and Decky Loader"),
+	),
 )
-	.option("-s, --sudo-password <password>", "Sudo password for Steam Deck")
 	.option("--no-flatpaks", "Skip Flatpak/Discover updates")
 	.option("--no-os", "Skip SteamOS update")
 	.option("--no-games", "Skip Steam game/runtime updates check")

@@ -4,6 +4,7 @@ import { $ } from "bun";
 import {
 	analyzeDisk,
 	cleanupTargets,
+	type DiskOptions,
 	dirSizeBytes,
 	logCleanupStep,
 	logCleanupSummary,
@@ -11,12 +12,6 @@ import {
 	type WindowsBase,
 } from "../diskCommon";
 import { commandExists } from "../helpers";
-
-type DiskWindowsOptions = {
-	clean?: boolean;
-	dryRun?: boolean;
-	top?: number;
-};
 
 type ResolvedWindowsTarget = {
 	name: string;
@@ -149,7 +144,7 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
 	return null;
 };
 
-export const commandDiskWindows = async (options: DiskWindowsOptions) => {
+export const commandDiskWindows = async (options: DiskOptions) => {
 	const dirs = await resolveWindowsDirs();
 
 	if (!dirs) {
