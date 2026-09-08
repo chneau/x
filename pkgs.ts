@@ -11,6 +11,17 @@ export type Pkg = {
 	install: () => Promise<unknown>;
 };
 
+/** Outcome of installing a batch of packages. */
+export type InstallResult = {
+	label: string;
+	/** Packages that install() was invoked for. */
+	names: string[];
+	/** True when every install attempt succeeded (or there was nothing to do). */
+	ok: boolean;
+	/** Name -> error message for each failed package. */
+	failures: Record<string, string>;
+};
+
 /** A package entry from config.json; `check` overrides the binary name tested. */
 type ConfigPkg = { name: string; check?: string };
 
@@ -26,17 +37,45 @@ const createPkg = (
 	install,
 });
 
-/** Install command per tool; a `string[]` installs the whole list in one command. */
+/**
+ * Install strategy per tool:
+ * - `"batch"`: install the whole list in one command.
+ * - `"sequential"`: install packages one at a time.
+ */
 const installers: Record<
 	Exclude<PkgType, "custom" | "winget">,
-	(names: string | string[]) => Promise<unknown>
+	{
+		strategy: "batch" | "sequential";
+		label: string;
+		run: (names: string | string[]) => Promise<unknown>;
+	}
 > = {
-	apt: (names) => $`sudo apt install -y ${names}`,
-	brew: (names) => $`brew install ${names}`,
-	bun: (names) => $`bun install --force --global ${names}`,
-	uv: (names) => $`uv tool install --force ${names}`.nothrow(),
-	dotnet: (names) =>
-		$`dotnet tool install --global ${names} || dotnet tool update --global ${names}`.nothrow(),
+	apt: {
+		strategy: "batch",
+		label: "apt",
+		run: (names) => $`sudo apt install -y ${names}`,
+	},
+	brew: {
+		strategy: "batch",
+		label: "brew",
+		run: (names) => $`brew install ${names}`,
+	},
+	bun: {
+		strategy: "batch",
+		label: "bun",
+		run: (names) => $`bun install --force --global ${names}`,
+	},
+	uv: {
+		strategy: "sequential",
+		label: "uv tool",
+		run: (names) => $`uv tool install --force ${names}`.nothrow(),
+	},
+	dotnet: {
+		strategy: "sequential",
+		label: "dotnet tool",
+		run: (names) =>
+			$`dotnet tool install --global ${names} || dotnet tool update --global ${names}`.nothrow(),
+	},
 };
 
 /** Build the `Pkg` list for a config section, e.g. `makePkgs("apt", config.packages.apt)`. */
@@ -49,7 +88,7 @@ const makePkgs = (
 		return createPkg(
 			name,
 			type,
-			() => installers[type](name),
+			() => installers[type].run(name),
 			typeof pkg === "string" ? undefined : pkg.check,
 		);
 	});
@@ -79,23 +118,6 @@ const customPkgs: Pkg[] = config.packages.custom.map((pkg) =>
 	),
 );
 
-/** Install `names` one by one with the per-tool installer. */
-const sequential =
-	(install: (name: string) => Promise<unknown>) => async (names: string[]) => {
-		for (const name of names) await install(name);
-	};
-
-export const installUvPkgs = sequential(installers.uv);
-
-export const installDotnetPkgs = sequential(installers.dotnet);
-
-// apt/brew/bun batch their whole list into a single command.
-export const installAptPkgs = (names: string[]) => installers.apt(names);
-
-export const installBrewPkgs = (names: string[]) => installers.brew(names);
-
-export const installBunPkgs = (names: string[]) => installers.bun(names);
-
 export const pkgs: Pkg[] = [
 	...aptPkgs,
 	...customPkgs,
@@ -105,29 +127,120 @@ export const pkgs: Pkg[] = [
 	...dotnetPkgs,
 ];
 
-/** Packages in `pkgs` that are not currently installed. */
-export const findMissing = async (pkgs: Pkg[]): Promise<Pkg[]> => {
+/** Packages in `list` that are not currently installed. */
+export const findMissing = async (list: readonly Pkg[]): Promise<Pkg[]> => {
 	const results = await Promise.all(
-		pkgs.map(async (pkg) => ({ pkg, exists: await pkg.check() })),
+		list.map(async (pkg) => ({ pkg, exists: await pkg.check() })),
 	);
 	return results.filter((r) => !r.exists).map((r) => r.pkg);
 };
 
-/** Batch-install `toInstall` via `install`, logging progress and failures. */
-export const installBatch = async (
-	label: string,
-	toInstall: Pkg[],
-	install: (names: string[]) => Promise<unknown>,
-) => {
-	if (toInstall.length === 0) return;
-	const names = toInstall.map((p) => p.name);
-	console.log(`🕒 Batch installing ${label} packages: ${names.join(", ")}...`);
-	try {
-		await install(names);
-		console.log(`✅ Installed ${label} packages: ${names.join(", ")}`);
-	} catch {
-		console.log(
-			`❌ Failed to install some ${label} packages: ${names.join(", ")}`,
-		);
+const logBatchStart = (label: string, names: string[]) =>
+	console.log(`🕒 Installing ${label} packages: ${names.join(", ")}...`);
+
+const logBatchDone = (label: string, result: InstallResult) => {
+	if (result.ok) {
+		console.log(`✅ Installed ${label} packages: ${result.names.join(", ")}`);
+		return;
 	}
+	console.log(
+		`❌ Failed to install some ${label} packages: ${result.names.join(", ")}`,
+	);
+	for (const [name, error] of Object.entries(result.failures)) {
+		console.error(`   ${name}: ${error}`);
+	}
+};
+
+/** Install a single package with `pkg.install()`, capturing the error message. */
+const installOne = async (pkg: Pkg): Promise<string | undefined> => {
+	try {
+		await pkg.install();
+		return undefined;
+	} catch (error) {
+		return error instanceof Error ? error.message : String(error);
+	}
+};
+
+/** Install `type`-keyed packages using that tool's native strategy (batch or sequential). */
+export const installPkgs = async (
+	type: keyof typeof installers,
+	toInstall: readonly Pkg[],
+): Promise<InstallResult> => {
+	const tool = installers[type];
+	const names = toInstall.map((p) => p.name);
+	if (names.length === 0) {
+		return { label: tool.label, names, ok: true, failures: {} };
+	}
+	logBatchStart(tool.label, names);
+	const failures: Record<string, string> = {};
+	if (tool.strategy === "batch") {
+		try {
+			await tool.run(names);
+		} catch (error) {
+			// A batch command fails as a whole; attribute the error to every package.
+			const message = error instanceof Error ? error.message : String(error);
+			for (const name of names) failures[name] = message;
+		}
+	} else {
+		for (const pkg of toInstall) {
+			const error = await installOne(pkg);
+			if (error) failures[pkg.name] = error;
+		}
+	}
+	const result: InstallResult = {
+		label: tool.label,
+		names,
+		ok: Object.keys(failures).length === 0,
+		failures,
+	};
+	logBatchDone(tool.label, result);
+	return result;
+};
+
+/** Install `custom` packages one at a time (each carries its own command/env). */
+export const installCustomPkgs = async (
+	toInstall: readonly Pkg[],
+): Promise<InstallResult> => {
+	const label = "custom";
+	const names = toInstall.map((p) => p.name);
+	if (names.length === 0) {
+		return { label, names, ok: true, failures: {} };
+	}
+	const failures: Record<string, string> = {};
+	for (const pkg of toInstall) {
+		console.log(`🕒 Installing custom package ${pkg.name}...`);
+		const error = await installOne(pkg);
+		if (error) failures[pkg.name] = error;
+		else console.log(`✅ Installed ${pkg.name}`);
+	}
+	return {
+		label,
+		names,
+		ok: Object.keys(failures).length === 0,
+		failures,
+	};
+};
+
+/**
+ * Install any mix of `Pkg`s, grouping by type and dispatching each group to its
+ * tool's native strategy. Returns one structured result per non-empty group.
+ */
+export const installPkgsGrouped = async (
+	toInstall: readonly Pkg[],
+): Promise<InstallResult[]> => {
+	const byType = new Map<PkgType, Pkg[]>();
+	for (const pkg of toInstall) {
+		const group = byType.get(pkg.type) ?? [];
+		group.push(pkg);
+		byType.set(pkg.type, group);
+	}
+	const results: InstallResult[] = [];
+	for (const [type, group] of byType) {
+		if (type === "custom" || type === "winget") {
+			results.push(await installCustomPkgs(group));
+		} else {
+			results.push(await installPkgs(type, group));
+		}
+	}
+	return results;
 };

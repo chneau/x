@@ -13,12 +13,8 @@ import {
 import { canSudo, commandExists, isRoot } from "./helpers";
 import {
 	findMissing,
-	installAptPkgs,
-	installBatch,
-	installBrewPkgs,
-	installBunPkgs,
-	installDotnetPkgs,
-	installUvPkgs,
+	installCustomPkgs,
+	installPkgs,
 	pkgs,
 } from "./pkgs";
 import { commandDoctorWindows } from "./windows/commandDoctorWindows";
@@ -161,19 +157,12 @@ const doctorPkgs = async () => {
 	const byType = (type: (typeof pkgs)[number]["type"]) =>
 		missing.filter((p) => p.type === type);
 
-	await installBatch("apt", byType("apt"), installAptPkgs);
-	await installBatch("brew", byType("brew"), installBrewPkgs);
-	await installBatch("bun", byType("bun"), installBunPkgs);
-	await installBatch("uv tool", byType("uv"), installUvPkgs);
-	await installBatch("dotnet tool", byType("dotnet"), installDotnetPkgs);
-
-	for (const pkg of byType("custom")) {
-		console.log(`🕒 Installing custom package ${pkg.name}...`);
-		await pkg
-			.install()
-			.then(() => console.log(`✅ Installed ${pkg.name}`))
-			.catch(() => console.log(`❌ Failed to install ${pkg.name}`));
-	}
+	await installPkgs("apt", byType("apt"));
+	await installPkgs("brew", byType("brew"));
+	await installPkgs("bun", byType("bun"));
+	await installPkgs("uv", byType("uv"));
+	await installPkgs("dotnet", byType("dotnet"));
+	await installCustomPkgs(byType("custom"));
 };
 
 const checkLogFix = async (

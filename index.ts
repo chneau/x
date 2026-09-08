@@ -147,9 +147,9 @@ addPrsOptions(
 		.description("Clean and merge/close open Renovate and Dependabot PRs"),
 ).action(commandPrs);
 
-/** Options shared by `x deck` and its subcommands. */
+/** Options shared by `x deck` and its subcommands. `-H` so `-h` stays help. */
 const addHostOption = (cmd: Command) =>
-	cmd.option("-h, --host <host>", "SSH host name", "steamdeck");
+	cmd.option("-H, --host <host>", "SSH host name", "steamdeck");
 
 const addSudoOption = (cmd: Command) =>
 	cmd.option("-s, --sudo-password <password>", "Sudo password for Steam Deck");
