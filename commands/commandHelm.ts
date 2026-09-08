@@ -1,6 +1,6 @@
 import { $ } from "bun";
-import { c, die, ensureCommand, pad, stripAnsi } from "./helpers";
-import { kubectlContext, printContextBanner } from "./kubeCommon";
+import { c, die, ensureCommand, pad, stripAnsi } from "../utils/helpers";
+import { kubectlContext, printContextBanner } from "../utils/kubeCommon";
 
 type HelmRelease = {
 	name: string;

@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { cpus } from "node:os";
 import type { ZodAny, z } from "zod";
-import { mapConcurrent, walkDirectories } from "./helpers";
+import { mapConcurrent, walkDirectories } from "../utils/helpers";
 
 type CommandOptions = {
 	recursive?: number;

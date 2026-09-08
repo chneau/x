@@ -27,7 +27,7 @@ export const canSudo = async () =>
 	(await $`sudo -n true`.quiet().nothrow()).exitCode === 0;
 
 export const getCurrentVersion = async () =>
-	await Bun.file(`${import.meta.dir}/package.json`)
+	await Bun.file(`${import.meta.dir}/../package.json`)
 		.json()
 		.then((x) => (x.version as string) ?? "0.0.0")
 		.catch(() => "0.0.0");

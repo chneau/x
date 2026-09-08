@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { fetchLatestVersion } from "./helpers";
+import { fetchLatestVersion } from "./utils/helpers";
 
 const latestVersion = await fetchLatestVersion();
 const lastPart = latestVersion.split(".").pop();

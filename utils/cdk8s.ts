@@ -15,7 +15,7 @@ import type {
 	DeployImage,
 	DeployRegistry,
 	NormalDeployService,
-} from "./commandDeploy";
+} from "../commands/commandDeploy";
 
 const parseCpu = (value: string): Cpu => {
 	if (value.endsWith("m")) {

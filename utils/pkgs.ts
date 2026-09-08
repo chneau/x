@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import config from "./config.json";
+import config from "../config.json";
 import { commandExists } from "./helpers";
 
 type PkgType = "apt" | "brew" | "bun" | "custom" | "winget" | "uv" | "dotnet";
@@ -12,7 +12,7 @@ export type Pkg = {
 };
 
 /** Outcome of installing a batch of packages. */
-export type InstallResult = {
+type InstallResult = {
 	label: string;
 	/** Packages that install() was invoked for. */
 	names: string[];
@@ -198,7 +198,7 @@ export const installPkgs = async (
 };
 
 /** Install `custom` packages one at a time (each carries its own command/env). */
-export const installCustomPkgs = async (
+const installCustomPkgs = async (
 	toInstall: readonly Pkg[],
 ): Promise<InstallResult> => {
 	const label = "custom";

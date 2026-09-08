@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import Cloudflare, { APIError } from "cloudflare";
-import { die } from "./helpers";
+import { die } from "../utils/helpers";
 
 /**
  * Cloudflare mini-CLI powering the `x cf` command.

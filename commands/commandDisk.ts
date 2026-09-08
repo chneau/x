@@ -8,9 +8,9 @@ import {
 	logCleanupStep,
 	logCleanupSummary,
 	unixCleanupTargets,
-} from "./diskCommon";
-import { commandExists, formatBytes } from "./helpers";
-import { commandDiskWindows } from "./windows/commandDiskWindows";
+} from "../utils/diskCommon";
+import { commandExists, formatBytes } from "../utils/helpers";
+import { commandDiskWindows } from "./commandDiskWindows";
 
 const goBytesReclaimable = async (): Promise<number> => {
 	if (!(await commandExists("go"))) return 0;

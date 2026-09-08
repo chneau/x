@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { die, formatBytes } from "./helpers";
+import { die, formatBytes } from "../utils/helpers";
 
 type SteamdeckOptions = {
 	host?: string;

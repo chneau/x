@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import config from "./config.json";
+import config from "../config.json";
 import {
 	type DoctorOptions,
 	doctorGitconfig,
@@ -9,10 +9,10 @@ import {
 	doctorSshPermissions,
 	logDoctorStart,
 	optionsSchema,
-} from "./doctorCommon";
-import { canSudo, commandExists, isRoot } from "./helpers";
-import { findMissing, installCustomPkgs, installPkgs, pkgs } from "./pkgs";
-import { commandDoctorWindows } from "./windows/commandDoctorWindows";
+} from "../utils/doctorCommon";
+import { canSudo, commandExists, isRoot } from "../utils/helpers";
+import { findMissing, installPkgsGrouped, pkgs } from "../utils/pkgs";
+import { commandDoctorWindows } from "./commandDoctorWindows";
 
 if (process.platform !== "win32") {
 	Bun.env.PATH = [
@@ -149,15 +149,7 @@ const doctorPkgs = async () => {
 	console.log("❌ Some packages are not installed");
 	console.table(missing.map((p) => ({ name: p.name, type: p.type })));
 
-	const byType = (type: (typeof pkgs)[number]["type"]) =>
-		missing.filter((p) => p.type === type);
-
-	await installPkgs("apt", byType("apt"));
-	await installPkgs("brew", byType("brew"));
-	await installPkgs("bun", byType("bun"));
-	await installPkgs("uv", byType("uv"));
-	await installPkgs("dotnet", byType("dotnet"));
-	await installCustomPkgs(byType("custom"));
+	await installPkgsGrouped(missing);
 };
 
 const checkLogFix = async (

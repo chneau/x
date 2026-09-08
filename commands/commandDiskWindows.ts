@@ -10,8 +10,8 @@ import {
 	logCleanupSummary,
 	sharedCleanupTargets,
 	type WindowsBase,
-} from "../diskCommon";
-import { commandExists } from "../helpers";
+} from "../utils/diskCommon";
+import { commandExists } from "../utils/helpers";
 
 type ResolvedWindowsTarget = {
 	name: string;

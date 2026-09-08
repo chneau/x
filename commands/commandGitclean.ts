@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { $ } from "bun";
-import { mapConcurrent, subdirectories } from "./helpers";
+import { mapConcurrent, subdirectories } from "../utils/helpers";
 
 type GitCleanOptions = {
 	recursive?: number;

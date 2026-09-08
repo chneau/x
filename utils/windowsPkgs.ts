@@ -1,7 +1,7 @@
 import { $ } from "bun";
 import config from "../config.json";
-import { commandExists } from "../helpers";
-import { bunPkgs, type Pkg } from "../pkgs";
+import { commandExists } from "./helpers";
+import { bunPkgs, type Pkg } from "./pkgs";
 
 type WinPkg = Pkg & { type: "winget" | "bun" };
 

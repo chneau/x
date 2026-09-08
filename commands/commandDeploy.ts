@@ -1,8 +1,8 @@
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
-import { createDeployment } from "./cdk8s";
-import { envSubst } from "./helpers";
+import { createDeployment } from "../utils/cdk8s";
+import { envSubst } from "../utils/helpers";
 
 const registrySchema = z.object({
 	hostname: z.string(),

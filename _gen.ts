@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { deploySchema } from "./commandDeploy";
+import { deploySchema } from "./commands/commandDeploy";
 
 const jsonSchema = z.toJSONSchema(deploySchema, {
 	io: "input",

@@ -5,9 +5,9 @@ import {
 	doctorGithub,
 	doctorSsh,
 	logDoctorStart,
-} from "../doctorCommon";
-import { findMissing, installPkgs } from "../pkgs";
-import { windowsPackages } from "./windowsPkgs";
+} from "../utils/doctorCommon";
+import { findMissing, installPkgs } from "../utils/pkgs";
+import { windowsPackages } from "../utils/windowsPkgs";
 
 const doctorUpdateSystem = async () => {
 	console.log("🕒 Updating system (winget upgrade --all)...");

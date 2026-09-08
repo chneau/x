@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import "./verboseShell";
+import "./utils/verboseShell";
 import { type Command, InvalidArgumentError, program } from "commander";
 import {
 	commandCfDomainsList,
@@ -10,26 +10,26 @@ import {
 	commandCfLogout,
 	commandCfMailforwardingList,
 	commandCfMailforwardingSet,
-} from "./commandCf";
+} from "./commands/commandCf";
 import {
 	commandCleanShortcuts,
 	commandDeck,
 	commandDeckDisk,
-} from "./commandDeck";
-import { commandDeploy } from "./commandDeploy";
-import { commandDisk } from "./commandDisk";
-import { commandDoctor } from "./commandDoctor";
-import { commandFmt } from "./commandFmt";
-import { commandGitclean } from "./commandGitclean";
-import { commandHelm } from "./commandHelm";
-import { commandKclean } from "./commandKclean";
-import { commandNew } from "./commandNew";
-import { commandPrs } from "./commandPrs";
-import { commandPurify } from "./commandPurify";
-import { commandUpgrade } from "./commandUpgrade";
+} from "./commands/commandDeck";
+import { commandDeploy } from "./commands/commandDeploy";
+import { commandDisk } from "./commands/commandDisk";
+import { commandDiskWindows } from "./commands/commandDiskWindows";
+import { commandDoctor } from "./commands/commandDoctor";
+import { commandFmt } from "./commands/commandFmt";
+import { commandGitclean } from "./commands/commandGitclean";
+import { commandHelm } from "./commands/commandHelm";
+import { commandKclean } from "./commands/commandKclean";
+import { commandNew } from "./commands/commandNew";
+import { commandPrs } from "./commands/commandPrs";
+import { commandPurify } from "./commands/commandPurify";
+import { commandUpgrade } from "./commands/commandUpgrade";
 import config from "./config.json";
-import { getCurrentVersion } from "./helpers";
-import { commandDiskWindows } from "./windows/commandDiskWindows";
+import { getCurrentVersion } from "./utils/helpers";
 
 const version = await getCurrentVersion();
 
