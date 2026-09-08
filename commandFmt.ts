@@ -8,7 +8,17 @@ import { $ } from "bun";
 const formatters: { files: string[]; cmd: string }[] = [
 	// TypeScript / JavaScript / JSON / CSS / Markdown
 	{
-		files: ["*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs", "*.json", "*.css", "*.md"],
+		files: [
+			"*.ts",
+			"*.tsx",
+			"*.js",
+			"*.jsx",
+			"*.mjs",
+			"*.cjs",
+			"*.json",
+			"*.css",
+			"*.md",
+		],
 		cmd: "deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
 	},
 	// Go
@@ -79,4 +89,5 @@ const fmtIfFiles = async ({ files, cmd }: { files: string[]; cmd: string }) => {
 	await $`${{ raw: cmd }}`.nothrow().quiet();
 };
 
-export const commandFmt = async () => void (await Promise.all(formatters.map(fmtIfFiles)));
+export const commandFmt = async () =>
+	void (await Promise.all(formatters.map(fmtIfFiles)));
