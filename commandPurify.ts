@@ -148,7 +148,7 @@ const applyDefaults = (
 ) => {
 	for (const [key, value] of Object.entries(expected)) {
 		if (target[key] === value) continue;
-		if (keep?.(target[key])) continue;
+		if (target[key] != null && keep?.(target[key])) continue;
 		target[key] = value;
 	}
 };
