@@ -24,7 +24,6 @@ export const doctorGitconfig = async (options: DoctorOptions) => {
 	await checkGitConfig("user.name", options.name);
 	await checkGitConfig("user.email", options.email);
 
-	// Set other configurations
 	await $`git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"`;
 	await $`git config --global merge.ff false`;
 	await $`git config --global pull.ff true`;

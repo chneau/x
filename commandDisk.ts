@@ -124,7 +124,6 @@ const commandDiskUnix = async (options: DiskOptions) => {
 
 	await analyzeDisk(home, { top: topCount });
 
-	// Cleanup hint
 	console.log(
 		"\n💡 Tip: Run `x disk --dry-run` to preview cleanup or `x disk --clean` to automatically reclaim space.",
 	);

@@ -248,7 +248,6 @@ export const commandDiskWindows = async (options: DiskOptions) => {
 		limitBreakdown: true,
 	});
 
-	// Cleanup hint
 	console.log(
 		"\n💡 Tip: Run `x disk-windows --dry-run` to preview cleanup or `x disk-windows --clean` to automatically reclaim space.",
 	);

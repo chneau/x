@@ -133,7 +133,6 @@ const updateSteps: UpdateStep[] = [
 const doctorUpdateSystem = async () => {
 	console.log("🕒 Updating system...");
 
-	// Apt
 	await $`sudo apt update -y`.nothrow();
 	await $`sudo apt upgrade -y`.nothrow();
 	await $`sudo apt autoremove -y`.nothrow();
@@ -168,7 +167,6 @@ const doctorPkgs = async () => {
 	await installBatch("uv tool", byType("uv"), installUvPkgs);
 	await installBatch("dotnet tool", byType("dotnet"), installDotnetPkgs);
 
-	// Individual Custom installs
 	for (const pkg of byType("custom")) {
 		console.log(`🕒 Installing custom package ${pkg.name}...`);
 		await pkg

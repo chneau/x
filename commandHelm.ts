@@ -86,7 +86,6 @@ export const commandHelm = async (
 		return;
 	}
 
-	// Filter releases if specified as positional arguments
 	if (releasesFilter && releasesFilter.length > 0) {
 		releases = releases.filter(
 			(r) =>
@@ -148,7 +147,6 @@ export const commandHelm = async (
 		pad(`${c.bold}UPGRADE${c.reset}`, colWidths.status),
 	].join(" ");
 
-	// Asynchronously process each release
 	type StepKey = "clientDryRun" | "serverDryRun" | "upgradeStatus";
 	const errorKey: Record<
 		StepKey,
@@ -224,7 +222,6 @@ export const commandHelm = async (
 
 	await Promise.all(rows.map((r) => processRelease(r)));
 
-	// Output clean result table
 	console.log(header);
 	console.log(`${c.dim}${"─".repeat(stripAnsi(header).length)}${c.reset}`);
 
