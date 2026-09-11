@@ -26,11 +26,19 @@ export const isRoot = async () => (await $`id -u`.text()).trim() === "0";
 export const canSudo = async () =>
 	(await $`sudo -n true`.quiet().nothrow()).exitCode === 0;
 
-export const getCurrentVersion = async () =>
-	await Bun.file(`${import.meta.dir}/../package.json`)
-		.json()
-		.then((x) => (x.version as string) ?? "0.0.0")
-		.catch(() => "0.0.0");
+export const getCurrentVersion = async () => {
+	for (const path of [
+		`${import.meta.dir}/package.json`,
+		`${import.meta.dir}/../package.json`,
+	]) {
+		const version = await Bun.file(path)
+			.json()
+			.then((x) => (x.version as string) ?? null)
+			.catch(() => null);
+		if (version) return version;
+	}
+	return "0.0.0";
+};
 
 export const fetchLatestVersion = async () =>
 	await fetch("https://registry.npmjs.org/@chneau/x/latest")
