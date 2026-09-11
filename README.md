@@ -58,8 +58,8 @@ x new [dir] [-t|--template <template-name|repo>] [-l|--list-templates]
 Initializes a new project (in current directory or specified target `[dir]`):
 
 - **List templates:** `x new --list-templates` (or `-l`) prints the templates
-  configured in `config.json` with their aliases and repository URLs, then
-  exits without touching disk.
+  configured in `config.json` with their aliases and repository URLs, then exits
+  without touching disk.
 - **Template support:** If specified, fetches the template via `degit` (supports
   templates configured in config like `web` (`web-orpc`) / `web-hono` or a full
   git repository URL).

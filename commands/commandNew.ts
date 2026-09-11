@@ -22,13 +22,14 @@ const listTemplates = () => {
 	const width = Math.max(...groups.map((g) => g.names.join(", ").length), 0);
 	console.log("Available templates (use -t/--template <name>):");
 	for (const { repo, names } of groups) {
-		const aliases = names.map((name) => `${c.cyan}${name}${c.reset}`).join(
-			", ",
-		);
+		const aliases = names
+			.map((name) => `${c.cyan}${name}${c.reset}`)
+			.join(", ");
 		console.log(
-			` ${c.green}•${c.reset} ${
-				pad(aliases, width)
-			}  ${c.gray}${repo}${c.reset}`,
+			` ${c.green}•${c.reset} ${pad(
+				aliases,
+				width,
+			)}  ${c.gray}${repo}${c.reset}`,
 		);
 	}
 	console.log(
