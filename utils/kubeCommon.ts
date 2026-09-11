@@ -7,6 +7,19 @@ export const kubectlContext = async (): Promise<string> =>
 		await $`kubectl config current-context`.text().catch(() => "unknown")
 	).trim();
 
+/** All available kubectl context names. */
+export const kubectlContexts = async (): Promise<string[]> => {
+	try {
+		const raw = await $`kubectl config get-contexts -o name`.text();
+		return raw
+			.split("\n")
+			.map((s) => s.trim())
+			.filter((s) => s.length > 0);
+	} catch {
+		return [];
+	}
+};
+
 /** Print the styled `[Context: ...]` banner shared by kubernetes commands. */
 export const printContextBanner = (
 	title: string,

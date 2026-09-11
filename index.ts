@@ -219,11 +219,16 @@ program
 program
 	.command("kclean")
 	.description(
-		"Clean zero-replica ReplicaSets and failed/succeeded Pods in the current context",
+		"Clean zero-replica ReplicaSets and failed/succeeded Pods in the current context (or all contexts)",
 	)
 	.option(
 		"-A, --all-namespaces",
 		"Clean across all namespaces instead of the current one",
+		false,
+	)
+	.option(
+		"-C, --all-contexts",
+		"Clean across all kubectl contexts instead of just the current one",
 		false,
 	)
 	.option(

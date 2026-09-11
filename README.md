@@ -115,10 +115,11 @@ reports failure details).
 ### Kubernetes Cleanup
 
 ```bash
-x kclean [-A|--all-namespaces] [-y|--yes]
+x kclean [-A|--all-namespaces] [-C|--all-contexts] [-y|--yes]
 ```
 
-Cleans up leftover Kubernetes objects in the current context:
+Cleans up leftover Kubernetes objects in the current context (or across all
+contexts):
 
 - **Zero-replica ReplicaSets** (`spec.replicas == 0`)
 - **Failed Pods** (`status.phase=Failed`)
@@ -126,7 +127,8 @@ Cleans up leftover Kubernetes objects in the current context:
 
 Defaults to a **dry run** that only lists what would be deleted; re-run with
 `--yes` to actually delete. Use `-A`/`--all-namespaces` to operate across every
-namespace instead of just the current one.
+namespace instead of just the current one, and `-C`/`--all-contexts` to iterate
+across every configured kubectl context.
 
 ### Disk Inspection & Cache Cleaning
 
