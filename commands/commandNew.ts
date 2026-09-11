@@ -2,12 +2,49 @@ import { existsSync, mkdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { $ } from "bun";
 import config from "../config.json";
+import { c, pad } from "../utils/helpers";
 import { commandPurify } from "./commandPurify";
+
+/** Templates from config.json, grouped so aliases pointing at the same repo share a line. */
+const templateGroups = () => {
+	const byRepo = new Map<string, string[]>();
+	for (const [name, repo] of Object.entries(config.templates)) {
+		byRepo.set(repo, [...(byRepo.get(repo) ?? []), name].sort());
+	}
+	return [...byRepo.entries()]
+		.map(([repo, names]) => ({ repo, names }))
+		.sort((a, b) => (a.names[0] ?? "").localeCompare(b.names[0] ?? ""));
+};
+
+/** `x new --list-templates` — print the configured templates and their aliases. */
+const listTemplates = () => {
+	const groups = templateGroups();
+	const width = Math.max(...groups.map((g) => g.names.join(", ").length), 0);
+	console.log("Available templates (use -t/--template <name>):");
+	for (const { repo, names } of groups) {
+		const aliases = names.map((name) => `${c.cyan}${name}${c.reset}`).join(
+			", ",
+		);
+		console.log(
+			` ${c.green}•${c.reset} ${
+				pad(aliases, width)
+			}  ${c.gray}${repo}${c.reset}`,
+		);
+	}
+	console.log(
+		`\nAny other value is passed to ${c.cyan}degit${c.reset} as a template shorthand or git repository URL.`,
+	);
+};
 
 export const commandNew = async (
 	dir = ".",
-	options: { template?: string } = {},
+	options: { template?: string; listTemplates?: boolean } = {},
 ) => {
+	if (options.listTemplates) {
+		listTemplates();
+		return;
+	}
+
 	const targetDir = resolve(dir);
 	if (!existsSync(targetDir)) {
 		mkdirSync(targetDir, { recursive: true });

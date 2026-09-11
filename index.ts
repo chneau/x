@@ -272,6 +272,7 @@ program
 	.description("Scaffold and initialize a new project")
 	.argument("[dir]", "Target directory for the new project", ".")
 	.option("-t, --template <template-name>", "Template name or git repository")
+	.option("-l, --list-templates", "List available templates and exit", false)
 	.action(commandNew);
 
 const cf = program
