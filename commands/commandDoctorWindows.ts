@@ -6,7 +6,7 @@ import {
 	doctorSsh,
 	logDoctorStart,
 } from "../utils/doctorCommon";
-import { findMissing, installPkgs } from "../utils/pkgs";
+import { findMissing, installPkgsGrouped } from "../utils/pkgs";
 import { windowsPackages } from "../utils/windowsPkgs";
 
 const doctorUpdateSystem = async () => {
@@ -31,25 +31,7 @@ const doctorPkgs = async () => {
 	console.log("❌ Some packages are not installed");
 	console.table(result.map((r) => ({ name: r.name, type: r.type })));
 
-	const wingetToInstall = result.filter((r) => r.type === "winget");
-	const bunToInstall = result.filter((r) => r.type === "bun");
-
-	// Winget (installed sequentially as winget does not natively support clean batch commands without chaining)
-	for (const pkg of wingetToInstall) {
-		console.log(`🕒 Installing ${pkg.name} via winget...`);
-		try {
-			await pkg.install();
-			console.log(`✅ Installed ${pkg.name}`);
-		} catch (error) {
-			console.log(`❌ Failed to install ${pkg.name}`);
-			console.error(
-				`   ${error instanceof Error ? error.message : String(error)}`,
-			);
-		}
-	}
-
-	// Bun (batched)
-	await installPkgs("bun", bunToInstall);
+	await installPkgsGrouped(result);
 };
 
 export const commandDoctorWindows = async (options: DoctorOptions) => {

@@ -99,9 +99,9 @@ const brewPkgs = makePkgs("brew", config.packages.brew);
 
 export const bunPkgs = makePkgs("bun", config.packages.bun);
 
-const uvPkgs = makePkgs("uv", config.packages.uv ?? []);
+export const uvPkgs = makePkgs("uv", config.packages.uv ?? []);
 
-const dotnetPkgs = makePkgs("dotnet", config.packages.dotnet ?? []);
+export const dotnetPkgs = makePkgs("dotnet", config.packages.dotnet ?? []);
 
 const customPkgs: Pkg[] = config.packages.custom.map((pkg) =>
 	createPkg(

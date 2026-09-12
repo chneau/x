@@ -115,7 +115,8 @@
 		"custom": [
 			{
 				"name": "uv",
-				"command": "curl -LsSf https://astral.sh/uv/install.sh | sh"
+				"command": "curl -LsSf https://astral.sh/uv/install.sh | sh",
+				"commandWindows": "powershell.exe -Command \"irm https://astral.sh/uv/install.ps1 | iex\""
 			},
 			{
 				"name": "brew",
@@ -127,7 +128,8 @@
 			},
 			{
 				"name": "deno",
-				"command": "curl -fsSL https://deno.land/install.sh | sh"
+				"command": "curl -fsSL https://deno.land/install.sh | sh",
+				"commandWindows": "powershell.exe -Command \"irm https://deno.land/install.ps1 | iex\""
 			},
 			{
 				"name": "dotnet",
@@ -135,20 +137,34 @@
 			},
 			{
 				"name": "rtk",
-				"command": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh"
+				"command": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh",
+				"commandWindows": "powershell.exe -Command \"irm https://raw.githubusercontent.com/rtk-ai/rtk/master/install.ps1 | iex\""
 			},
 			{
 				"name": "agy",
-				"command": "curl -fsSL https://antigravity.google/cli/install.sh | bash"
+				"command": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+				"commandWindows": "powershell.exe -Command \"irm https://antigravity.google/cli/install.ps1 | iex\""
 			},
 			{
 				"name": "codex",
-				"command": "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh"
+				"command": "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh",
+				"commandWindows": "powershell.exe -Command \"irm https://chatgpt.com/codex/install.ps1 | iex\""
 			},
 			{
 				"name": "cursor",
 				"check": "agent",
-				"command": "curl -fsSL https://cursor.com/install | bash"
+				"command": "curl -fsSL https://cursor.com/install | bash",
+				"commandWindows": "powershell.exe -Command \"irm https://cursor.com/install.ps1 | iex\""
+			},
+			{
+				"name": "claude",
+				"command": "curl -fsSL https://claude.ai/install.sh | bash",
+				"commandWindows": "powershell.exe -Command \"irm https://claude.ai/install.ps1 | iex\""
+			},
+			{
+				"name": "opencode",
+				"command": "curl -fsSL https://opencode.ai/install | bash",
+				"commandWindows": "powershell.exe -Command \"irm https://opencode.ai/install.ps1 | iex\""
 			},
 			{
 				"name": "pi",
@@ -186,7 +202,16 @@
 			{ "name": "ahmetb.kubectx", "check": "kubectx" },
 			{ "name": "GnuWin32.Tree", "check": "tree" },
 			{ "name": "Microsoft.AzureCLI", "check": "az" },
-			{ "name": "DigitalOcean.doctl", "check": "doctl" }
+			{ "name": "DigitalOcean.doctl", "check": "doctl" },
+			{ "name": "BurntSushi.ripgrep", "check": "rg" },
+			{ "name": "junegunn.fzf", "check": "fzf" },
+			{ "name": "7zip.7zip", "check": "7z" },
+			{ "name": "jqlang.jq", "check": "jq" },
+			{ "name": "Fastfetch-cli.Fastfetch", "check": "fastfetch" },
+			{ "name": "cURL.cURL", "check": "curl" },
+			{ "name": "JernejSimoncic.Wget", "check": "wget" },
+			{ "name": "ezwinports.make", "check": "make" },
+			{ "name": "yt-dlp.yt-dlp", "check": "yt-dlp" }
 		]
 	}
 }
