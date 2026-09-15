@@ -231,7 +231,8 @@ const managePackagejson = async (
 				"check:deno": "deno fmt --use-tabs --quiet",
 				"check:oxlint":
 					"oxlint --fix-dangerously --fix-suggestions --fix --quiet",
-				"check:biome": "timeout 3s biome check --write --unsafe .",
+				"check:biome":
+					"timeout 3s biome check --write --unsafe --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
 				"check:export": "ts-unused-exports tsconfig.json",
 				lint: "tsc --noEmit",
 				all: "bun run --sequential --no-exit-on-error upgrade check",
