@@ -1,7 +1,7 @@
 import { $ } from "bun";
 import config from "../config.json";
 import { commandExists } from "./helpers";
-import { bunPkgs, dotnetPkgs, type Pkg, uvPkgs } from "./pkgs";
+import { bunPkgs, dotnetPkgs, gemPkgs, type Pkg, uvPkgs } from "./pkgs";
 
 type WinPkg = Pkg;
 
@@ -39,5 +39,6 @@ export const windowsPackages: WinPkg[] = [
 	...bunPkgs,
 	...uvPkgs,
 	...dotnetPkgs,
+	...gemPkgs,
 	...customWindowsPkgs,
 ];

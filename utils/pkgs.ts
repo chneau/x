@@ -2,7 +2,15 @@ import { $ } from "bun";
 import config from "../config.json";
 import { commandExists } from "./helpers";
 
-type PkgType = "apt" | "brew" | "bun" | "custom" | "winget" | "uv" | "dotnet";
+type PkgType =
+	| "apt"
+	| "brew"
+	| "bun"
+	| "custom"
+	| "winget"
+	| "uv"
+	| "dotnet"
+	| "gem";
 
 export type Pkg = {
 	name: string;
@@ -76,6 +84,11 @@ const installers: Record<
 		run: (names) =>
 			$`dotnet tool install --global ${names} || dotnet tool update --global ${names}`.nothrow(),
 	},
+	gem: {
+		strategy: "sequential",
+		label: "gem",
+		run: (names) => $`gem install ${names}`,
+	},
 };
 
 /** Build the `Pkg` list for a config section, e.g. `makePkgs("apt", config.packages.apt)`. */
@@ -103,6 +116,8 @@ export const uvPkgs = makePkgs("uv", config.packages.uv ?? []);
 
 export const dotnetPkgs = makePkgs("dotnet", config.packages.dotnet ?? []);
 
+export const gemPkgs = makePkgs("gem", config.packages.gem ?? []);
+
 const customPkgs: Pkg[] = config.packages.custom.map((pkg) =>
 	createPkg(
 		pkg.name,
@@ -125,6 +140,7 @@ export const pkgs: Pkg[] = [
 	...bunPkgs,
 	...uvPkgs,
 	...dotnetPkgs,
+	...gemPkgs,
 ];
 
 /** Packages in `list` that are not currently installed. */

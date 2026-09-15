@@ -119,6 +119,11 @@ const updateSteps: UpdateStep[] = [
 		check: "kubectl-krew",
 		run: () => $`kubectl krew upgrade`.nothrow(),
 	},
+	{
+		label: "gem packages",
+		check: "gem",
+		run: () => $`gem update`.nothrow(),
+	},
 ];
 
 const doctorUpdateSystem = async () => {

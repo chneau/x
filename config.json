@@ -58,6 +58,7 @@
 			{ "name": "sqlfluff" },
 			{ "name": "yamlfmt" },
 			{ "name": "hashicorp/tap/terraform", "check": "terraform" },
+			{ "name": "ruby", "check": "gem" },
 			{ "name": "scc" },
 			{ "name": "stern" },
 			{ "name": "tmux" },
@@ -112,6 +113,7 @@
 			{ "name": "dotnet-serve" },
 			{ "name": "dotnet-symbol" }
 		],
+		"gem": [{ "name": "kamal" }],
 		"custom": [
 			{
 				"name": "uv",
@@ -210,7 +212,8 @@
 			{ "name": "cURL.cURL", "check": "curl" },
 			{ "name": "JernejSimoncic.Wget", "check": "wget" },
 			{ "name": "ezwinports.make", "check": "make" },
-			{ "name": "yt-dlp.yt-dlp", "check": "yt-dlp" }
+			{ "name": "yt-dlp.yt-dlp", "check": "yt-dlp" },
+			{ "name": "RubyInstallerTeam.RubyWithDevKit.3.4", "check": "gem" }
 		]
 	}
 }
