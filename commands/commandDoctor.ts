@@ -19,6 +19,7 @@ if (process.platform !== "win32") {
 		Bun.env.PATH ?? "",
 		"/home/linuxbrew/.linuxbrew/bin",
 		"/home/linuxbrew/.linuxbrew/sbin",
+		"/home/linuxbrew/.linuxbrew/opt/ruby/bin",
 		"$BUN_INSTALL/bin",
 		"$HOME/go/bin",
 		"$HOME/.arkade/bin",
