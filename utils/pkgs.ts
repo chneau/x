@@ -162,7 +162,7 @@ const installOne = async (pkg: Pkg): Promise<string | undefined> => {
 };
 
 /** Install `type`-keyed packages using that tool's native strategy (batch or sequential). */
-export const installPkgs = async (
+const installPkgs = async (
 	type: keyof typeof installers,
 	toInstall: readonly Pkg[],
 ): Promise<InstallResult> => {
