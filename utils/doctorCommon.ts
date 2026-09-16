@@ -20,6 +20,54 @@ const checkGitConfig = async (key: string, expected: string) => {
 	}
 };
 
+/** Entries kept in the global gitignore, one per line. */
+export const globalIgnoreEntries = [
+	".antigravitycli",
+	".serena",
+	".reasonix",
+	".agents",
+	"skills-lock.json",
+	".claude",
+];
+
+/**
+ * Keep `~/.gitignore_global` in sync and point git at it, without ever dropping
+ * lines that were added by hand: existing entries are kept, only missing ones
+ * are appended.
+ */
+export const doctorGlobalIgnore = async () => {
+	const home = Bun.env.HOME || Bun.env.USERPROFILE;
+	if (!home) return;
+
+	const path = `${home}/.gitignore_global`;
+	if (!(await Bun.file(path).exists())) {
+		await Bun.write(path, "");
+	}
+
+	const missing: string[] = [];
+	for (const entry of globalIgnoreEntries) {
+		const present = await $`grep -Fxq ${entry} ${path}`.nothrow().quiet();
+		if (present.exitCode !== 0) missing.push(entry);
+	}
+
+	if (missing.length > 0) {
+		console.log(
+			`🕒 Adding ${missing.length} entries to global gitignore: ${
+				missing.join(", ")
+			}`,
+		);
+		const existing = await Bun.file(path).text();
+		const trimmed = existing.trim();
+		const prefix = trimmed === "" ? "" : `${trimmed}\n`;
+		await Bun.write(path, `${prefix}${missing.join("\n")}\n`);
+	} else {
+		console.log("✅ Global gitignore is up to date");
+	}
+
+	await $`git config --global core.excludesfile ${path}`;
+	console.log(`✅ Git excludesfile set to ${path}`);
+};
+
 export const doctorGitconfig = async (options: DoctorOptions) => {
 	await checkGitConfig("user.name", options.name);
 	await checkGitConfig("user.email", options.email);
@@ -30,6 +78,8 @@ export const doctorGitconfig = async (options: DoctorOptions) => {
 	await $`git config --global pull.rebase true`;
 	await $`git config --global core.whitespace "blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol"`;
 	await $`git config --global fetch.prune true`;
+
+	await doctorGlobalIgnore();
 
 	console.log("✅ Git config checked and updated.");
 };
