@@ -21,7 +21,7 @@ const checkGitConfig = async (key: string, expected: string) => {
 };
 
 /** Entries kept in the global gitignore, one per line. */
-export const globalIgnoreEntries = [
+const globalIgnoreEntries = [
 	".antigravitycli",
 	".serena",
 	".reasonix",
@@ -35,7 +35,7 @@ export const globalIgnoreEntries = [
  * lines that were added by hand: existing entries are kept, only missing ones
  * are appended.
  */
-export const doctorGlobalIgnore = async () => {
+const doctorGlobalIgnore = async () => {
 	const home = Bun.env.HOME || Bun.env.USERPROFILE;
 	if (!home) return;
 
@@ -52,9 +52,9 @@ export const doctorGlobalIgnore = async () => {
 
 	if (missing.length > 0) {
 		console.log(
-			`🕒 Adding ${missing.length} entries to global gitignore: ${
-				missing.join(", ")
-			}`,
+			`🕒 Adding ${missing.length} entries to global gitignore: ${missing.join(
+				", ",
+			)}`,
 		);
 		const existing = await Bun.file(path).text();
 		const trimmed = existing.trim();
