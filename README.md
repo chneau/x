@@ -81,6 +81,26 @@ Formats files across different languages using:
 - **Go:** `go fmt ./...`.
 - **C#:** `dotnet csharpier`.
 
+### Python / uv Scripts
+
+```bash
+x pyup [dir] [-d|--dry-run] [--check]
+```
+
+Scans every `*.py` file (skipping virtualenvs, caches and generated directories)
+and keeps them modern, self-contained
+[uv scripts](https://docs.astral.sh/uv/guides/scripts/):
+
+- **uv script:** converts a `python` / `python3` shebang to
+  `#!/usr/bin/env -S uv run --script` and adds an inline PEP 723 metadata block
+  when missing.
+- **Python 3.14:** always pins `requires-python = ">=3.14"`.
+- **Latest dependencies:** keeps declared dependencies and adds third-party
+  imports (mapping `sklearn` → `scikit-learn`, `PIL` → `pillow`, …), then bumps
+  each one to its latest release published on PyPI.
+- **Dry-run / check:** `-d` previews without writing; `--check` exits non-zero
+  when a file is out of date, for use in CI.
+
 ### Deployment
 
 ```bash

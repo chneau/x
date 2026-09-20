@@ -31,6 +31,7 @@ import { commandKclean } from "./commands/commandKclean";
 import { commandNew } from "./commands/commandNew";
 import { commandPrs } from "./commands/commandPrs";
 import { commandPurify } from "./commands/commandPurify";
+import { commandPyup } from "./commands/commandPyup";
 import { commandUpgrade } from "./commands/commandUpgrade";
 import config from "./config.json";
 import { getCurrentVersion } from "./utils/helpers";
@@ -274,6 +275,16 @@ program
 	.option("-t, --template <template-name>", "Template name or git repository")
 	.option("-l, --list-templates", "List available templates and exit", false)
 	.action(commandNew);
+
+program
+	.command("pyup")
+	.description(
+		"Make Python files uv scripts with Python 3.14 and latest dependencies",
+	)
+	.argument("[dir]", "Directory to scan for Python files", ".")
+	.option("-d, --dry-run", "Preview changes without writing", false)
+	.option("--check", "Exit non-zero if any file needs updating", false)
+	.action(commandPyup);
 
 const cf = program
 	.command("cf")
