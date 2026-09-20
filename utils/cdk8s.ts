@@ -197,8 +197,8 @@ export const createDeployment = async ({
 			privileged: service.privileged,
 		},
 		startup: Probe.fromTcpSocket({
-			periodSeconds: Duration.seconds(1),
-			failureThreshold: 30,
+			periodSeconds: Duration.seconds(service.startupProbePeriodSeconds ?? 1),
+			failureThreshold: service.startupProbeFailureThreshold ?? 30,
 		}),
 	});
 	const _service = deployment.exposeViaService({ name: image.imageName });

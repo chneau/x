@@ -43,6 +43,8 @@ const serviceBase = z.object({
 	cpuLimit: z.string().optional(),
 	memoryRequest: z.string().optional(),
 	memoryLimit: z.string().optional(),
+	startupProbePeriodSeconds: z.number().positive().optional(),
+	startupProbeFailureThreshold: z.number().positive().optional(),
 	endpoints: z.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)),
 	ingress: z.enum(["nginx", "traefik"]).optional(),
 });

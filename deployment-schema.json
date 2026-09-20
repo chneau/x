@@ -144,6 +144,14 @@
 							"memoryLimit": {
 								"type": "string"
 							},
+							"startupProbePeriodSeconds": {
+								"type": "number",
+								"exclusiveMinimum": 0
+							},
+							"startupProbeFailureThreshold": {
+								"type": "number",
+								"exclusiveMinimum": 0
+							},
 							"endpoints": {
 								"default": [],
 								"type": "array",
@@ -221,6 +229,14 @@
 							},
 							"memoryLimit": {
 								"type": "string"
+							},
+							"startupProbePeriodSeconds": {
+								"type": "number",
+								"exclusiveMinimum": 0
+							},
+							"startupProbeFailureThreshold": {
+								"type": "number",
+								"exclusiveMinimum": 0
 							},
 							"endpoints": {
 								"type": "array",
