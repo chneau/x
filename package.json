@@ -14,8 +14,8 @@
 	},
 	"dependencies": {
 		"@commander-js/extra-typings": "^15.0.0",
-		"cdk8s": "^2.70.103",
-		"cdk8s-plus-34": "^2.0.57",
+		"cdk8s": "^2.70.104",
+		"cdk8s-plus-34": "^2.0.58",
 		"cloudflare": "^7.1.0",
 		"commander": "^15.0.0",
 		"zod": "^4.6.5"
