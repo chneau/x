@@ -74,6 +74,11 @@ const addPrsOptions = (cmd: Command) =>
 			"-c, --concurrency <number>",
 			"Number of concurrent workers",
 			positiveInt("Concurrency"),
+		)
+		.option(
+			"-d, --dry-run",
+			"Preview PR actions without merging or closing",
+			false,
 		);
 
 /** Options shared by `x disk` and `x disk-windows`. */
@@ -114,6 +119,11 @@ program
 		positiveInt("Concurrency"),
 		10,
 	)
+	.option(
+		"-d, --dry-run",
+		"Preview clean operations without deleting files or repacking",
+		false,
+	)
 	.action(commandGitclean);
 
 program
@@ -134,6 +144,11 @@ program
 	.command("fmt")
 	.description(
 		"Format code across all supported languages (Deno, Biome, Go, C#)",
+	)
+	.option(
+		"-c, --check",
+		"Verify formatting without writing changes (exit 1 if unformatted)",
+		false,
 	)
 	.action(commandFmt);
 
@@ -274,6 +289,11 @@ program
 	.argument("[dir]", "Target directory for the new project", ".")
 	.option("-t, --template <template-name>", "Template name or git repository")
 	.option("-l, --list-templates", "List available templates and exit", false)
+	.option(
+		"-f, --force",
+		"Force creation even if target directory is not empty",
+		false,
+	)
 	.action(commandNew);
 
 program

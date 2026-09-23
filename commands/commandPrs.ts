@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { die, ensureCommand, mapConcurrent } from "../utils/helpers";
+import { c, die, ensureCommand, mapConcurrent } from "../utils/helpers";
 
 type PullRequest = {
 	number: number;
@@ -52,18 +52,28 @@ const closePr = async (
 	};
 };
 
-const processPr = async (pr: PullRequest): Promise<string> => {
+const processPr = async (pr: PullRequest, dryRun = false): Promise<string> => {
 	const url = pr.url ?? "";
 	const repo = pr.repository?.nameWithOwner ?? "";
 	const num = pr.number ?? "";
 	const title = pr.title ?? "";
 	const author = (pr.author?.login ?? "").toLowerCase();
 
+	if (dryRun) {
+		if (author.includes("renovate")) {
+			return `${c.yellow}[DRY-RUN WOULD CLOSE]${c.reset} ${repo}#${num}: ${title}`;
+		}
+		if (author.includes("dependabot")) {
+			return `${c.cyan}[DRY-RUN WOULD MERGE/CLOSE]${c.reset} ${repo}#${num}: ${title}`;
+		}
+		return `${c.gray}[SKIPPED OTHER AUTHOR (${author})]${c.reset} ${repo}#${num}: ${title}`;
+	}
+
 	if (author.includes("renovate")) {
 		const { ok, stderr } = await closePr(url);
 		return ok
-			? `[RENOVATE CLOSED] ${repo}#${num}: ${title}`
-			: `[RENOVATE FAILED CLOSE] ${repo}#${num} (${stderr}): ${title}`;
+			? `${c.green}[RENOVATE CLOSED]${c.reset} ${repo}#${num}: ${title}`
+			: `${c.red}[RENOVATE FAILED CLOSE]${c.reset} ${repo}#${num} (${stderr}): ${title}`;
 	}
 
 	if (author.includes("dependabot")) {
@@ -72,21 +82,22 @@ const processPr = async (pr: PullRequest): Promise<string> => {
 				.quiet()
 				.nothrow();
 			if (res.exitCode === 0) {
-				return `[DEPENDABOT MERGED] ${repo}#${num} (${flag}): ${title}`;
+				return `${c.green}[DEPENDABOT MERGED]${c.reset} ${repo}#${num} (${flag}): ${title}`;
 			}
 		}
 		const { ok, stderr } = await closePr(url);
 		return ok
-			? `[DEPENDABOT CLOSED] ${repo}#${num} (Unmergeable): ${title}`
-			: `[DEPENDABOT FAILED CLOSE] ${repo}#${num} (${stderr}): ${title}`;
+			? `${c.yellow}[DEPENDABOT CLOSED]${c.reset} ${repo}#${num} (Unmergeable): ${title}`
+			: `${c.red}[DEPENDABOT FAILED CLOSE]${c.reset} ${repo}#${num} (${stderr}): ${title}`;
 	}
 
-	return `[SKIPPED OTHER AUTHOR (${author})] ${repo}#${num}: ${title}`;
+	return `${c.gray}[SKIPPED OTHER AUTHOR (${author})]${c.reset} ${repo}#${num}: ${title}`;
 };
 
 export const commandPrs = async (options: {
 	owner?: string;
 	concurrency?: number;
+	dryRun?: boolean;
 }) => {
 	await ensureCommand(
 		"gh",
@@ -101,6 +112,12 @@ export const commandPrs = async (options: {
 	}
 
 	const maxWorkers = options.concurrency ?? 10;
+	const isDryRun = Boolean(options.dryRun);
+
+	if (isDryRun) {
+		console.log("🔍 Running in dry-run mode (no PRs will be merged or closed)");
+	}
+
 	console.log(`=== Starting PR Processor for owner: '${owner}' ===`);
 
 	const prs = await fetchOpenPrs(owner);
@@ -110,16 +127,18 @@ export const commandPrs = async (options: {
 	}
 
 	console.log(
-		`\nFound ${prs.length} open PRs. Processing concurrently (workers=${maxWorkers})...`,
+		`\nFound ${prs.length} open PRs. ${
+			isDryRun ? "Previewing" : "Processing"
+		} concurrently (workers=${maxWorkers})...`,
 	);
 
 	await mapConcurrent(prs, maxWorkers, async (pr) => {
 		try {
-			const result = await processPr(pr);
+			const result = await processPr(pr, isDryRun);
 			console.log(`  ${result}`);
 		} catch (e) {
 			console.error(`  [ERROR] ${e}`);
 		}
 	});
-	console.log("All PRs processed.");
+	console.log(isDryRun ? "All PRs previewed." : "All PRs processed.");
 };

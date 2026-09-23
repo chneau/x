@@ -199,6 +199,9 @@ const createTemplateDeploy = async () => {
 	}
 	await file.write(templateStr);
 	console.log("✅ Created .deploy.json");
+	console.log(
+		"💡 Tip: Edit .deploy.json with your service and registry configuration, then run 'x deploy' again.",
+	);
 };
 
 const extendsServiceToNormal = (

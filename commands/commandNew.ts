@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import { $ } from "bun";
 import config from "../config.json";
@@ -39,7 +40,7 @@ const listTemplates = () => {
 
 export const commandNew = async (
 	dir = ".",
-	options: { template?: string; listTemplates?: boolean } = {},
+	options: { template?: string; listTemplates?: boolean; force?: boolean } = {},
 ) => {
 	if (options.listTemplates) {
 		listTemplates();
@@ -49,17 +50,56 @@ export const commandNew = async (
 	const targetDir = resolve(dir);
 	if (!existsSync(targetDir)) {
 		mkdirSync(targetDir, { recursive: true });
+	} else if (!options.force) {
+		const existingFiles = (
+			await readdir(targetDir, { withFileTypes: true }).catch(() => [])
+		).filter((e) => e.name !== ".git");
+		if (existingFiles.length > 0) {
+			console.error(
+				`${c.red}❌ Target directory '${targetDir}' is not empty (${existingFiles.length} item(s) found).${c.reset}`,
+			);
+			console.error(
+				`${c.dim}Pass ${c.cyan}-f, --force${c.reset}${c.dim} to scaffold anyway.${c.reset}`,
+			);
+			process.exit(1);
+		}
+	}
+
+	const { template } = options;
+	if (template && !(template in config.templates)) {
+		const isGitSpecifier =
+			template.includes("/") ||
+			template.includes(":") ||
+			template.startsWith("git@") ||
+			template.startsWith("http");
+		if (!isGitSpecifier) {
+			console.error(`${c.red}❌ Unknown template: '${template}'${c.reset}\n`);
+			listTemplates();
+			process.exit(1);
+		}
 	}
 
 	const originalCwd = process.cwd();
 	process.chdir(targetDir);
 
 	try {
-		const { template } = options;
 		if (template) {
 			const repoUrl =
 				config.templates[template as keyof typeof config.templates] ?? template;
-			await $`bunx degit --force ${repoUrl} .`;
+			console.log(`📦 Scaffolding from template '${template}'...`);
+			const degitRes = await $`bunx degit --force ${repoUrl} .`
+				.quiet()
+				.nothrow();
+			if (degitRes.exitCode !== 0) {
+				const errText =
+					degitRes.stderr.toString().trim() ||
+					degitRes.stdout.toString().trim();
+				console.error(
+					`${c.red}❌ Failed to fetch template from '${repoUrl}'${c.reset}`,
+				);
+				if (errText) console.error(`   ${errText}`);
+				process.exit(1);
+			}
 		} else {
 			await $`bun init -y .`;
 		}
