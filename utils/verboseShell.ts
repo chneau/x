@@ -8,10 +8,12 @@ const stringify = (value: unknown): string => {
 const $ = new Proxy(Bun.$, {
 	apply(target, thisArg, args: Parameters<typeof Bun.$>) {
 		const [strings, ...values] = args;
-		const cmd = strings
-			.map((s, i) => s + (i < values.length ? stringify(values[i]) : ""))
-			.join("")
-			.trim();
+		const cmd = Array.isArray(strings)
+			? strings
+					.map((s, i) => s + (i < values.length ? stringify(values[i]) : ""))
+					.join("")
+					.trim()
+			: String(strings ?? "").trim();
 		console.log(`\x1b[2m\x1b[90m$ ${cmd}\x1b[0m`);
 		return Reflect.apply(target, thisArg, args);
 	},

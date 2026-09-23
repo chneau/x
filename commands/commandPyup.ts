@@ -437,7 +437,7 @@ export const commandPyup = async (
 		for (const [key, value] of names) unique.set(key, value);
 	}
 	await mapConcurrent(
-		[...unique.entries()].sort(([a], [b]) => (a < b ? -1 : 1)),
+		[...unique.entries()].sort(([a], [b]) => a.localeCompare(b)),
 		8,
 		async ([, name]) => {
 			await latestVersion(name, cache);
@@ -448,7 +448,7 @@ export const commandPyup = async (
 	const changed: string[] = [];
 	for (const { file, text, names } of scanned) {
 		const deps = [...names.entries()]
-			.sort(([a], [b]) => (a < b ? -1 : 1))
+			.sort(([a], [b]) => a.localeCompare(b))
 			.map(([key, name]) => {
 				const version = cache.get(key);
 				return version ? `${name}>=${version}` : name;

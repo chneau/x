@@ -1,3 +1,4 @@
+import { readdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
@@ -109,12 +110,11 @@ export const commandDeploy = async (
 	const filters = files.filter((arg) => !arg.endsWith(".json"));
 	const isTargettingJsonFiles = jsonFiles.length > 0;
 	if (jsonFiles.length === 0) {
-		jsonFiles.push(
-			...(await Bun.$`ls *.json`.text().catch(() => ""))
-				.split("\n")
-				.filter(Boolean),
-			".deploy.json",
-		);
+		const entries = await readdir(".", { withFileTypes: true }).catch(() => []);
+		const discoveredJson = entries
+			.filter((e) => e.isFile() && e.name.endsWith(".json"))
+			.map((e) => e.name);
+		jsonFiles.push(...discoveredJson, ".deploy.json");
 	}
 	let isFound = false;
 	const promises: Promise<unknown>[] = [];
@@ -235,8 +235,7 @@ const extendsServiceToNormal = (
 			continue;
 		}
 		if (value !== undefined) {
-			// @ts-expect-error
-			targetService[key] = value;
+			(targetService as Record<string, unknown>)[key] = value;
 		}
 	}
 

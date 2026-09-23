@@ -40,15 +40,20 @@ const doctorGlobalIgnore = async () => {
 	if (!home) return;
 
 	const path = `${home}/.gitignore_global`;
-	if (!(await Bun.file(path).exists())) {
-		await Bun.write(path, "");
-	}
-
-	const missing: string[] = [];
-	for (const entry of globalIgnoreEntries) {
-		const present = await $`grep -Fxq ${entry} ${path}`.nothrow().quiet();
-		if (present.exitCode !== 0) missing.push(entry);
-	}
+	const existing = (
+		await Bun.file(path)
+			.text()
+			.catch(() => "")
+	).trim();
+	const existingLines = new Set(
+		existing
+			.split("\n")
+			.map((l) => l.trim())
+			.filter(Boolean),
+	);
+	const missing = globalIgnoreEntries.filter(
+		(entry) => !existingLines.has(entry),
+	);
 
 	if (missing.length > 0) {
 		console.log(
@@ -56,9 +61,7 @@ const doctorGlobalIgnore = async () => {
 				", ",
 			)}`,
 		);
-		const existing = await Bun.file(path).text();
-		const trimmed = existing.trim();
-		const prefix = trimmed === "" ? "" : `${trimmed}\n`;
+		const prefix = existing === "" ? "" : `${existing}\n`;
 		await Bun.write(path, `${prefix}${missing.join("\n")}\n`);
 	} else {
 		console.log("✅ Global gitignore is up to date");
@@ -140,16 +143,14 @@ export const doctorInotify = async () => {
 	if (process.platform === "win32") return;
 	try {
 		const watches = (
-			await $`cat /proc/sys/fs/inotify/max_user_watches`
-				.quiet()
-				.nothrow()
+			await Bun.file("/proc/sys/fs/inotify/max_user_watches")
 				.text()
+				.catch(() => "")
 		).trim();
 		const instances = (
-			await $`cat /proc/sys/fs/inotify/max_user_instances`
-				.quiet()
-				.nothrow()
+			await Bun.file("/proc/sys/fs/inotify/max_user_instances")
 				.text()
+				.catch(() => "")
 		).trim();
 
 		const watchesNum = Number.parseInt(watches, 10);

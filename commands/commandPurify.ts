@@ -1,6 +1,5 @@
 import { readdir } from "node:fs/promises";
 import { cpus } from "node:os";
-import type { ZodAny, z } from "zod";
 import { mapConcurrent, walkDirectories } from "../utils/helpers";
 
 type CommandOptions = {
@@ -119,7 +118,7 @@ const manageGitignore = async (
 		console.log(`🔍 [dry-run] Would update ${filename}`);
 		return true;
 	}
-	await Bun.write(file, [...lines].join("\n"));
+	await Bun.write(file, `${[...lines].join("\n")}\n`);
 	console.log(`✅ Done with ${filename}`);
 	return true;
 };
@@ -153,6 +152,11 @@ const applyDefaults = (
 	}
 };
 
+type TsConfig = {
+	compilerOptions?: Record<string, unknown>;
+	[key: string]: unknown;
+};
+
 const manageTsconfig = async (
 	dir: string,
 	dryRun = false,
@@ -160,7 +164,7 @@ const manageTsconfig = async (
 	const filename = `${dir}/tsconfig.json`;
 	const file = Bun.file(filename);
 	if (!(await file.exists())) return false;
-	const tsconfig = Bun.JSONC.parse(await file.text()) as z.infer<ZodAny>;
+	const tsconfig = Bun.JSONC.parse(await file.text()) as TsConfig;
 	if (!tsconfig.compilerOptions) return false;
 	const expected = {
 		noUnusedLocals: true,

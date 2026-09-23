@@ -28,8 +28,8 @@ export const canSudo = async () =>
 
 export const getCurrentVersion = async () => {
 	for (const path of [
-		`${import.meta.dir}/package.json`,
-		`${import.meta.dir}/../package.json`,
+		join(import.meta.dir, "package.json"),
+		join(import.meta.dir, "..", "package.json"),
 	]) {
 		const version = await Bun.file(path)
 			.json()

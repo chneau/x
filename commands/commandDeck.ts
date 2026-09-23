@@ -314,7 +314,7 @@ export const commandDeckDisk = async (options: SteamdeckOptions) => {
 
 	for (const cat of categories) {
 		const out = await sshText(host, `du -sk ${cat.path} 2>/dev/null | tail -1`);
-		const kb = parseInt(out.split(/\s+/)[0] || "0", 10);
+		const kb = Number.parseInt(out.split(/\s+/)[0] || "0", 10);
 		if (kb > 0) {
 			console.log(`  • ${cat.name.padEnd(16)}: ${formatBytes(kb * 1024)}`);
 		}
@@ -416,10 +416,10 @@ export const commandDeck = async (options: UpdateOptions) => {
 			const doneStMatch = block.match(/"BytesStaged"\s+"([^"]*)"/);
 
 			if (appidMatch && nameMatch && appidMatch[1] && nameMatch[1]) {
-				const toDl = parseInt(toDlMatch?.[1] || "0", 10);
-				const doneDl = parseInt(doneDlMatch?.[1] || "0", 10);
-				const toSt = parseInt(toStMatch?.[1] || "0", 10);
-				const doneSt = parseInt(doneStMatch?.[1] || "0", 10);
+				const toDl = Number.parseInt(toDlMatch?.[1] || "0", 10);
+				const doneDl = Number.parseInt(doneDlMatch?.[1] || "0", 10);
+				const toSt = Number.parseInt(toStMatch?.[1] || "0", 10);
+				const doneSt = Number.parseInt(doneStMatch?.[1] || "0", 10);
 				const remaining = toDl - doneDl + (toSt - doneSt);
 				if (remaining > 0) {
 					pendingGames.push({

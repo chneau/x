@@ -69,17 +69,19 @@ const createDockerConfigJson = (
 	});
 };
 
-const envVarToCDK8S = (envVars: { [key: string]: string }) => {
-	const result: { [key: string]: EnvValue } = {};
-	for (const [key, value] of Object.entries(envVars)) {
-		result[key] = EnvValue.fromValue(value);
-	}
-	return result;
-};
+const envVarToCDK8S = (
+	envVars: Record<string, string>,
+): Record<string, EnvValue> =>
+	Object.fromEntries(
+		Object.entries(envVars).map(([key, value]) => [
+			key,
+			EnvValue.fromValue(value),
+		]),
+	);
 
 const createIngresses = (chart: Chart, service: Service, hosts: string[]) => {
 	for (const host of hosts) {
-		const sanitizedHost = host.replace(/\.|:|\//g, "-");
+		const sanitizedHost = host.replaceAll(/[.:/]/g, "-");
 		const ingress = new Ingress(chart, sanitizedHost, { className: "nginx" });
 		ingress.addRules({
 			backend: IngressBackend.fromService(service),
@@ -106,7 +108,7 @@ const createTraefikIngressRoutesYaml = (
 	port: number,
 ): string => {
 	const yamls = hosts.map((host) => {
-		const sanitizedHost = host.replace(/\.|:|\//g, "-");
+		const sanitizedHost = host.replaceAll(/[.:/]/g, "-");
 		return `apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:

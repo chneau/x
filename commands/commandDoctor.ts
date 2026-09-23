@@ -194,10 +194,12 @@ const doctorDotfiles = async () => {
 		results
 			.filter((x) => !x.isPresent)
 			.map(async (x) => {
-				console.log(`🕒 Installing ${x.name}`);
-				const content = await fetch(`${baseFiles}${x.name}`).then((r) =>
-					r.text(),
-				);
+				const res = await fetch(`${baseFiles}${x.name}`);
+				if (!res.ok) {
+					console.error(`❌ Failed to fetch ${x.name}: HTTP ${res.status}`);
+					return;
+				}
+				const content = await res.text();
 				await Bun.write(`${Bun.env.HOME}/${x.name}`, content);
 				console.log(`✅ Installed ${x.name}`);
 			}),
@@ -234,22 +236,28 @@ const doctorZsh = async () => {
 	);
 };
 
+const runGitAndSshChecks = async (options: DoctorOptions) => {
+	await doctorGitconfig(options);
+	await doctorSsh();
+	await doctorSshPermissions();
+	await doctorGithub();
+};
+
+const runDockerChecks = async () => {
+	await doctorDocker();
+	await doctorUserGroups();
+};
+
 const commandDoctorLinux = async (options: DoctorOptions) => {
 	logDoctorStart("Linux", options);
 	await Promise.all([doctorRoot(), doctorSudo()]);
+	await doctorDotfiles();
+	await doctorPkgs();
 	await Promise.all([
-		doctorDotfiles(),
-		doctorPkgs().then(() =>
-			Promise.all([
-				doctorGitconfig(options)
-					.then(doctorSsh)
-					.then(doctorSshPermissions)
-					.then(doctorGithub),
-				doctorZsh(),
-				doctorDocker().then(doctorUserGroups),
-				doctorInotify(),
-			]),
-		),
+		runGitAndSshChecks(options),
+		doctorZsh(),
+		runDockerChecks(),
+		doctorInotify(),
 	]);
 	if (options.updates) {
 		await doctorUpdateSystem();

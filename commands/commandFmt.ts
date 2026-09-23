@@ -111,8 +111,6 @@ const formatters: {
 	},
 ];
 
-const shellEscape = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`;
-
 type FmtOptions = {
 	check?: boolean;
 };
@@ -123,8 +121,7 @@ export const commandFmt = async (options: FmtOptions = {}) => {
 	let hasError = false;
 
 	for (const formatter of formatters) {
-		const patterns = formatter.files.map(shellEscape).join(" ");
-		const found = await $`git ls-files -- ${patterns}`.nothrow().text();
+		const found = await $`git ls-files -- ${formatter.files}`.nothrow().text();
 		if (!found.trim()) continue;
 
 		const fileCount = found.trim().split("\n").filter(Boolean).length;

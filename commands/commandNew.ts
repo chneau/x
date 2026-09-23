@@ -144,10 +144,10 @@ export const commandNew = async (
 
 		const gitignoreFile = Bun.file(".gitignore");
 		if (!(await gitignoreFile.exists())) {
-			await $`echo node_modules > .gitignore`;
+			await Bun.write(".gitignore", "node_modules\n");
 		}
 
-		await $`rm -rf CLAUDE.md`;
+		await Bun.$`rm -f CLAUDE.md`.nothrow();
 		await $`bun run all`;
 	} finally {
 		process.chdir(originalCwd);

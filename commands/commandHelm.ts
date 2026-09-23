@@ -1,5 +1,12 @@
 import { $ } from "bun";
-import { c, die, ensureCommand, pad, stripAnsi } from "../utils/helpers";
+import {
+	c,
+	die,
+	ensureCommand,
+	mapConcurrent,
+	pad,
+	stripAnsi,
+} from "../utils/helpers";
 import { kubectlContext, printContextBanner } from "../utils/kubeCommon";
 
 type HelmRelease = {
@@ -220,7 +227,7 @@ export const commandHelm = async (
 		}
 	};
 
-	await Promise.all(rows.map((r) => processRelease(r)));
+	await mapConcurrent(rows, 4, (r) => processRelease(r));
 
 	console.log(header);
 	console.log(`${c.dim}${"─".repeat(stripAnsi(header).length)}${c.reset}`);

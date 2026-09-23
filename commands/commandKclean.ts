@@ -195,9 +195,10 @@ const cleanSingleContext = async ({
 	printPlan(entries);
 	console.log();
 
-	const deleted = await Promise.all(
+	const counts = await Promise.all(
 		entries.map((e) => deleteObjects(e, context)),
-	).then((counts) => counts.reduce((sum, n) => sum + n, 0));
+	);
+	const deleted = counts.reduce((sum, n) => sum + n, 0);
 	console.log(`\n🎉 Deleted ${deleted} object(s).\n`);
 	return deleted;
 };
