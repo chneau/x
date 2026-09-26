@@ -166,7 +166,7 @@
 			},
 			{
 				"name": "opencode",
-				"command": "curl -fsSL https://opencode.ai/install | bash",
+				"command": "curl -fsSL https://opencode.ai/v2/install | bash",
 				"commandWindows": "powershell.exe -Command \"irm https://opencode.ai/install.ps1 | iex\""
 			},
 			{
