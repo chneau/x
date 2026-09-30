@@ -494,7 +494,8 @@ const ensureEmailRoutingOn = async (client: Cloudflare, zoneId: string) => {
 	}
 	if (enabled) return;
 	try {
-		await client.emailRouting.enable({ zone_id: zoneId, body: {} });
+		// cloudflare 7.2 dropped the (always empty) body from the enable params.
+		await client.emailRouting.enable({ zone_id: zoneId });
 	} catch (err) {
 		die(
 			"❌ Could not enable Email Routing on this domain.",
