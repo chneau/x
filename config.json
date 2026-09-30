@@ -98,6 +98,7 @@
 		],
 		"uv": [
 			{ "name": "bpytop" },
+			{ "name": "google-colab-cli", "check": "colab" },
 			{ "name": "livereload" },
 			{ "name": "yt-dlp" }
 		],
