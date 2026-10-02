@@ -8,13 +8,8 @@ export function die(message: string, detail?: string): never {
 	process.exit(1);
 }
 
-export const commandExists = async (cmd: string) => {
-	const shell =
-		process.platform === "win32"
-			? $`powershell.exe -Command "Get-Command ${cmd}"`
-			: $`which ${cmd}`;
-	return (await shell.quiet().nothrow()).exitCode === 0;
-};
+export const commandExists = async (cmd: string) =>
+	Bun.which(cmd, { PATH: Bun.env.PATH }) !== null;
 
 /** Exit with `msg` when `cmd` is missing from PATH. */
 export const ensureCommand = async (cmd: string, msg?: string) => {

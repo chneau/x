@@ -17,6 +17,7 @@ export type Pkg = {
 	type: PkgType;
 	check: () => Promise<boolean>;
 	install: () => Promise<unknown>;
+	trust?: boolean;
 };
 
 /** Outcome of installing a batch of packages. */
@@ -31,18 +32,20 @@ type InstallResult = {
 };
 
 /** A package entry from config.json; `check` overrides the binary name tested. */
-type ConfigPkg = { name: string; check?: string };
+type ConfigPkg = { name: string; check?: string; trust?: boolean };
 
 const createPkg = (
 	name: string,
 	type: PkgType,
 	install: () => Promise<unknown>,
 	checkName?: string,
+	trust?: boolean,
 ): Pkg => ({
 	name,
 	type,
 	check: () => commandExists(checkName ?? name),
 	install,
+	trust,
 });
 
 /**
@@ -87,7 +90,16 @@ const installers: Record<
 	gem: {
 		strategy: "sequential",
 		label: "gem",
-		run: (names) => $`gem install ${names}`,
+		run: async (names) => {
+			const brewGlibc = "/home/linuxbrew/.linuxbrew/opt/glibc/lib";
+			const hasBrewGlibc =
+				process.platform !== "win32" &&
+				(await Bun.file(`${brewGlibc}/libc.so.6`).exists());
+			if (hasBrewGlibc) {
+				return $`gem install ${names} -- --with-ldflags=-Wl,-rpath,${brewGlibc} -L${brewGlibc}`;
+			}
+			return $`gem install ${names}`;
+		},
 	},
 };
 
@@ -98,11 +110,13 @@ const makePkgs = (
 ): Pkg[] =>
 	list.map((pkg) => {
 		const name = typeof pkg === "string" ? pkg : pkg.name;
+		const trust = typeof pkg === "string" ? undefined : pkg.trust;
 		return createPkg(
 			name,
 			type,
 			() => installers[type].run(name),
 			typeof pkg === "string" ? undefined : pkg.check,
+			trust,
 		);
 	});
 
@@ -191,7 +205,18 @@ const installPkgs = async (
 	const failures: Record<string, string> = {};
 	if (tool.strategy === "batch") {
 		try {
-			await tool.run(names);
+			if (type === "bun") {
+				const trusted = toInstall.filter((p) => p.trust).map((p) => p.name);
+				const untrusted = toInstall.filter((p) => !p.trust).map((p) => p.name);
+				if (trusted.length > 0) {
+					await $`bun install --force --trust --global ${trusted}`;
+				}
+				if (untrusted.length > 0) {
+					await $`bun install --force --global ${untrusted}`;
+				}
+			} else {
+				await tool.run(names);
+			}
 		} catch (error) {
 			// A batch command fails as a whole; attribute the error to every package.
 			const message = error instanceof Error ? error.message : String(error);

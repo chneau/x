@@ -87,7 +87,7 @@
 			{ "name": "nodemon" },
 			{ "name": "npm-check-updates" },
 			{ "name": "npm-check" },
-			{ "name": "opencode-ai", "check": "opencode" },
+			{ "name": "@opencode/cli", "check": "opencode", "trust": true },
 			{ "name": "oxlint" },
 			{ "name": "prettier" },
 			{ "name": "reasonix" },
@@ -164,11 +164,6 @@
 				"name": "claude",
 				"command": "curl -fsSL https://claude.ai/install.sh | bash",
 				"commandWindows": "powershell.exe -Command \"irm https://claude.ai/install.ps1 | iex\""
-			},
-			{
-				"name": "opencode",
-				"command": "curl -fsSL https://opencode.ai/v2/install | bash",
-				"commandWindows": "powershell.exe -Command \"irm https://opencode.ai/install.ps1 | iex\""
 			},
 			{
 				"name": "pi",

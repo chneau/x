@@ -15,22 +15,35 @@ import { findMissing, installPkgsGrouped, pkgs } from "../utils/pkgs";
 import { commandDoctorWindows } from "./commandDoctorWindows";
 
 if (process.platform !== "win32") {
+	const home = Bun.env.HOME ?? "";
+	const bunInstall = Bun.env.BUN_INSTALL ?? `${home}/.bun`;
+	const krewRoot = Bun.env.KREW_ROOT ?? `${home}/.krew`;
+	const gemDirs = [
+		"/home/linuxbrew/.linuxbrew/lib/ruby/gems/4.0.0/bin",
+		"/home/linuxbrew/.linuxbrew/lib/ruby/gems/3.4.0/bin",
+		"/home/linuxbrew/.linuxbrew/lib/ruby/gems/3.3.0/bin",
+		`${home}/.local/share/gem/ruby/4.0.0/bin`,
+		`${home}/.local/share/gem/ruby/3.4.0/bin`,
+		`${home}/.local/share/gem/ruby/3.3.0/bin`,
+		`${home}/.gem/ruby/4.0.0/bin`,
+		`${home}/.gem/ruby/3.4.0/bin`,
+		`${home}/.gem/ruby/3.3.0/bin`,
+	];
 	Bun.env.PATH = [
 		Bun.env.PATH ?? "",
 		"/home/linuxbrew/.linuxbrew/bin",
 		"/home/linuxbrew/.linuxbrew/sbin",
 		"/home/linuxbrew/.linuxbrew/opt/ruby/bin",
-		"$BUN_INSTALL/bin",
-		"$HOME/go/bin",
-		"$HOME/.arkade/bin",
-		// biome-ignore lint/suspicious/noTemplateCurlyInString: it's what I actually expect
-		"${KREW_ROOT:-$HOME/.krew}/bin",
-		"$HOME/.cargo/bin",
-		"$HOME/.dotnet",
-		"$HOME/.dotnet/tools",
-		"$HOME/.go/bin",
-		"$HOME/.local/bin",
-		"$HOME/bin",
+		...gemDirs,
+		`${bunInstall}/bin`,
+		`${home}/go/bin`,
+		`${home}/.arkade/bin`,
+		`${krewRoot}/bin`,
+		`${home}/.cargo/bin`,
+		`${home}/.dotnet`,
+		`${home}/.dotnet/tools`,
+		`${home}/.local/bin`,
+		`${home}/bin`,
 		"/snap/bin",
 		"/usr/local/sbin",
 		"/usr/sbin",
@@ -110,7 +123,7 @@ const updateSteps: UpdateStep[] = [
 			for (const line of lines) {
 				const toolName = line.trim().split(/\s+/)[0];
 				if (toolName) {
-					await $`dotnet tool update --global ${toolName}`.nothrow();
+					await $`dotnet tool update --global ${toolName}`.quiet().nothrow();
 				}
 			}
 		},
@@ -123,17 +136,30 @@ const updateSteps: UpdateStep[] = [
 	{
 		label: "gem packages",
 		check: "gem",
-		run: () => $`gem update`.nothrow(),
+		run: async () => {
+			const gems = config.packages.gem?.map((p) => p.name) ?? [];
+			if (gems.length > 0) {
+				const brewGlibc = "/home/linuxbrew/.linuxbrew/opt/glibc/lib";
+				const hasBrewGlibc =
+					process.platform !== "win32" &&
+					(await Bun.file(`${brewGlibc}/libc.so.6`).exists());
+				if (hasBrewGlibc) {
+					await $`gem update ${gems} -- --with-ldflags=-Wl,-rpath,${brewGlibc} -L${brewGlibc}`.nothrow();
+				} else {
+					await $`gem update ${gems}`.nothrow();
+				}
+			}
+		},
 	},
 ];
 
 const doctorUpdateSystem = async () => {
 	console.log("🕒 Updating system...");
 
-	await $`sudo apt update -y`.nothrow();
-	await $`sudo apt upgrade -y`.nothrow();
-	await $`sudo apt autoremove -y`.nothrow();
-	await $`sudo apt autoclean -y`.nothrow();
+	await $`sudo apt-get update -y -qq`.quiet().nothrow();
+	await $`sudo apt-get upgrade -y -qq`.quiet().nothrow();
+	await $`sudo apt-get autoremove -y -qq`.quiet().nothrow();
+	await $`sudo apt-get autoclean -y -qq`.quiet().nothrow();
 
 	for (const step of updateSteps) {
 		if (step.check && !(await commandExists(step.check))) continue;
