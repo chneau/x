@@ -177,6 +177,10 @@
 			{
 				"name": "hermes",
 				"command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash"
+			},
+			{
+				"name": "tuios",
+				"command": "curl -fsSL https://raw.githubusercontent.com/Gaurav-Gosain/tuios/main/install.sh | bash"
 			}
 		],
 		"winget": [
