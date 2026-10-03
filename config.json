@@ -73,6 +73,7 @@
 			{ "name": "@posthog/cli", "check": "posthog-cli" },
 			{ "name": "@qwen-code/qwen-code", "check": "qwen" },
 			{ "name": "@vegamo/deepcode-cli", "check": "deepcode" },
+			{ "name": "ccusage" },
 			{ "name": "cf" },
 			{ "name": "cline" },
 			{ "name": "command-code" },
