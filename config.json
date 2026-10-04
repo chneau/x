@@ -70,6 +70,7 @@
 			{ "name": "@github/copilot", "check": "copilot" },
 			{ "name": "@google/jules", "check": "jules" },
 			{ "name": "@minimax-ai/code", "check": "mcode" },
+			{ "name": "@oh-my-pi/pi-coding-agent", "check": "omp" },
 			{ "name": "@posthog/cli", "check": "posthog-cli" },
 			{ "name": "@qwen-code/qwen-code", "check": "qwen" },
 			{ "name": "@vegamo/deepcode-cli", "check": "deepcode" },
