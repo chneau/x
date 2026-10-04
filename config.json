@@ -179,6 +179,10 @@
 				"command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash"
 			},
 			{
+				"name": "herdr",
+				"command": "curl -fsSL https://herdr.dev/install.sh | sh"
+			},
+			{
 				"name": "tuios",
 				"command": "curl -fsSL https://raw.githubusercontent.com/Gaurav-Gosain/tuios/main/install.sh | bash"
 			}
