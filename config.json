@@ -68,6 +68,7 @@
 			{ "name": "@anthropic-ai/claude-code", "check": "claude" },
 			{ "name": "@biomejs/biome", "check": "biome" },
 			{ "name": "@github/copilot", "check": "copilot" },
+			{ "name": "@getpaseo/cli", "check": "paseo" },
 			{ "name": "@google/jules", "check": "jules" },
 			{ "name": "@minimax-ai/code", "check": "mcode" },
 			{ "name": "@oh-my-pi/pi-coding-agent", "check": "omp" },
