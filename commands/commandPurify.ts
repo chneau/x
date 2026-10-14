@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { cpus } from "node:os";
 import { mapConcurrent, walkDirectories } from "../utils/helpers";
+import { $ } from "../utils/verboseShell";
 
 type CommandOptions = {
 	recursive?: number;
@@ -44,15 +45,14 @@ const purify = async (dir: string, dryRun = false) => {
 		await removeFileIfExists(dir, lockfile, dryRun).catch(console.error);
 	}
 	const isCSharp = await isCSharpProject(dir);
+	const hasPackageJson = await Bun.file(`${dir}/package.json`).exists();
 	const packageJsonExists = await managePackagejson(
 		dir,
 		isCSharp,
 		dryRun,
 	).catch(console.error);
 	const tsconfigExists = await manageTsconfig(dir, dryRun).catch(console.error);
-	await manageGitignore(dir, packageJsonExists ?? false, dryRun).catch(
-		console.error,
-	);
+	await manageGitignore(dir, hasPackageJson, dryRun).catch(console.error);
 	if (dryRun) {
 		console.log(`🔍 [dry-run] Would run checks/upgrades for ${dir}`);
 		console.log(`🎉 Done previewing files in ${dir}`);
@@ -60,18 +60,18 @@ const purify = async (dir: string, dryRun = false) => {
 	}
 	if (packageJsonExists) {
 		console.log("🚀 Updating everything!");
-		await Bun.$`timeout 20s bun run --cwd=${dir} upgrade`
+		await $`timeout 20s bun run --cwd=${dir} upgrade`
 			.nothrow()
 			.catch(console.error);
 	}
 	if (tsconfigExists) {
 		console.log("🚀 Checking and linting!");
-		await Bun.$`timeout 6s bun run --cwd=${dir} check`
+		await $`timeout 6s bun run --cwd=${dir} check`
 			.nothrow()
 			.catch(console.error);
 	} else if (isCSharp && packageJsonExists) {
 		console.log("🚀 Checking C# project!");
-		await Bun.$`timeout 60s bun run --cwd=${dir} check`
+		await $`timeout 60s bun run --cwd=${dir} check`
 			.nothrow()
 			.catch(console.error);
 	}
@@ -90,7 +90,7 @@ const removeFileIfExists = async (
 		console.log(`🔍 [dry-run] Would remove ${path}`);
 		return true;
 	}
-	await Bun.$`rm -f ${path}`.nothrow();
+	await $`rm -f ${path}`.nothrow();
 	console.log(`✅ Done with ${path}`);
 	return true;
 };
@@ -135,7 +135,7 @@ const writeManagedJson = async (
 		return;
 	}
 	await Bun.write(file, `${JSON.stringify(data, null, 2)}\n`);
-	await Bun.$`biome check --write --unsafe ${filename}`.nothrow();
+	await $`biome check --write --unsafe ${filename}`.nothrow();
 	console.log(`✅ Done with ${filename}`);
 };
 

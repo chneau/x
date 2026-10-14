@@ -1,6 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { $ } from "bun";
+import { $ } from "./verboseShell";
 
 export function die(message: string, detail?: string): never {
 	console.error(message);
@@ -35,14 +35,18 @@ export const getCurrentVersion = async () => {
 	return "0.0.0";
 };
 
-export const fetchLatestVersion = async () =>
+/** Latest published version, or `null` when the registry cannot be reached. */
+export const fetchLatestVersion = async (): Promise<string | null> =>
 	await fetch("https://registry.npmjs.org/@chneau/x/latest")
 		.then((x) => x.json())
 		.then((x) => x.version as string)
-		.catch(() => "0.0.0");
+		.catch(() => null);
 
+/** Replace `${VAR}` with its env value, JSON-escaped so it survives JSON parsing. */
 export const envSubst = (str: string) =>
-	str.replace(/\${(.*?)}/g, (_, key) => Bun.env[key] ?? "");
+	str.replace(/\${(.*?)}/g, (_, key) =>
+		JSON.stringify(Bun.env[key] ?? "").slice(1, -1),
+	);
 
 export const formatBytes = (bytes: number): string => {
 	if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";

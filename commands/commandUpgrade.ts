@@ -1,13 +1,19 @@
-import { $ } from "bun";
 import {
 	c,
 	die,
 	fetchLatestVersion,
 	getCurrentVersion,
 } from "../utils/helpers";
+import { $ } from "../utils/verboseShell";
 
 export const commandUpgrade = async () => {
 	const latestVersion = await fetchLatestVersion();
+	if (!latestVersion) {
+		die(
+			"❌ Could not fetch the latest version of @chneau/x.",
+			"Check your network connection and try again.",
+		);
+	}
 	const currentVersion = await getCurrentVersion();
 	if (latestVersion === currentVersion) {
 		console.log(

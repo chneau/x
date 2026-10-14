@@ -1,5 +1,5 @@
-import { $ } from "bun";
 import { c } from "../utils/helpers";
+import { $ } from "../utils/verboseShell";
 
 /**
  * Formatters per language/stack. Each is only run when the corresponding

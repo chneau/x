@@ -1,10 +1,10 @@
-import { $ } from "bun";
 import { c, ensureCommand, mapConcurrent } from "../utils/helpers";
 import {
 	kubectlContext,
 	kubectlContexts,
 	printContextBanner,
 } from "../utils/kubeCommon";
+import { $ } from "../utils/verboseShell";
 
 type KcleanOptions = {
 	allNamespaces?: boolean;

@@ -1,5 +1,5 @@
-import { $ } from "bun";
-import { die, formatBytes } from "../utils/helpers";
+import { c, die, formatBytes } from "../utils/helpers";
+import { $ } from "../utils/verboseShell";
 
 type SteamdeckOptions = {
 	host?: string;
@@ -20,8 +20,6 @@ type UpdateOptions = SteamdeckOptions & {
 };
 
 const DEFAULT_HOST = "steamdeck";
-const DEFAULT_SHORTCUTS_PATH =
-	"/home/deck/.local/share/Steam/userdata/56154729/config/shortcuts.vdf";
 const DEFAULT_STEAMAPPS_PATH = "/home/deck/.local/share/Steam/steamapps";
 const DEFAULT_DECKY_BIN = "/home/deck/homebrew/services/PluginLoader";
 const DEFAULT_DECKY_INSTALLER =
@@ -29,10 +27,36 @@ const DEFAULT_DECKY_INSTALLER =
 
 const SSH_OPTS = "-o ConnectTimeout=30 -o BatchMode=yes";
 
-const sshRun = async (host: string, cmd: string, timeoutSec = 60) =>
-	await $`timeout ${timeoutSec}s ssh ${SSH_OPTS} ${host} ${cmd}`
-		.quiet()
-		.nothrow();
+type SshResult = { exitCode: number; stdout: Buffer; stderr: Buffer };
+
+/**
+ * Run a remote command. `stdin` (e.g. a sudo password) is written to the ssh
+ * process, so it never appears in the echoed command.
+ */
+const sshRun = async (
+	host: string,
+	cmd: string,
+	timeoutSec = 60,
+	stdin?: string,
+): Promise<SshResult> => {
+	console.log(`${c.dim}${c.gray}$ ssh ${host} ${cmd}${c.reset}`);
+	const proc = Bun.spawn(
+		["timeout", `${timeoutSec}s`, "ssh", ...SSH_OPTS.split(" "), host, cmd],
+		{ stdin: "pipe", stdout: "pipe", stderr: "pipe" },
+	);
+	if (stdin !== undefined) proc.stdin.write(stdin);
+	proc.stdin.end();
+	const [stdout, stderr, exitCode] = await Promise.all([
+		new Response(proc.stdout).arrayBuffer(),
+		new Response(proc.stderr).arrayBuffer(),
+		proc.exited,
+	]);
+	return {
+		exitCode,
+		stdout: Buffer.from(stdout),
+		stderr: Buffer.from(stderr),
+	};
+};
 
 /** Die unless an SSH connection to `host` succeeds. */
 const ensureSsh = async (host: string) => {
@@ -44,15 +68,19 @@ const ensureSsh = async (host: string) => {
 	}
 };
 
-/** Pipe the sudo password into `sudo -S <cmd>` when one is provided. */
-const sudoRun = (cmd: string, sudoPassword?: string) =>
-	sudoPassword ? `echo ${JSON.stringify(sudoPassword)} | sudo -S ${cmd}` : cmd;
-
 const sshText = async (host: string, cmd: string, timeoutSec = 60) => {
 	const res = await sshRun(host, cmd, timeoutSec);
 	if (res.exitCode !== 0) return "";
 	return res.stdout.toString().trim();
 };
+
+/** Locate the shortcuts.vdf of whichever Steam account owns one. */
+const findShortcutsPath = async (host: string) =>
+	await sshText(
+		host,
+		"ls -d /home/deck/.local/share/Steam/userdata/*/config/shortcuts.vdf 2>/dev/null | head -n 1",
+		20,
+	);
 
 /** Stream `content` into `remotePath` over ssh, backing up the previous file. */
 const sshWriteFile = async (
@@ -69,9 +97,21 @@ const sshWriteFile = async (
 type VDFEntry = {
 	index: string;
 	fields: Record<string, unknown>;
+	/** Byte offset where this entry's field data starts (after the index string). */
+	fieldsStart: number;
+	/** Byte offset just past this entry (its object terminator included). */
+	end: number;
 };
 
-const parseVdf = (buffer: Uint8Array): VDFEntry[] => {
+type ParsedVdf = {
+	entries: VDFEntry[];
+	/** Offset where the first entry starts, i.e. past the `shortcuts` root key. */
+	headerEnd: number;
+	/** Offset of the `0x08` that closes the shortcuts list. */
+	trailerStart: number;
+};
+
+const parseVdf = (buffer: Uint8Array): ParsedVdf => {
 	const data = Buffer.from(buffer);
 	let pos = 0;
 
@@ -101,6 +141,8 @@ const parseVdf = (buffer: Uint8Array): VDFEntry[] => {
 		return val;
 	};
 
+	const empty: ParsedVdf = { entries: [], headerEnd: 0, trailerStart: 0 };
+
 	const readObject = (): Record<string, unknown> => {
 		const obj: Record<string, unknown> = {};
 		while (pos < data.length) {
@@ -113,80 +155,60 @@ const parseVdf = (buffer: Uint8Array): VDFEntry[] => {
 				obj[key] = readCString();
 			} else if (typeByte === 0x02) {
 				obj[key] = readInt32();
+			} else if (typeByte === 0x03) {
+				obj[key] = data.readFloatLE(pos);
+				pos += 4;
 			} else if (typeByte === 0x07) {
 				obj[key] = readInt64();
+			} else {
+				// Bail out rather than desync and corrupt the file on write-back.
+				throw new Error(`unsupported VDF type 0x${typeByte.toString(16)}`);
 			}
 		}
 		return obj;
 	};
 
-	if (data.length === 0 || readByte() !== 0x00) return [];
+	if (data.length === 0 || readByte() !== 0x00) return empty;
 	const rootKey = readCString();
-	if (rootKey !== "shortcuts") return [];
+	if (rootKey !== "shortcuts") return empty;
+	const headerEnd = pos;
 
 	const entries: VDFEntry[] = [];
 	while (pos < data.length) {
 		const typeByte = readByte();
-		if (typeByte === 0x08) break;
-		if (typeByte !== 0x00) break;
+		if (typeByte !== 0x00) break; // 0x08 ends the list
 		const index = readCString();
+		const fieldsStart = pos;
 		const fields = readObject();
-		entries.push({ index, fields });
+		entries.push({ index, fields, fieldsStart, end: pos });
 	}
 
-	return entries;
+	// The byte right after the last entry is the `0x08` closing the list.
+	return {
+		entries,
+		headerEnd,
+		trailerStart: entries.at(-1)?.end ?? headerEnd,
+	};
 };
 
-const dumpVdf = (entries: VDFEntry[]): Buffer => {
-	const chunks: Buffer[] = [];
-
-	const writeStr = (s: string) => {
-		chunks.push(Buffer.from(s, "utf-8"));
+/**
+ * Rebuild the file with `keep` entries, renumbered from 0. Every field byte is
+ * copied verbatim from `original`, so types this parser cannot interpret survive.
+ */
+const rebuildVdf = (
+	original: Uint8Array,
+	parsed: ParsedVdf,
+	keep: VDFEntry[],
+): Buffer => {
+	const data = Buffer.from(original);
+	const chunks: Buffer[] = [data.subarray(0, parsed.headerEnd)];
+	keep.forEach((entry, i) => {
 		chunks.push(Buffer.from([0x00]));
-	};
-
-	const writeObject = (obj: Record<string, unknown>) => {
-		for (const [key, value] of Object.entries(obj)) {
-			if (value && typeof value === "object" && !Array.isArray(value)) {
-				chunks.push(Buffer.from([0x00]));
-				writeStr(key);
-				writeObject(value as Record<string, unknown>);
-			} else if (typeof value === "string") {
-				chunks.push(Buffer.from([0x01]));
-				writeStr(key);
-				writeStr(value);
-			} else if (typeof value === "number") {
-				if (Math.abs(value) > 0x7fffffff) {
-					chunks.push(Buffer.from([0x07]));
-					writeStr(key);
-					const buf = Buffer.alloc(8);
-					buf.writeBigInt64LE(BigInt(value));
-					chunks.push(buf);
-				} else {
-					chunks.push(Buffer.from([0x02]));
-					writeStr(key);
-					const buf = Buffer.alloc(4);
-					buf.writeInt32LE(value);
-					chunks.push(buf);
-				}
-			}
-		}
-		chunks.push(Buffer.from([0x08]));
-	};
-
-	// root
-	chunks.push(Buffer.from([0x00]));
-	writeStr("shortcuts");
-
-	entries.forEach((entry, i) => {
+		chunks.push(Buffer.from(`${i}`, "utf-8"));
 		chunks.push(Buffer.from([0x00]));
-		writeStr(String(i));
-		writeObject(entry.fields);
+		chunks.push(data.subarray(entry.fieldsStart, entry.end));
 	});
-
-	chunks.push(Buffer.from([0x08])); // end shortcuts
-	chunks.push(Buffer.from([0x08])); // end root
-
+	chunks.push(data.subarray(parsed.trailerStart));
 	return Buffer.concat(chunks);
 };
 
@@ -208,18 +230,35 @@ const isSystemLauncher = (exe: string): boolean =>
 
 export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 	const host = options.host || DEFAULT_HOST;
-	const shortcutsPath = options.shortcutsPath || DEFAULT_SHORTCUTS_PATH;
 
 	console.log(`🔍 Checking Steam Deck (${host}) for broken shortcuts...`);
 
 	await ensureSsh(host);
+
+	const shortcutsPath =
+		options.shortcutsPath || (await findShortcutsPath(host));
+	if (!shortcutsPath) {
+		die(
+			"❌ Could not locate shortcuts.vdf on the Steam Deck.",
+			"Pass --shortcuts-path <path> to point at it explicitly.",
+		);
+	}
 
 	const rawShortcuts = await sshRun(host, `cat ${shortcutsPath}`, 30);
 	if (rawShortcuts.exitCode !== 0) {
 		die(`❌ Cannot read shortcuts from ${shortcutsPath}`);
 	}
 
-	const entries = parseVdf(rawShortcuts.stdout);
+	let parsed: ParsedVdf;
+	try {
+		parsed = parseVdf(rawShortcuts.stdout);
+	} catch (error) {
+		die(
+			"❌ Could not parse shortcuts.vdf — nothing was changed.",
+			error instanceof Error ? error.message : String(error),
+		);
+	}
+	const entries = parsed.entries;
 	if (entries.length === 0) {
 		console.log("No shortcuts found.");
 		return;
@@ -268,7 +307,7 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 		return;
 	}
 
-	const newData = dumpVdf(good);
+	const newData = rebuildVdf(rawShortcuts.stdout, parsed, good);
 	console.log(`Writing updated shortcuts to ${shortcutsPath}...`);
 
 	const writeRes = await sshWriteFile(host, shortcutsPath, newData);
@@ -358,13 +397,16 @@ export const commandDeck = async (options: UpdateOptions) => {
 			console.log("✅ Flatpaks are up to date.");
 		} else {
 			console.log("Updating Flatpaks...");
+			// `sudo -S` reads the password from ssh stdin, so it is never echoed.
 			const cmd = sudoPassword
-				? `flatpak update --user -y; ${sudoRun(
-						"flatpak update --system -y",
-						sudoPassword,
-					)}`
+				? "flatpak update --user -y; sudo -S flatpak update --system -y"
 				: "flatpak update --user -y";
-			const res = await sshRun(host, cmd, 300);
+			const res = await sshRun(
+				host,
+				cmd,
+				300,
+				sudoPassword ? `${sudoPassword}\n` : undefined,
+			);
 			if (res.exitCode === 0) {
 				console.log("✅ Flatpaks updated.");
 			} else {
@@ -469,14 +511,16 @@ export const commandDeck = async (options: UpdateOptions) => {
 				console.log("✅ Decky Loader is up to date.");
 			} else {
 				console.log("Updating Decky Loader...");
-				// prime the sudo credential cache first when a password is provided
+				// Prime the sudo credential cache via stdin, then install.
 				const installCmd = sudoPassword
-					? `${sudoRun(
-							"true 2>/dev/null",
-							sudoPassword,
-						)} && curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`
+					? `sudo -S true 2>/dev/null && curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`
 					: `curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`;
-				const res = await sshRun(host, installCmd, 120);
+				const res = await sshRun(
+					host,
+					installCmd,
+					120,
+					sudoPassword ? `${sudoPassword}\n` : undefined,
+				);
 				if (res.exitCode === 0) {
 					console.log("✅ Decky updated.");
 				} else {

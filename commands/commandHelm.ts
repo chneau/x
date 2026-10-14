@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import {
 	c,
 	die,
@@ -8,6 +7,7 @@ import {
 	stripAnsi,
 } from "../utils/helpers";
 import { kubectlContext, printContextBanner } from "../utils/kubeCommon";
+import { $ } from "../utils/verboseShell";
 
 type HelmRelease = {
 	name: string;

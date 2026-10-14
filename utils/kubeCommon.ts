@@ -1,5 +1,5 @@
-import { $ } from "bun";
 import { c } from "./helpers";
+import { $ } from "./verboseShell";
 
 /** Current kubectl context name ("unknown" when unavailable). */
 export const kubectlContext = async (): Promise<string> =>

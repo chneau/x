@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import {
 	type DoctorOptions,
 	doctorGitconfig,
@@ -7,6 +6,7 @@ import {
 	logDoctorStart,
 } from "../utils/doctorCommon";
 import { findMissing, installPkgsGrouped } from "../utils/pkgs";
+import { $ } from "../utils/verboseShell";
 import { windowsPackages } from "../utils/windowsPkgs";
 
 const doctorUpdateSystem = async () => {

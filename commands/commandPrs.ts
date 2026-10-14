@@ -1,5 +1,5 @@
-import { $ } from "bun";
 import { c, die, ensureCommand, mapConcurrent } from "../utils/helpers";
+import { $ } from "../utils/verboseShell";
 
 type PullRequest = {
 	number: number;

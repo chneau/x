@@ -1,6 +1,6 @@
 import { readdir, rm } from "node:fs/promises";
+import { userInfo } from "node:os";
 import { join } from "node:path";
-import { $ } from "bun";
 import {
 	analyzeDisk,
 	cleanupTargets,
@@ -12,6 +12,7 @@ import {
 	type WindowsBase,
 } from "../utils/diskCommon";
 import { commandExists } from "../utils/helpers";
+import { $ } from "../utils/verboseShell";
 
 type ResolvedWindowsTarget = {
 	name: string;
@@ -119,13 +120,13 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
 						].includes(name),
 				);
 
-			const currentLinuxUser = Bun.env.USER || "c";
+			const currentLinuxUser = Bun.env.USER || userInfo().username;
 			const matchedUser =
 				userCandidates.find(
 					(u) => u.toLowerCase() === currentLinuxUser.toLowerCase(),
 				) ||
 				userCandidates[0] ||
-				"c";
+				currentLinuxUser;
 
 			const userProfile = `${mntUsers}/${matchedUser}`;
 			const localAppData = `${userProfile}/AppData/Local`;

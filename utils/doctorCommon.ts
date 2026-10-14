@@ -1,5 +1,5 @@
-import { $ } from "bun";
 import z from "zod";
+import { $ } from "./verboseShell";
 
 export const optionsSchema = z.object({
 	email: z.email(),

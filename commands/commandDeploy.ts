@@ -3,7 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
 import { createDeployment } from "../utils/cdk8s";
-import { envSubst } from "../utils/helpers";
+import { c, envSubst } from "../utils/helpers";
+import { $, Redacted } from "../utils/verboseShell";
 
 const registrySchema = z.object({
 	hostname: z.string(),
@@ -74,6 +75,7 @@ const serviceSchema = normalServiceSchema.or(extendsServiceSchema);
 type DeployService = z.infer<typeof serviceSchema>;
 
 export const deploySchema = z.object({
+	$schema: z.string().optional(),
 	registries: z.record(z.string(), registrySchema).default({}),
 	images: z.record(z.string(), imageSchema),
 	services: z.record(z.string(), serviceSchema),
@@ -117,15 +119,32 @@ export const commandDeploy = async (
 		jsonFiles.push(...discoveredJson, ".deploy.json");
 	}
 	let isFound = false;
+	let invalidCount = 0;
 	const promises: Promise<unknown>[] = [];
 	for (const jsonFile of jsonFiles) {
 		const file = Bun.file(jsonFile);
 		const rawStr = await file.text().catch(() => null);
 		if (!rawStr) continue;
-		const envSubstStr = envSubst(rawStr);
-		const rawJson = JSON.parse(envSubstStr);
-		const parsed = await deploySchema.parseAsync(rawJson).catch(() => null);
-		if (!parsed) continue;
+		let parsed: Deploy;
+		try {
+			parsed = await deploySchema.parseAsync(JSON.parse(envSubst(rawStr)));
+		} catch (error) {
+			// Explicitly named files are reported; discovered ones are just not configs.
+			if (isTargettingJsonFiles) {
+				invalidCount += 1;
+				console.error(
+					`${c.red}❌ Invalid deploy config '${jsonFile}'${c.reset}`,
+				);
+				console.error(
+					error instanceof z.ZodError
+						? z.prettifyError(error)
+						: error instanceof Error
+							? error.message
+							: String(error),
+				);
+			}
+			continue;
+		}
 		const copy = structuredClone(parsed);
 		if (filters.length) {
 			for (const key in parsed.services) {
@@ -155,6 +174,7 @@ export const commandDeploy = async (
 	if (isTargettingJsonFiles && !isFound) {
 		console.log("❌ No valid json files found");
 	}
+	if (invalidCount > 0) process.exitCode = 1;
 	await Promise.all(promises);
 };
 
@@ -261,7 +281,9 @@ const dockerLogin = (hostname: string, username: string, password: string) => {
 					return;
 				}
 				console.log(`🔑 Logging in to ${hostname}...`);
-				await Bun.$`echo ${password} | docker login --username ${username} --password-stdin ${hostname}`;
+				await $`echo ${new Redacted(
+					password,
+				)} | docker login --username ${username} --password-stdin ${hostname}`;
 				console.log(`... ✅ Logged in to ${hostname}`);
 			})(),
 		);
@@ -310,7 +332,7 @@ const deploy = async ({
 			const targetArg = image.target ? [`--target=${image.target}`] : [];
 			const buildContext = path.resolve(cwd, image.context);
 			const dockerfilePath = path.resolve(cwd, image.dockerfile);
-			await Bun.$`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`.cwd(
+			await $`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`.cwd(
 				buildContext,
 			);
 			console.log(`... ✅ Built ${imageFullName}`);
@@ -340,7 +362,7 @@ const deploy = async ({
 			...Bun.env,
 			KUBECONFIG: path.join(cwd, service.file),
 		};
-		await Bun.$`echo ${deploymentYaml} | kubectl --context=${service.context} apply --filename=-`.env(
+		await $`echo ${deploymentYaml} | kubectl --context=${service.context} apply --filename=-`.env(
 			kubeEnv,
 		);
 		console.log(`... ✅ Deployed ${serviceAlias}`);

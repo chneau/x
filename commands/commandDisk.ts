@@ -1,4 +1,4 @@
-import { $ } from "bun";
+import { homedir } from "node:os";
 import {
 	analyzeDisk,
 	type CleanupTarget,
@@ -10,6 +10,7 @@ import {
 	unixCleanupTargets,
 } from "../utils/diskCommon";
 import { commandExists, formatBytes } from "../utils/helpers";
+import { $ } from "../utils/verboseShell";
 import { commandDiskWindows } from "./commandDiskWindows";
 
 const goBytesReclaimable = async (): Promise<number> => {
@@ -96,7 +97,7 @@ const runCleanupCommands = async (dryRun: boolean) => {
 };
 
 const commandDiskUnix = async (options: DiskOptions) => {
-	const home = Bun.env.HOME || "/home/c";
+	const home = Bun.env.HOME || homedir();
 	const topCount = options.top || 15;
 	const dryRun = Boolean(options.dryRun);
 	const shouldClean = options.clean || options.dryRun;

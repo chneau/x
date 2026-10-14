@@ -1,6 +1,6 @@
-import { $ } from "bun";
 import config from "../config.json";
 import { commandExists } from "./helpers";
+import { $ } from "./verboseShell";
 
 type PkgType =
 	| "apt"

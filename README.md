@@ -35,7 +35,7 @@ Recursively scans directories (up to depth 4) to:
 ### Git Clean & Maintenance
 
 ```bash
-x gitclean [dir] [-r|--recursive <depth>] [-c|--concurrency <workers>]
+x gitclean [dir] [-r|--recursive <depth>] [-c|--concurrency <workers>] [-d|--dry-run]
 ```
 
 Finds git repositories in parallel (up to recursion depth) and performs full
@@ -47,7 +47,22 @@ cleanup:
 - `git fetch --prune --prune-tags`
 - `GIT_ASK_YESNO=false git clean -ffdx`
 
-Concurrency defaults to 10 workers, and recursion depth defaults to 1.
+Concurrency defaults to 10 workers, and recursion depth defaults to 1. Use `-d`
+/ `--dry-run` to preview what would be repacked, pruned, and deleted.
+
+### GitHub PR Cleanup
+
+```bash
+x prs [--owner <owner>] [-c|--concurrency <workers>] [-d|--dry-run]
+```
+
+`x prs clean` is an alias with the same options. Closes Renovate PRs and merges
+(or, when unmergeable, closes) Dependabot PRs across the owner's repositories:
+
+- **Owner:** Defaults to the current `gh` user; override with `-o|--owner`.
+- **Concurrency:** Number of concurrent workers (defaults to 10).
+- **Dry-run:** `-d` / `--dry-run` previews the actions without merging or
+  closing anything.
 
 ### Project Initialization
 
@@ -98,8 +113,9 @@ and keeps them modern, self-contained
 - **Latest dependencies:** keeps declared dependencies and adds third-party
   imports (mapping `sklearn` → `scikit-learn`, `PIL` → `pillow`, …), then bumps
   each one to its latest release published on PyPI.
-- **Dry-run / check:** `-d` previews without writing; `--check` exits non-zero
-  when a file is out of date, for use in CI.
+- **Dry-run / check:** `-d` previews without writing; `--check` also leaves
+  files untouched and exits non-zero when anything is out of date, for use in
+  CI.
 
 ### Deployment
 
@@ -217,6 +233,28 @@ Need them from Cloudflare? Credentials are here:
 domain then points its catch-all at `destination` (which must already be
 verified for Cloudflare Email Routing). Omitting `destination` disables the
 rule.
+
+### Steam Deck
+
+```bash
+x deck [-H|--host <host>] [-s|--sudo-password <password>]
+x deck shortcuts [-H|--host <host>] [-p|--shortcuts-path <path>] [-d|--dry-run]
+x deck disk [-H|--host <host>]
+x deck update [-H|--host <host>] [-s|--sudo-password <password>] \
+  [--no-flatpaks] [--no-os] [--no-games] [--no-decky]
+```
+
+Manages a Steam Deck over SSH (default host `steamdeck`):
+
+- **shortcuts:** locates the `shortcuts.vdf` of the Deck's Steam account and
+  deletes non-Steam shortcuts whose executable no longer exists, backing the
+  original up to `<path>.bak`. `-d` previews and `-p` overrides the path.
+- **disk:** reports filesystem usage, per-category sizes, and the largest
+  directories/files on the Deck.
+- **update:** updates Discover/Flatpak apps and SteamOS, lists pending Steam
+  game/runtime downloads, and updates Decky Loader. Each step can be skipped
+  with `--no-flatpaks` / `--no-os` / `--no-games` / `--no-decky`. The `-s` sudo
+  password is piped over ssh stdin, never echoed.
 
 ### Self Update
 

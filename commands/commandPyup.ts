@@ -396,8 +396,15 @@ export const commandPyup = async (
 	const cwd = typeof dir === "string" && dir.trim().length > 0 ? dir : ".";
 	const root = resolve(cwd);
 	const isDryRun = Boolean(options.dryRun);
-	if (isDryRun) {
-		console.log("🔍 Running in dry-run mode (no files will be modified)");
+	const isCheck = Boolean(options.check);
+	// `--check` verifies without writing, so it never mutates a CI working tree.
+	const isPreview = isDryRun || isCheck;
+	if (isPreview) {
+		console.log(
+			`🔍 Running in ${
+				isDryRun ? "dry-run" : "check"
+			} mode (no files will be modified)`,
+		);
 	}
 
 	const files = await findPythonFiles(root);
@@ -458,7 +465,7 @@ export const commandPyup = async (
 
 		changed.push(file);
 		const label = relative(root, file) || file;
-		if (isDryRun) {
+		if (isPreview) {
 			console.log(`🔍 [would update] ${label}`);
 		} else {
 			await Bun.write(file, updated);
@@ -471,7 +478,7 @@ export const commandPyup = async (
 		return;
 	}
 
-	const verb = isDryRun ? "would be updated" : "updated";
+	const verb = isPreview ? "would be updated" : "updated";
 	console.log(`\n${changed.length} of ${files.length} Python file(s) ${verb}.`);
-	if (options.check && !isDryRun) process.exitCode = 1;
+	if (isCheck) process.exitCode = 1;
 };

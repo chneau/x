@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { basename, resolve } from "node:path";
-import { $ } from "bun";
 import config from "../config.json";
 import { c, pad } from "../utils/helpers";
+import { $ } from "../utils/verboseShell";
 import { commandPurify } from "./commandPurify";
 
 /** Templates from config.json, grouped so aliases pointing at the same repo share a line. */
@@ -147,7 +147,7 @@ export const commandNew = async (
 			await Bun.write(".gitignore", "node_modules\n");
 		}
 
-		await Bun.$`rm -f CLAUDE.md`.nothrow();
+		await $`rm -f CLAUDE.md`.nothrow();
 		await $`bun run all`;
 	} finally {
 		process.chdir(originalCwd);

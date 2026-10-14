@@ -1,7 +1,7 @@
-import { $ } from "bun";
 import config from "../config.json";
 import { commandExists } from "./helpers";
 import { bunPkgs, dotnetPkgs, gemPkgs, type Pkg, uvPkgs } from "./pkgs";
+import { $ } from "./verboseShell";
 
 type WinPkg = Pkg;
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import "./utils/verboseShell";
 import {
 	type Command,
 	InvalidArgumentError,
@@ -142,6 +141,7 @@ program
 
 program
 	.command("fmt")
+	.alias("format")
 	.description(
 		"Format code across all supported languages (Deno, Biome, Go, C#)",
 	)

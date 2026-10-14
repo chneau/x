@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import config from "../config.json";
 import {
 	type DoctorOptions,
@@ -12,6 +11,7 @@ import {
 } from "../utils/doctorCommon";
 import { canSudo, commandExists, isRoot } from "../utils/helpers";
 import { findMissing, installPkgsGrouped, pkgs } from "../utils/pkgs";
+import { $ } from "../utils/verboseShell";
 import { commandDoctorWindows } from "./commandDoctorWindows";
 
 if (process.platform !== "win32") {
