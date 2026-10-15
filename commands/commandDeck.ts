@@ -29,10 +29,6 @@ const SSH_OPTS = "-o ConnectTimeout=30 -o BatchMode=yes";
 
 type SshResult = { exitCode: number; stdout: Buffer; stderr: Buffer };
 
-/**
- * Run a remote command. `stdin` (e.g. a sudo password) is written to the ssh
- * process, so it never appears in the echoed command.
- */
 const sshRun = async (
 	host: string,
 	cmd: string,
@@ -58,7 +54,6 @@ const sshRun = async (
 	};
 };
 
-/** Die unless an SSH connection to `host` succeeds. */
 const ensureSsh = async (host: string) => {
 	const testConn = await sshRun(host, "echo ok", 10);
 	if (testConn.exitCode !== 0) {
@@ -74,7 +69,6 @@ const sshText = async (host: string, cmd: string, timeoutSec = 60) => {
 	return res.stdout.toString().trim();
 };
 
-/** Locate the shortcuts.vdf of whichever Steam account owns one. */
 const findShortcutsPath = async (host: string) =>
 	await sshText(
 		host,
@@ -82,7 +76,6 @@ const findShortcutsPath = async (host: string) =>
 		20,
 	);
 
-/** Stream `content` into `remotePath` over ssh, backing up the previous file. */
 const sshWriteFile = async (
 	host: string,
 	remotePath: string,
@@ -92,22 +85,16 @@ const sshWriteFile = async (
 		"base64",
 	)} | base64 -d | ssh ${SSH_OPTS} ${host} ${`cp ${remotePath} ${remotePath}.bak && cat > ${remotePath}`}`.nothrow();
 
-// ── VDF Binary Reader & Parser ────────────────────────────────────────────────
-
 type VDFEntry = {
 	index: string;
 	fields: Record<string, unknown>;
-	/** Byte offset where this entry's field data starts (after the index string). */
 	fieldsStart: number;
-	/** Byte offset just past this entry (its object terminator included). */
 	end: number;
 };
 
 type ParsedVdf = {
 	entries: VDFEntry[];
-	/** Offset where the first entry starts, i.e. past the `shortcuts` root key. */
 	headerEnd: number;
-	/** Offset of the `0x08` that closes the shortcuts list. */
 	trailerStart: number;
 };
 
@@ -147,7 +134,7 @@ const parseVdf = (buffer: Uint8Array): ParsedVdf => {
 		const obj: Record<string, unknown> = {};
 		while (pos < data.length) {
 			const typeByte = readByte();
-			if (typeByte === 0x08) break; // end of object
+			if (typeByte === 0x08) break;
 			const key = readCString();
 			if (typeByte === 0x00) {
 				obj[key] = readObject();
@@ -161,7 +148,6 @@ const parseVdf = (buffer: Uint8Array): ParsedVdf => {
 			} else if (typeByte === 0x07) {
 				obj[key] = readInt64();
 			} else {
-				// Bail out rather than desync and corrupt the file on write-back.
 				throw new Error(`unsupported VDF type 0x${typeByte.toString(16)}`);
 			}
 		}
@@ -176,14 +162,13 @@ const parseVdf = (buffer: Uint8Array): ParsedVdf => {
 	const entries: VDFEntry[] = [];
 	while (pos < data.length) {
 		const typeByte = readByte();
-		if (typeByte !== 0x00) break; // 0x08 ends the list
+		if (typeByte !== 0x00) break;
 		const index = readCString();
 		const fieldsStart = pos;
 		const fields = readObject();
 		entries.push({ index, fields, fieldsStart, end: pos });
 	}
 
-	// The byte right after the last entry is the `0x08` closing the list.
 	return {
 		entries,
 		headerEnd,
@@ -191,10 +176,6 @@ const parseVdf = (buffer: Uint8Array): ParsedVdf => {
 	};
 };
 
-/**
- * Rebuild the file with `keep` entries, renumbered from 0. Every field byte is
- * copied verbatim from `original`, so types this parser cannot interpret survive.
- */
 const rebuildVdf = (
 	original: Uint8Array,
 	parsed: ParsedVdf,
@@ -225,8 +206,6 @@ const isSystemLauncher = (exe: string): boolean =>
 	exe.startsWith("/usr/bin/flatpak") ||
 	exe === "steamos-nested-desktop" ||
 	!exe.startsWith("/");
-
-// ── Command: clean-shortcuts ──────────────────────────────────────────────────
 
 export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 	const host = options.host || DEFAULT_HOST;
@@ -321,8 +300,6 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 	console.log("Restart Steam on the Steam Deck to apply changes.");
 };
 
-// ── Command: disk ─────────────────────────────────────────────────────────────
-
 export const commandDeckDisk = async (options: SteamdeckOptions) => {
 	const host = options.host || DEFAULT_HOST;
 	console.log(`🔍 Inspecting disk usage on ${host}...`);
@@ -343,7 +320,6 @@ export const commandDeckDisk = async (options: SteamdeckOptions) => {
 	console.log(dfOut);
 
 	console.log("\n=== Category Breakdown ===");
-	// Each path is measured separately (later entries overlap earlier ones).
 	const categories = [
 		{ name: "Steam Games", path: "/home/deck/.local/share/Steam/steamapps" },
 		{ name: "Flatpaks", path: "/home/deck/.var/app /var/lib/flatpak" },
@@ -375,8 +351,6 @@ export const commandDeckDisk = async (options: SteamdeckOptions) => {
 	console.log(topFiles || "None");
 };
 
-// ── Command: update ───────────────────────────────────────────────────────────
-
 export const commandDeck = async (options: UpdateOptions) => {
 	const host = options.host || DEFAULT_HOST;
 	const sudoPassword = options.sudoPassword;
@@ -385,7 +359,6 @@ export const commandDeck = async (options: UpdateOptions) => {
 
 	await ensureSsh(host);
 
-	// 1. Flatpaks
 	if (options.flatpaks !== false) {
 		console.log("\n── Flatpak / Discover Apps ──");
 		const pendingFlatpaks = await sshText(
@@ -397,7 +370,6 @@ export const commandDeck = async (options: UpdateOptions) => {
 			console.log("✅ Flatpaks are up to date.");
 		} else {
 			console.log("Updating Flatpaks...");
-			// `sudo -S` reads the password from ssh stdin, so it is never echoed.
 			const cmd = sudoPassword
 				? "flatpak update --user -y; sudo -S flatpak update --system -y"
 				: "flatpak update --user -y";
@@ -415,7 +387,6 @@ export const commandDeck = async (options: UpdateOptions) => {
 		}
 	}
 
-	// 2. SteamOS
 	if (options.os !== false) {
 		console.log("\n── SteamOS System Update ──");
 		const check = await sshRun(host, "steamos-update check 2>&1", 60);
@@ -434,7 +405,6 @@ export const commandDeck = async (options: UpdateOptions) => {
 		}
 	}
 
-	// 3. Steam Games / Runtimes pending
 	if (options.games !== false) {
 		console.log("\n── Steam Games & Runtimes ──");
 		const rawManifests = await sshText(
@@ -485,7 +455,6 @@ export const commandDeck = async (options: UpdateOptions) => {
 		}
 	}
 
-	// 4. Decky Loader
 	if (options.decky !== false) {
 		console.log("\n── Decky Loader ──");
 		const exists =
@@ -511,7 +480,6 @@ export const commandDeck = async (options: UpdateOptions) => {
 				console.log("✅ Decky Loader is up to date.");
 			} else {
 				console.log("Updating Decky Loader...");
-				// Prime the sudo credential cache via stdin, then install.
 				const installCmd = sudoPassword
 					? `sudo -S true 2>/dev/null && curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`
 					: `curl -sL ${DEFAULT_DECKY_INSTALLER} | sudo -S sh 2>&1`;

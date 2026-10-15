@@ -20,7 +20,6 @@ const checkGitConfig = async (key: string, expected: string) => {
 	}
 };
 
-/** Entries kept in the global gitignore, one per line. */
 const globalIgnoreEntries = [
 	".antigravitycli",
 	".serena",
@@ -30,11 +29,6 @@ const globalIgnoreEntries = [
 	".claude",
 ];
 
-/**
- * Keep `~/.gitignore_global` in sync and point git at it, without ever dropping
- * lines that were added by hand: existing entries are kept, only missing ones
- * are appended.
- */
 const doctorGlobalIgnore = async () => {
 	const home = Bun.env.HOME || Bun.env.USERPROFILE;
 	if (!home) return;

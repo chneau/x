@@ -6,7 +6,6 @@ import { c, pad } from "../utils/helpers";
 import { $ } from "../utils/verboseShell";
 import { commandPurify } from "./commandPurify";
 
-/** Templates from config.json, grouped so aliases pointing at the same repo share a line. */
 const templateGroups = () => {
 	const byRepo = new Map<string, string[]>();
 	for (const [name, repo] of Object.entries(config.templates)) {
@@ -17,7 +16,6 @@ const templateGroups = () => {
 		.sort((a, b) => (a.names[0] ?? "").localeCompare(b.names[0] ?? ""));
 };
 
-/** `x new --list-templates` — print the configured templates and their aliases. */
 const listTemplates = () => {
 	const groups = templateGroups();
 	const width = Math.max(...groups.map((g) => g.names.join(", ").length), 0);

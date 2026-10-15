@@ -3,23 +3,6 @@ import { cpus } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { mapConcurrent } from "../utils/helpers";
 
-/**
- * Keep every Python file in a repo a modern, up-to-date uv script.
- *
- * For every `*.py` file (excluding virtualenvs, caches and generated dirs):
- *  1. makes it a uv script  — a `python`/`python3` shebang is replaced with
- *     `#!/usr/bin/env -S uv run --script` and an inline PEP 723 metadata block
- *     is inserted when missing;
- *  2. pins Python 3.14      — `requires-python = ">=3.14"`;
- *  3. uses the latest deps  — declared dependencies plus third-party imports are
- *     resolved to their latest PyPI release and rewritten as `>=<latest>`.
- *
- * Usage:
- *   x pyup                 # rewrite files in place
- *   x pyup --dry-run       # preview only
- *   x pyup --check         # exit 1 if anything is out of date
- */
-
 type CommandPyupOptions = {
 	dryRun?: boolean;
 	check?: boolean;
@@ -28,7 +11,6 @@ type CommandPyupOptions = {
 const UV_SHEBANG = "#!/usr/bin/env -S uv run --script\n";
 const REQUIRES_PYTHON = ">=3.14";
 
-/** Directories that never contain hand-written scripts we want to touch. */
 const EXCLUDED_DIRS = new Set([
 	".git",
 	".hg",
@@ -47,7 +29,6 @@ const EXCLUDED_DIRS = new Set([
 	"dist",
 ]);
 
-/** Python standard-library top-level modules (from `sys.stdlib_module_names`). */
 const STDLIB = new Set([
 	"abc",
 	"annotationlib",
@@ -245,7 +226,6 @@ const STDLIB = new Set([
 	"zoneinfo",
 ]);
 
-/** Import name -> PyPI distribution name, for the cases where they differ. */
 const IMPORT_TO_PYPI: Record<string, string> = {
 	attr: "attrs",
 	bs4: "beautifulsoup4",
@@ -269,10 +249,8 @@ const IMPORT_RE = /^\s*(?:from|import)\s+([A-Za-z_]\w*)/gm;
 const DEP_RE = /^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(.*)$/;
 const DEPS_ARRAY_RE = /# dependencies = \[([\s\S]*?)\]/;
 
-/** PEP 503 normalisation, used to de-duplicate distributions. */
 const canonical = (name: string) => name.replace(/[-_.]+/g, "-").toLowerCase();
 
-/** Depth-first list of `*.py` files, skipping generated/excluded directories. */
 const findPythonFiles = async (root: string): Promise<string[]> => {
 	const results: string[] = [];
 	const walk = async (dir: string): Promise<void> => {
@@ -290,7 +268,6 @@ const findPythonFiles = async (root: string): Promise<string[]> => {
 	return results.sort();
 };
 
-/** Stems of every discovered file, so sibling imports are not treated as deps. */
 const localModuleNames = (files: string[]): Set<string> => {
 	const names = new Set<string>();
 	for (const file of files) {
@@ -303,7 +280,6 @@ const localModuleNames = (files: string[]): Set<string> => {
 	return names;
 };
 
-/** Read `dependencies` out of a raw inline-metadata block. */
 const parseDepsFromBlock = (block: string): string[] => {
 	const match = block.match(DEPS_ARRAY_RE);
 	if (!match?.[1]) return [];
@@ -312,7 +288,6 @@ const parseDepsFromBlock = (block: string): string[] => {
 		.filter((dep): dep is string => Boolean(dep));
 };
 
-/** Map top-level third-party imports to PyPI distribution names. */
 const importedDistributions = (
 	text: string,
 	local: Set<string>,
@@ -337,7 +312,6 @@ const importedDistributions = (
 const depName = (spec: string): string =>
 	spec.trim().match(DEP_RE)?.[1] ?? spec.trim();
 
-/** Resolve a distribution's latest release from PyPI, caching (incl. failures). */
 const latestVersion = async (
 	name: string,
 	cache: Map<string, string | null>,
@@ -357,9 +331,7 @@ const latestVersion = async (
 			};
 			version = data.info?.version ?? null;
 		}
-	} catch {
-		// handled below
-	}
+	} catch {}
 	if (!version) console.error(`   ! could not resolve latest '${name}'`);
 	cache.set(key, version);
 	return version;
@@ -397,7 +369,6 @@ export const commandPyup = async (
 	const root = resolve(cwd);
 	const isDryRun = Boolean(options.dryRun);
 	const isCheck = Boolean(options.check);
-	// `--check` verifies without writing, so it never mutates a CI working tree.
 	const isPreview = isDryRun || isCheck;
 	if (isPreview) {
 		console.log(
@@ -416,7 +387,6 @@ export const commandPyup = async (
 	const local = localModuleNames(files);
 	const concurrency = Math.max(cpus().length * 2, 2);
 
-	// Pass 1: read every file and collect the distributions it needs.
 	const scanned = await mapConcurrent(
 		files,
 		concurrency,
@@ -437,7 +407,6 @@ export const commandPyup = async (
 		},
 	);
 
-	// Pass 2: resolve the latest version of every unique distribution once.
 	const cache = new Map<string, string | null>();
 	const unique = new Map<string, string>();
 	for (const { names } of scanned) {
@@ -451,7 +420,6 @@ export const commandPyup = async (
 		},
 	);
 
-	// Pass 3: rewrite and (unless dry-run) persist every changed file.
 	const changed: string[] = [];
 	for (const { file, text, names } of scanned) {
 		const deps = [...names.entries()]

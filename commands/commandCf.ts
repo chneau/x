@@ -5,23 +5,8 @@ import { createInterface } from "node:readline/promises";
 import Cloudflare, { APIError } from "cloudflare";
 import { die } from "../utils/helpers";
 
-/**
- * Cloudflare mini-CLI powering the `x cf` command.
- *
- * Uses the official `cloudflare` SDK directly (no external `cf` / `wrangler`
- * binaries required). Credentials are stored in `~/.config/x/cf.json`.
- *
- * Two Cloudflare auth schemes are auto-guessed on `x cf login`:
- *   - API Token                -> one random token per pasted line
- *   - Global API Key (+ email) -> an <email> line paired with an api-key line
- */
-
 const CONFIG_DIR = join(homedir(), ".config", "x");
 const CONFIG_FILE = join(CONFIG_DIR, "cf.json");
-
-// ---------------------------------------------------------------------------
-// credential store (~/.config/x/cf.json)
-// ---------------------------------------------------------------------------
 
 type StoredLogin =
 	| {
@@ -78,7 +63,6 @@ const makeClient = (login: StoredLogin): Cloudflare =>
 		? new Cloudflare({ apiToken: login.apiToken })
 		: new Cloudflare({ apiKey: login.apiKey, apiEmail: login.apiEmail });
 
-/** Resolve the active login (most recent unless overridden) and build a client. */
 const loggedInClient = async (): Promise<{
 	client: Cloudflare;
 	login: StoredLogin;
@@ -103,7 +87,6 @@ const describeLogin = (login: StoredLogin): string =>
 		? `api-token ${masked(login.apiToken)}`
 		: `global key (${login.apiEmail}) ${masked(login.apiKey)}`;
 
-/** Find a stored login by id, or exit with a hint. */
 const requireLogin = (store: CfStore, id: string): StoredLogin => {
 	const found = store.logins.find((l) => l.id === id);
 	if (!found) {
@@ -112,11 +95,6 @@ const requireLogin = (store: CfStore, id: string): StoredLogin => {
 	return found;
 };
 
-// ---------------------------------------------------------------------------
-// x cf login
-// ---------------------------------------------------------------------------
-
-/** Collect all non-empty trimmed input lines. */
 const linesOf = (raw: string): string[] =>
 	raw
 		.split("\n")
@@ -136,14 +114,6 @@ const apiKeyInput = (apiEmail: string, apiKey: string): CredInput => ({
 	label: `${apiEmail} / ${masked(apiKey)}`,
 });
 
-/**
- * Auto-guess credentials from pasted stdin.
- *
- * A login is either a bare API Token (one per line) or a Global API Key that
- * must be accompanied by its account email. When an email is present, every
- * non-email line is treated as a key: a single email applies to all pasted keys
- * (e.g. key rotation), otherwise emails and keys are paired line-by-line.
- */
 const parseCredentials = (raw: string): CredInput[] => {
 	const lines = linesOf(raw);
 	if (lines.length === 0) {
@@ -158,14 +128,12 @@ const parseCredentials = (raw: string): CredInput[] => {
 			die("❌ Found an email but no matching API key.");
 		}
 		if (emails.length === 1) {
-			// a single email with one or many global keys for that account
 			const email = emails[0];
 			if (!email) {
 				die("❌ Missing email.");
 			}
 			return keys.map((apiKey) => apiKeyInput(email, apiKey));
 		}
-		// multiple emails: pair each email with its api key, line by line
 		return emails.map((apiEmail, i) => {
 			const apiKey = keys[i];
 			if (!apiKey) {
@@ -175,7 +143,6 @@ const parseCredentials = (raw: string): CredInput[] => {
 		});
 	}
 
-	// No email -> each line is an API token.
 	return keys.map(tokenInput);
 };
 
@@ -197,7 +164,6 @@ const materializeLogin = (input: CredInput): StoredLogin => {
 			};
 };
 
-/** Persist credentials, best-effort verify each, then point active login at the newest. */
 const saveInputs = async (inputs: CredInput[]) => {
 	if (inputs.length === 0) return;
 	const store = await readStore();
@@ -213,9 +179,7 @@ const saveInputs = async (inputs: CredInput[]) => {
 				login.verifiedEmail = user.email;
 				verified = ` (verified: ${user.email})`;
 			}
-		} catch {
-			// not every token may read /user; it is still saved for the zone calls
-		}
+		} catch {}
 		console.log(`✅ Saved Cloudflare credentials: ${input.label}${verified}`);
 	}
 
@@ -225,10 +189,6 @@ const saveInputs = async (inputs: CredInput[]) => {
 	console.log(`Try: x cf domains list   |   x cf mailforwarding list`);
 };
 
-// ---------------------------------------------------------------------------
-// interactive prompt helpers (only used when stdin is an interactive TTY)
-// ---------------------------------------------------------------------------
-
 const askQuestion = async (
 	rl: ReturnType<typeof createInterface>,
 	query: string,
@@ -237,10 +197,6 @@ const askQuestion = async (
 	return answer.trim();
 };
 
-/**
- * Interactive login: because pasting into a silent prompt is confusing, walk the
- * user through what kind of credential Cloudflare accepts, then read it.
- */
 const interactiveLogin = async () => {
 	console.log(
 		"\nCloudflare login accepts either of these (from " +
@@ -280,7 +236,6 @@ const interactiveLogin = async () => {
 	rl.setPrompt("");
 
 	if (scheme === "apiToken") {
-		// Keep reading tokens until the user leaves a line blank.
 		for (;;) {
 			const token = await askQuestion(
 				rl,
@@ -299,7 +254,6 @@ const interactiveLogin = async () => {
 			console.log("No email provided — nothing saved.");
 			return;
 		}
-		// Global keys for one email: keep reading until blank.
 		for (;;) {
 			const key = await askQuestion(
 				rl,
@@ -320,13 +274,11 @@ const interactiveLogin = async () => {
 };
 
 export const commandCfLogin = async () => {
-	// Interactive terminal -> guide the user through what to enter.
 	if (process.stdin.isTTY) {
 		await interactiveLogin();
 		return;
 	}
 
-	// Piped stdin (e.g. `printf "token\n" | x cf login`) -> auto-guess line by line.
 	const raw = await new Promise<string>((resolve) => {
 		let data = "";
 		process.stdin.setEncoding("utf8");
@@ -382,10 +334,6 @@ export const commandCfLogout = async () => {
 	console.log("✅ Cleared the active login credentials reference.");
 };
 
-// ---------------------------------------------------------------------------
-// zone helpers
-// ---------------------------------------------------------------------------
-
 const listZones = async (client: Cloudflare) => {
 	const out: Array<{ id: string; name: string }> = [];
 	for await (const zone of client.zones.list()) {
@@ -418,14 +366,10 @@ const getCatchAll = async (
 		});
 		return rule as CatchAllRule;
 	} catch (err) {
-		if (err instanceof APIError) return null; // catch-all not configured / no routing
+		if (err instanceof APIError) return null;
 		throw err;
 	}
 };
-
-// ---------------------------------------------------------------------------
-// x cf domains list
-// ---------------------------------------------------------------------------
 
 export const commandCfDomainsList = async () => {
 	const { client, login } = await loggedInClient();
@@ -437,10 +381,6 @@ export const commandCfDomainsList = async () => {
 	);
 	for (const z of zonesFound) console.log(` • ${z.name}`);
 };
-
-// ---------------------------------------------------------------------------
-// x cf mailforwarding
-// ---------------------------------------------------------------------------
 
 const forwardDestination = (rule: CatchAllRule | null): string | null => {
 	if (!rule?.enabled) return null;
@@ -471,7 +411,7 @@ export const commandCfMailforwardingList = async () => {
 		}),
 	);
 
-	const width = Math.max(6, ...rows.map((r) => r.name.length)) + 2; // "DOMAIN"
+	const width = Math.max(6, ...rows.map((r) => r.name.length)) + 2;
 	const line = "-".repeat(width + 22);
 	console.log();
 	console.log(`${"DOMAIN".padEnd(width)}DESTINATION`);
@@ -483,18 +423,14 @@ export const commandCfMailforwardingList = async () => {
 	console.log();
 };
 
-/** Ensure the zone's Email Routing product is switched on before touching its rule. */
 const ensureEmailRoutingOn = async (client: Cloudflare, zoneId: string) => {
 	let enabled = false;
 	try {
 		const settings = await client.emailRouting.get({ zone_id: zoneId });
 		enabled = settings.enabled === true;
-	} catch {
-		// reading settings failed -> try to enable anyway
-	}
+	} catch {}
 	if (enabled) return;
 	try {
-		// cloudflare 7.2 dropped the (always empty) body from the enable params.
 		await client.emailRouting.enable({ zone_id: zoneId });
 	} catch (err) {
 		die(
@@ -515,7 +451,6 @@ export const commandCfMailforwardingSet = async (
 	}
 
 	if (!destination) {
-		// unset: disable the catch-all, keeping whatever matcher/actions existed
 		const current = await getCatchAll(client, zone.id);
 		const base = {
 			zone_id: zone.id,
@@ -542,7 +477,6 @@ export const commandCfMailforwardingSet = async (
 		return;
 	}
 
-	// ensure routing product is on, then point the catch-all at the destination
 	try {
 		await ensureEmailRoutingOn(client, zone.id);
 		await client.emailRouting.rules.catchAlls.update({

@@ -129,7 +129,6 @@ export const commandDeploy = async (
 		try {
 			parsed = await deploySchema.parseAsync(JSON.parse(envSubst(rawStr)));
 		} catch (error) {
-			// Explicitly named files are reported; discovered ones are just not configs.
 			if (isTargettingJsonFiles) {
 				invalidCount += 1;
 				console.error(
@@ -270,7 +269,6 @@ type DeployParams = {
 	printYaml?: boolean;
 };
 
-/** Log in to a docker registry once per hostname (shared across services). */
 const dockerLogin = (hostname: string, username: string, password: string) => {
 	if (!loginPromises.has(hostname)) {
 		loginPromises.set(

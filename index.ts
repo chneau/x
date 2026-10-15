@@ -39,7 +39,6 @@ const version = await getCurrentVersion();
 
 program.name("x").description("chneau's utility CLI").version(version);
 
-/** Commander option parser: integer in [min, max], else a clean error. */
 const intOption =
 	(message: string, min: number, max = Number.MAX_SAFE_INTEGER) =>
 	(value: string) => {
@@ -62,7 +61,6 @@ const purifyLevel = intOption(
 	4,
 );
 
-/** Options shared by `x prs` and its `clean` subcommand. */
 const addPrsOptions = (cmd: Command) =>
 	cmd
 		.option(
@@ -80,7 +78,6 @@ const addPrsOptions = (cmd: Command) =>
 			false,
 		);
 
-/** Options shared by `x disk` and `x disk-windows`. */
 const addDiskOptions = (cmd: Command) =>
 	cmd
 		.option(
@@ -167,7 +164,6 @@ addPrsOptions(
 		.description("Clean and merge/close open Renovate and Dependabot PRs"),
 ).action(commandPrs);
 
-/** Options shared by `x deck` and its subcommands. `-H` so `-h` stays help. */
 const addHostOption = (cmd: Command) =>
 	cmd.option("-H, --host <host>", "SSH host name", "steamdeck");
 
@@ -310,8 +306,6 @@ const cf = program
 	.command("cf")
 	.description("Manage a Cloudflare account (login, domains, mail forwarding)");
 
-// x cf login                          login by pasting credentials on stdin
-// x cf login list | use <id> | remove <id>
 const cfLogin = cf
 	.command("login")
 	.description(
@@ -341,7 +335,6 @@ cf.command("logout")
 	.description("Clear the active Cloudflare login")
 	.action(commandCfLogout);
 
-// x cf domains list
 const cfDomains = cf
 	.command("domains")
 	.description("Domains (zones) on the logged-in Cloudflare account");
@@ -351,7 +344,6 @@ cfDomains
 	.description("List all domains associated with the logged-in account")
 	.action(commandCfDomainsList);
 
-// x cf mailforwarding list | set <domain> [<destination>]
 const cfMailforwarding = cf
 	.command("mailforwarding")
 	.description("Manage the catch-all mail forwarding rule of your domains");

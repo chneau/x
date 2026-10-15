@@ -123,7 +123,6 @@ const manageGitignore = async (
 	return true;
 };
 
-/** Serialize `data`, write it, then let biome reformat the file. */
 const writeManagedJson = async (
 	file: ReturnType<typeof Bun.file>,
 	data: unknown,
@@ -139,7 +138,6 @@ const writeManagedJson = async (
 	console.log(`✅ Done with ${filename}`);
 };
 
-/** Fill in `expected` defaults on `target`, keeping existing values `keep` accepts. */
 const applyDefaults = (
 	target: Record<string, unknown>,
 	expected: Record<string, unknown>,

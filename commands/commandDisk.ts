@@ -30,17 +30,13 @@ const goBytesReclaimable = async (): Promise<number> => {
 type CleanupCommand = {
 	name: string;
 	detail: string;
-	/** Static note; defaults to the measured size when `size` is provided. */
 	note?: string;
-	/** Skip the step entirely when this returns false. */
 	exists?: () => Promise<boolean>;
 	size?: () => Promise<number>;
-	/** Skip unless `size()` reports at least this many bytes. */
 	minBytes?: number;
 	run?: () => Promise<unknown>;
 };
 
-/** Cleanup steps gated on a tool being present, applied uniformly. */
 const cleanupCommands: CleanupCommand[] = [
 	{
 		name: "Go Build & Mod Cache",
@@ -71,7 +67,6 @@ const cleanupCommands: CleanupCommand[] = [
 		run: () => $`journalctl --vacuum-time=3d 2>/dev/null`.quiet().nothrow(),
 	},
 	{
-		// Clean old temporary files in /tmp (files older than 2 days or bun/npm build artifacts)
 		name: "/tmp Temporary Files",
 		detail: "/tmp build artifacts & stale files",
 		size: () => dirSizeBytes("/tmp"),

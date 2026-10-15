@@ -39,7 +39,6 @@ const toWslPath = async (winPath: string): Promise<string> => {
 		const res = await $`wslpath -u ${trimmed}`.quiet().nothrow().text();
 		if (res.trim()) return res.trim();
 	}
-	// Fallback conversion for standard drive letters: C:\Users\... -> /mnt/c/Users/...
 	const match = trimmed.match(/^([a-zA-Z]):\\(.*)$/);
 	if (match) {
 		const drive = match[1]?.toLowerCase();
@@ -76,7 +75,6 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
 	}
 
 	if (inWsl) {
-		// Try resolving via cmd.exe first (very fast in WSL)
 		try {
 			const cmdOut =
 				await $`cmd.exe /c "echo %USERPROFILE%^|%LOCALAPPDATA%^|%APPDATA%^|%TEMP%"`
@@ -102,7 +100,6 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
 			}
 		} catch {}
 
-		// Fallback scanning /mnt/c/Users
 		const mntUsers = "/mnt/c/Users";
 		try {
 			const entries = await readdir(mntUsers, { withFileTypes: true });
@@ -204,7 +201,6 @@ export const commandDiskWindows = async (options: DiskOptions) => {
 				: rm(target.path, { recursive: true, force: true }).catch(() => {}),
 		);
 
-		// Go cache on Windows drive
 		const goCache = join(localAppData, "go-build");
 		const goModCache = join(userProfile, "go/pkg/mod");
 		const goBytes =
@@ -225,7 +221,6 @@ export const commandDiskWindows = async (options: DiskOptions) => {
 			}
 		}
 
-		// Empty Windows Recycle Bin if powershell/cmd is available
 		if (await commandExists("powershell.exe")) {
 			await logCleanupStep(
 				"Windows Recycle Bin",

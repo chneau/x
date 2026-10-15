@@ -69,12 +69,10 @@ const doctorSudo = async () => {
 
 type UpdateStep = {
 	label: string;
-	/** Omit when the tool check is unnecessary (e.g. bundled tools). */
 	check?: string;
 	run: () => Promise<unknown>;
 };
 
-/** Tool updates, applied uniformly over the table. */
 const updateSteps: UpdateStep[] = [
 	{
 		label: "brew",

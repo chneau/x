@@ -1,18 +1,12 @@
 import { c } from "../utils/helpers";
 import { $ } from "../utils/verboseShell";
 
-/**
- * Formatters per language/stack. Each is only run when the corresponding
- * files exist somewhere in the repo (checked with `git ls-files`, so
- * gitignored files are skipped).
- */
 const formatters: {
 	name: string;
 	files: string[];
 	cmd: string;
 	checkCmd?: string;
 }[] = [
-	// TypeScript / JavaScript / JSON / CSS / Markdown
 	{
 		name: "Deno/Oxlint/Biome (TS/JS/JSON/MD)",
 		files: [
@@ -30,35 +24,30 @@ const formatters: {
 		checkCmd:
 			"deno fmt --check --use-tabs --quiet && oxlint --quiet && biome check .",
 	},
-	// Go
 	{
 		name: "Go (go fmt)",
 		files: ["*.go"],
 		cmd: "go fmt ./...",
 		checkCmd: "test -z $(gofmt -l .)",
 	},
-	// C# (dotnet tool `csharpier`)
 	{
 		name: "C# (csharpier)",
 		files: ["*.cs", "*.csx"],
 		cmd: "dotnet csharpier .",
 		checkCmd: "dotnet csharpier --check .",
 	},
-	// Python
 	{
 		name: "Python (ruff)",
 		files: ["*.py"],
 		cmd: "ruff format .; ruff check --fix --quiet .",
 		checkCmd: "ruff format --check . && ruff check .",
 	},
-	// Rust
 	{
 		name: "Rust (cargo fmt)",
 		files: ["*.rs"],
 		cmd: "cargo fmt",
 		checkCmd: "cargo fmt -- --check",
 	},
-	// Java
 	{
 		name: "Java (google-java-format)",
 		files: ["*.java"],
@@ -66,7 +55,6 @@ const formatters: {
 		checkCmd:
 			"google-java-format --dry-run --set-exit-if-changed $(git ls-files '*.java')",
 	},
-	// C / C++
 	{
 		name: "C/C++ (clang-format)",
 		files: ["*.c", "*.h", "*.cpp", "*.hpp", "*.cc"],
@@ -74,35 +62,30 @@ const formatters: {
 		checkCmd:
 			"clang-format --dry-run --Werror $(git ls-files '*.c' '*.h' '*.cpp' '*.hpp' '*.cc')",
 	},
-	// Ruby
 	{
 		name: "Ruby (rubocop)",
 		files: ["*.rb", "Gemfile"],
 		cmd: "rubocop --autocorrect .",
 		checkCmd: "rubocop .",
 	},
-	// Shell scripts (tabs are shfmt's default indent)
 	{
 		name: "Shell (shfmt)",
 		files: ["*.sh"],
 		cmd: "shfmt -w .",
 		checkCmd: "shfmt -d .",
 	},
-	// SQL
 	{
 		name: "SQL (sqlfluff)",
 		files: ["*.sql"],
 		cmd: "sqlfluff fix --dialect ansi",
 		checkCmd: "sqlfluff lint --dialect ansi",
 	},
-	// YAML (yamlfmt from gopkg)
 	{
 		name: "YAML (yamlfmt)",
 		files: ["*.yaml", "*.yml"],
 		cmd: "yamlfmt .",
 		checkCmd: "yamlfmt -dry .",
 	},
-	// Terraform
 	{
 		name: "Terraform (terraform fmt)",
 		files: ["*.tf", "*.tfvars"],

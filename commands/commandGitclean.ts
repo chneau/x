@@ -18,13 +18,6 @@ const isGitRepo = async (dir: string): Promise<boolean> => {
 	}
 };
 
-/**
- * Finds all git repositories recursively up to maxDepth.
- * maxDepth = 0 means only check targetDir.
- * If targetDir itself is a git repo, returns [targetDir].
- * When a directory contains a .git directory or file (submodule/worktree),
- * it is considered a git root and we don't recurse deeper into it.
- */
 const findGitRepos = async (
 	dir: string,
 	currentDepth: number,

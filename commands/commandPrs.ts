@@ -38,7 +38,6 @@ const fetchOpenPrs = async (
 	}
 };
 
-/** Close a PR (deleting its branch when possible), retrying without. */
 const closePr = async (
 	url: string,
 ): Promise<{ ok: boolean; stderr: string }> => {

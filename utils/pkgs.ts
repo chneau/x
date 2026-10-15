@@ -20,18 +20,13 @@ export type Pkg = {
 	trust?: boolean;
 };
 
-/** Outcome of installing a batch of packages. */
 type InstallResult = {
 	label: string;
-	/** Packages that install() was invoked for. */
 	names: string[];
-	/** True when every install attempt succeeded (or there was nothing to do). */
 	ok: boolean;
-	/** Name -> error message for each failed package. */
 	failures: Record<string, string>;
 };
 
-/** A package entry from config.json; `check` overrides the binary name tested. */
 type ConfigPkg = { name: string; check?: string; trust?: boolean };
 
 const createPkg = (
@@ -48,11 +43,6 @@ const createPkg = (
 	trust,
 });
 
-/**
- * Install strategy per tool:
- * - `"batch"`: install the whole list in one command.
- * - `"sequential"`: install packages one at a time.
- */
 const installers: Record<
 	Exclude<PkgType, "custom" | "winget">,
 	{
@@ -103,7 +93,6 @@ const installers: Record<
 	},
 };
 
-/** Build the `Pkg` list for a config section, e.g. `makePkgs("apt", config.packages.apt)`. */
 const makePkgs = (
 	type: keyof typeof installers,
 	list: readonly (ConfigPkg | string)[],
@@ -157,7 +146,6 @@ export const pkgs: Pkg[] = [
 	...gemPkgs,
 ];
 
-/** Packages in `list` that are not currently installed. */
 export const findMissing = async (list: readonly Pkg[]): Promise<Pkg[]> => {
 	const results = await Promise.all(
 		list.map(async (pkg) => ({ pkg, exists: await pkg.check() })),
@@ -181,7 +169,6 @@ const logBatchDone = (label: string, result: InstallResult) => {
 	}
 };
 
-/** Install a single package with `pkg.install()`, capturing the error message. */
 const installOne = async (pkg: Pkg): Promise<string | undefined> => {
 	try {
 		await pkg.install();
@@ -191,7 +178,6 @@ const installOne = async (pkg: Pkg): Promise<string | undefined> => {
 	}
 };
 
-/** Install `type`-keyed packages using that tool's native strategy (batch or sequential). */
 const installPkgs = async (
 	type: keyof typeof installers,
 	toInstall: readonly Pkg[],
@@ -218,7 +204,6 @@ const installPkgs = async (
 				await tool.run(names);
 			}
 		} catch (error) {
-			// A batch command fails as a whole; attribute the error to every package.
 			const message = error instanceof Error ? error.message : String(error);
 			for (const name of names) failures[name] = message;
 		}
@@ -238,7 +223,6 @@ const installPkgs = async (
 	return result;
 };
 
-/** Install `custom` packages one at a time (each carries its own command/env). */
 const installCustomPkgs = async (
 	toInstall: readonly Pkg[],
 ): Promise<InstallResult> => {
@@ -262,10 +246,6 @@ const installCustomPkgs = async (
 	};
 };
 
-/**
- * Install any mix of `Pkg`s, grouping by type and dispatching each group to its
- * tool's native strategy. Returns one structured result per non-empty group.
- */
 export const installPkgsGrouped = async (
 	toInstall: readonly Pkg[],
 ): Promise<InstallResult[]> => {

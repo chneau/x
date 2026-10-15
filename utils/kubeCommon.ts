@@ -1,13 +1,11 @@
 import { c } from "./helpers";
 import { $ } from "./verboseShell";
 
-/** Current kubectl context name ("unknown" when unavailable). */
 export const kubectlContext = async (): Promise<string> =>
 	(
 		await $`kubectl config current-context`.text().catch(() => "unknown")
 	).trim();
 
-/** All available kubectl context names. */
 export const kubectlContexts = async (): Promise<string[]> => {
 	try {
 		const raw = await $`kubectl config get-contexts -o name`.text();
@@ -20,7 +18,6 @@ export const kubectlContexts = async (): Promise<string[]> => {
 	}
 };
 
-/** Print the styled `[Context: ...]` banner shared by kubernetes commands. */
 export const printContextBanner = (
 	title: string,
 	context: string,

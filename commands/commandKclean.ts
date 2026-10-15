@@ -23,13 +23,11 @@ type CleanEntry = {
 	objects: ObjectRef[];
 };
 
-/** Subset of a kubectl `-o json` object we care about. */
 type K8sObject = {
 	spec?: { replicas?: number };
 	metadata?: { name?: string; namespace?: string };
 };
 
-/** Runs a kubectl command and parses its `-o json` output (empty on failure). */
 const getJson = async (
 	parts: string[],
 	context?: string,
@@ -51,7 +49,6 @@ const toRefs = (items: K8sObject[]): ObjectRef[] =>
 		}))
 		.filter((ref) => ref.name.length > 0);
 
-/** Zero-replica ReplicaSets across the requested namespace scope. */
 const gatherReplicaSets = async (allNamespaces: boolean, context?: string) => {
 	const json = await getJson(
 		["get", "rs", ...(allNamespaces ? ["-A"] : []), "-o", "json"],
@@ -60,7 +57,6 @@ const gatherReplicaSets = async (allNamespaces: boolean, context?: string) => {
 	return toRefs(json.items.filter((item) => item.spec?.replicas === 0));
 };
 
-/** Pods in the given phase across the requested namespace scope. */
 const gatherPods = async (
 	allNamespaces: boolean,
 	phase: string,
@@ -125,7 +121,6 @@ const deleteObjects = async (
 	entry: CleanEntry,
 	context?: string,
 ): Promise<number> => {
-	// Deletions must be scoped to a namespace, so group objects per namespace.
 	const byNs = new Map<string, ObjectRef[]>();
 	for (const obj of entry.objects) {
 		const list = byNs.get(obj.namespace) ?? [];

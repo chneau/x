@@ -164,7 +164,6 @@ export const commandHelm = async (
 		upgradeStatus: "upgradeError",
 	};
 
-	/** Run one `helm upgrade` phase (dry-run or real), recording status on `row`. */
 	const runStep = async (
 		row: ReleaseState,
 		key: StepKey,
@@ -188,7 +187,6 @@ export const commandHelm = async (
 	const processRelease = async (row: ReleaseState) => {
 		const baseChart = row.targetChart;
 
-		// 1. Resolve upstream target chart
 		try {
 			const searchOut = await $`helm search repo ${baseChart} -o json`
 				.text()
@@ -204,24 +202,19 @@ export const commandHelm = async (
 				row.targetChart = matched.name;
 				row.targetVersion = matched.version;
 			}
-		} catch {
-			// keep fallback
-		}
+		} catch {}
 
-		// 2. Client dry run (server dry run & upgrade are skipped on failure)
 		if (!(await runStep(row, "clientDryRun", ["--dry-run=client"]))) {
 			row.serverDryRun = "skipped";
 			row.upgradeStatus = "skipped";
 			return;
 		}
 
-		// 3. Server dry run (upgrade is skipped on failure)
 		if (!(await runStep(row, "serverDryRun", ["--dry-run=server"]))) {
 			row.upgradeStatus = "skipped";
 			return;
 		}
 
-		// 4. Upgrade if requested
 		if (shouldUpgrade) {
 			await runStep(row, "upgradeStatus", ["--rollback-on-failure"]);
 		}

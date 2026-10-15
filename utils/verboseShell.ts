@@ -1,11 +1,3 @@
-/**
- * Shared `$` used by every command: it echoes each command before running it.
- *
- * Import `$` from here instead of from "bun" — the echo lives in this module
- * rather than a global `Bun.$` patch, so it cannot be silently lost by import
- * order. Interpolate `new Redacted(value)` to keep a value out of the echo
- * while still passing it through to the command.
- */
 export class Redacted {
 	constructor(readonly value: string) {}
 	toString() {

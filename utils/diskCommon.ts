@@ -2,28 +2,20 @@ import { join } from "node:path";
 import { formatBytes } from "./helpers";
 import { $ } from "./verboseShell";
 
-/** Options shared by `x disk` and `x disk-windows`. */
 export type DiskOptions = {
 	clean?: boolean;
 	dryRun?: boolean;
 	top?: number;
 };
 
-/** A directory that `x disk` / `x disk-windows` can size and remove. */
 export type CleanupTarget = {
 	name: string;
 	path: string;
 	description: string;
 };
 
-/** Base directory a Windows cleanup path resolves against. */
 export type WindowsBase = "userprofile" | "localappdata" | "appdata" | "temp";
 
-/**
- * Logical cleanup target shared by `x disk` and `x disk-windows`.
- * `unix` is relative to $HOME, `windows` relative to the matching Windows base
- * dir; a target is only listed on platforms where it has a path.
- */
 type SharedTarget = {
 	name: string;
 	description: string;
@@ -205,7 +197,6 @@ export const sharedCleanupTargets: SharedTarget[] = [
 	},
 ];
 
-/** `sharedCleanupTargets` resolved against a unix $HOME. */
 export const unixCleanupTargets = (home: string): CleanupTarget[] =>
 	sharedCleanupTargets
 		.filter((t) => t.unix !== undefined)
@@ -215,7 +206,6 @@ export const unixCleanupTargets = (home: string): CleanupTarget[] =>
 			description: t.description,
 		}));
 
-/** Log a cleanup step, running its command unless `dryRun`. */
 export const logCleanupStep = async (
 	name: string,
 	note: string,
@@ -227,14 +217,12 @@ export const logCleanupStep = async (
 	if (!dryRun && run) await run();
 };
 
-/** Size of a directory in bytes (0 when missing or unreadable). */
 export const dirSizeBytes = async (path: string): Promise<number> => {
 	const out = await $`du -sk ${path} 2>/dev/null`.quiet().nothrow().text();
 	const kb = Number.parseInt(out.split(/\s+/)[0] ?? "0", 10);
 	return Number.isNaN(kb) ? 0 : kb * 1024;
 };
 
-/** Log each non-empty target with its size, removing it unless `dryRun`. Returns total reclaimable bytes. */
 export const cleanupTargets = async <T extends CleanupTarget>(
 	targets: readonly T[],
 	dryRun: boolean,
@@ -271,7 +259,6 @@ export const logCleanupSummary = (
 	}
 };
 
-/** Print the shared disk-analysis report: filesystem, breakdown, hidden dirs, largest files. */
 export const analyzeDisk = async (
 	root: string,
 	options: {
@@ -287,7 +274,6 @@ export const analyzeDisk = async (
 	const df = await $`df -h ${root}`.quiet().nothrow().text();
 	console.log(df.trim() || "Drive overview unavailable.");
 
-	// Paths are passed as positional args so they are never re-parsed as shell.
 	console.log(`\n=== 2. Directory Breakdown in ${root} ===`);
 	const duScript = `du -hd 1 "$1" 2>/dev/null | sort -h${
 		options.limitBreakdown ? " | tail -n 15" : ""
@@ -296,7 +282,6 @@ export const analyzeDisk = async (
 	console.log(duOut.trim() || "No directories found / permission denied.");
 
 	console.log(`\n=== 3. Top Hidden/Config Dirs in ${root} ===`);
-	// `"$1"/.*` keeps the glob expanding while the variable stays quoted.
 	const hiddenArgs = extraDirs.map((_, i) => `"$${i + 2}"`).join(" ");
 	const duHiddenScript = `du -hd 1 "$1"/.* ${hiddenArgs} 2>/dev/null | sort -h | tail -n 15`;
 	const duHiddenOut = await $`bash -c ${duHiddenScript} _ ${root} ${extraDirs}`

@@ -11,7 +11,6 @@ export function die(message: string, detail?: string): never {
 export const commandExists = async (cmd: string) =>
 	Bun.which(cmd, { PATH: Bun.env.PATH }) !== null;
 
-/** Exit with `msg` when `cmd` is missing from PATH. */
 export const ensureCommand = async (cmd: string, msg?: string) => {
 	if (!(await commandExists(cmd))) die(msg ?? `❌ '${cmd}' not found in PATH`);
 };
@@ -35,14 +34,12 @@ export const getCurrentVersion = async () => {
 	return "0.0.0";
 };
 
-/** Latest published version, or `null` when the registry cannot be reached. */
 export const fetchLatestVersion = async (): Promise<string | null> =>
 	await fetch("https://registry.npmjs.org/@chneau/x/latest")
 		.then((x) => x.json())
 		.then((x) => x.version as string)
 		.catch(() => null);
 
-/** Replace `${VAR}` with its env value, JSON-escaped so it survives JSON parsing. */
 export const envSubst = (str: string) =>
 	str.replace(/\${(.*?)}/g, (_, key) =>
 		JSON.stringify(Bun.env[key] ?? "").slice(1, -1),
@@ -61,7 +58,6 @@ export const formatBytes = (bytes: number): string => {
 	return `${value.toFixed(decimals)} ${units[unit] ?? "B"}`;
 };
 
-// ANSI color helpers
 export const c = {
 	reset: "\x1b[0m",
 	bold: "\x1b[1m",
@@ -73,16 +69,14 @@ export const c = {
 	gray: "\x1b[90m",
 };
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequence stripping
-export const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, ""); // oxlint-disable-line no-control-regex
+const ansiPattern = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
+export const stripAnsi = (str: string) => str.replace(ansiPattern, "");
 
-/** Pad to a visible width, ignoring ANSI escape sequences. */
 export const pad = (str: string, length: number) => {
 	const padLength = Math.max(0, length - stripAnsi(str).length);
 	return str + " ".repeat(padLength);
 };
 
-/** Runs `fn` over `items` with at most `concurrency` promises in flight at once. */
 export const mapConcurrent = async <T, R>(
 	items: readonly T[],
 	concurrency: number,
@@ -106,7 +100,6 @@ export const mapConcurrent = async <T, R>(
 	return results;
 };
 
-/** Immediate child directories, skipping hidden dirs and node_modules. */
 export const subdirectories = async (path: string): Promise<string[]> =>
 	(await readdir(path, { withFileTypes: true }).catch(() => []))
 		.filter((x) => x.isDirectory())
@@ -114,7 +107,6 @@ export const subdirectories = async (path: string): Promise<string[]> =>
 		.filter((x) => !x.name.includes("node_modules"))
 		.map((x) => join(path, x.name));
 
-/** Breadth-first list of `root` plus its subdirectories up to `levels` deep. */
 export const walkDirectories = async (
 	root: string,
 	levels: number,
