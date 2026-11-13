@@ -253,7 +253,7 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
     const exeRaw = String(entry.fields.Exe ?? entry.fields.exe ?? "");
     const exe = parseExe(exeRaw);
 
-    let exists = false;
+    let exists: boolean;
     if (isSystemLauncher(exe)) {
       exists = true;
     } else {

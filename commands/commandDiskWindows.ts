@@ -98,7 +98,9 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
           isWslMode: true,
         };
       }
-    } catch {}
+    } catch {
+      /* ignore */
+    }
 
     const mntUsers = "/mnt/c/Users";
     try {
@@ -136,7 +138,9 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
         temp,
         isWslMode: true,
       };
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }
 
   return null;

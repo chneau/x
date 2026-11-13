@@ -202,7 +202,9 @@ export const commandHelm = async (
         row.targetChart = matched.name;
         row.targetVersion = matched.version;
       }
-    } catch {}
+    } catch {
+      /* ignore */
+    }
 
     if (!(await runStep(row, "clientDryRun", ["--dry-run=client"]))) {
       row.serverDryRun = "skipped";
@@ -226,7 +228,7 @@ export const commandHelm = async (
   console.log(`${c.dim}${"─".repeat(stripAnsi(header).length)}${c.reset}`);
 
   for (const row of rows) {
-    let upgradeDisplay = "";
+    let upgradeDisplay: string;
     if (row.upgradeStatus === "success") {
       upgradeDisplay = `${c.green}🎉 Upgraded${c.reset}`;
     } else if (row.upgradeStatus === "error") {

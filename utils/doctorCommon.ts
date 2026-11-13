@@ -180,7 +180,9 @@ export const doctorInotify = async () => {
     } else {
       console.log("✅ inotify limits are configured properly");
     }
-  } catch {}
+  } catch {
+    /* ignore */
+  }
 };
 
 export const doctorGithub = async () => {

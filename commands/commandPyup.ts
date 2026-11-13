@@ -330,7 +330,9 @@ const latestVersion = async (
       };
       version = data.info?.version ?? null;
     }
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   if (!version) console.error(`   ! could not resolve latest '${name}'`);
   cache.set(key, version);
   return version;

@@ -231,7 +231,9 @@ const saveInputs = async (inputs: CredInput[]) => {
         login.verifiedEmail = user.email;
         verified = ` (verified: ${user.email})`;
       }
-    } catch {}
+    } catch {
+      /* ignore */
+    }
     console.log(`✅ Saved Cloudflare credentials: ${input.label}${verified}`);
   }
 
@@ -483,7 +485,9 @@ const ensureEmailRoutingOn = async (client: CfClient, zoneId: string) => {
       `/zones/${zoneId}/email/routing`,
     );
     enabled = settings.enabled === true;
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   if (enabled) return;
   try {
     await client.request("POST", `/zones/${zoneId}/email/routing/enable`);
