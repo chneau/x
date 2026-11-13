@@ -1,232 +1,232 @@
 {
-	"git": {
-		"defaultName": "chneau",
-		"defaultEmail": "charles63500@gmail.com"
-	},
-	"templates": {
-		"web": "https://github.com/chneau/bun-orpc-react-template",
-		"web-orpc": "https://github.com/chneau/bun-orpc-react-template",
-		"web-hono": "https://github.com/chneau/bun-hono-react-template",
-		"bun-orpc-react-template": "https://github.com/chneau/bun-orpc-react-template",
-		"bun-hono-react-template": "https://github.com/chneau/bun-hono-react-template"
-	},
-	"dotfiles": {
-		"baseUrl": "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/"
-	},
-	"packages": {
-		"apt": [
-			"git",
-			"gcc",
-			"make",
-			"curl",
-			"wget",
-			"unzip",
-			"zsh",
-			"bash",
-			"tree",
-			"tmux",
-			"btop"
-		],
-		"brew": [
-			{ "name": "aichat" },
-			{ "name": "azure-cli", "check": "az" },
-			{ "name": "bpytop" },
-			{ "name": "btop" },
-			{ "name": "dive" },
-			{
-				"name": "dldash/core/docker-color-output",
-				"check": "docker-color-output"
-			},
-			{ "name": "docker-compose" },
-			{ "name": "doctl" },
-			{ "name": "gh" },
-			{ "name": "go" },
-			{ "name": "graphviz", "check": "dot" },
-			{ "name": "helm" },
-			{ "name": "hyperfine" },
-			{ "name": "kubecolor" },
-			{ "name": "kubectx" },
-			{ "name": "kubernetes-cli", "check": "kubectl" },
-			{ "name": "lazygit" },
-			{ "name": "node" },
-			{ "name": "openjdk", "check": "javac" },
-			{ "name": "pipx" },
-			{ "name": "ruff" },
-			{ "name": "google-java-format" },
-			{ "name": "rubocop" },
-			{ "name": "shfmt" },
-			{ "name": "sqlfluff" },
-			{ "name": "yamlfmt" },
-			{ "name": "hashicorp/tap/terraform", "check": "terraform" },
-			{ "name": "ruby", "check": "gem" },
-			{ "name": "scc" },
-			{ "name": "stern" },
-			{ "name": "tmux" },
-			{ "name": "zsh" }
-		],
-		"bun": [
-			{ "name": "@anthropic-ai/claude-code", "check": "claude" },
-			{ "name": "@biomejs/biome", "check": "biome" },
-			{ "name": "@github/copilot", "check": "copilot" },
-			{ "name": "@getpaseo/cli", "check": "paseo" },
-			{ "name": "@google/jules", "check": "jules" },
-			{ "name": "@minimax-ai/code", "check": "mcode" },
-			{ "name": "@oh-my-pi/pi-coding-agent", "check": "omp" },
-			{ "name": "@posthog/cli", "check": "posthog-cli" },
-			{ "name": "@qwen-code/qwen-code", "check": "qwen" },
-			{ "name": "@vegamo/deepcode-cli", "check": "deepcode" },
-			{ "name": "ccusage" },
-			{ "name": "cf" },
-			{ "name": "cline" },
-			{ "name": "command-code" },
-			{ "name": "concurrently" },
-			{ "name": "depcheck" },
-			{ "name": "fkill-cli", "check": "fkill" },
-			{ "name": "freebuff" },
-			{ "name": "http-server" },
-			{ "name": "jsdoc-scribe", "check": "gen-comments" },
-			{ "name": "knip" },
-			{ "name": "live-server" },
-			{ "name": "nodemon" },
-			{ "name": "npm-check-updates" },
-			{ "name": "npm-check" },
-			{ "name": "@opencode/cli", "check": "opencode", "trust": true },
-			{ "name": "oxlint" },
-			{ "name": "prettier" },
-			{ "name": "reasonix" },
-			{ "name": "ts-unused-exports" },
-			{ "name": "tsx" },
-			{ "name": "typesync" },
-			{ "name": "ungit" }
-		],
-		"uv": [
-			{ "name": "bpytop" },
-			{ "name": "google-colab-cli", "check": "colab" },
-			{ "name": "livereload" },
-			{ "name": "yt-dlp" }
-		],
-		"dotnet": [
-			{ "name": "CSharpier", "check": "csharpier" },
-			{
-				"name": "CentralisedPackageConverter",
-				"check": "central-pkg-converter"
-			},
-			{ "name": "PowerShell", "check": "pwsh" },
-			{ "name": "Roslynator.DotNet.Cli", "check": "roslynator" },
-			{ "name": "dotnet-ef" },
-			{ "name": "dotnet-outdated-tool", "check": "dotnet-outdated" },
-			{ "name": "dotnet-serve" },
-			{ "name": "dotnet-symbol" }
-		],
-		"gem": [{ "name": "kamal" }],
-		"custom": [
-			{
-				"name": "uv",
-				"command": "curl -LsSf https://astral.sh/uv/install.sh | sh",
-				"commandWindows": "powershell.exe -Command \"irm https://astral.sh/uv/install.ps1 | iex\""
-			},
-			{
-				"name": "brew",
-				"env": {
-					"CI": "1",
-					"HOME": "/tmp"
-				},
-				"command": "curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash"
-			},
-			{
-				"name": "deno",
-				"command": "curl -fsSL https://deno.land/install.sh | sh",
-				"commandWindows": "powershell.exe -Command \"irm https://deno.land/install.ps1 | iex\""
-			},
-			{
-				"name": "dotnet",
-				"command": "curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0"
-			},
-			{
-				"name": "rtk",
-				"command": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh",
-				"commandWindows": "powershell.exe -Command \"irm https://raw.githubusercontent.com/rtk-ai/rtk/master/install.ps1 | iex\""
-			},
-			{
-				"name": "agy",
-				"command": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
-				"commandWindows": "powershell.exe -Command \"irm https://antigravity.google/cli/install.ps1 | iex\""
-			},
-			{
-				"name": "codex",
-				"command": "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh",
-				"commandWindows": "powershell.exe -Command \"irm https://chatgpt.com/codex/install.ps1 | iex\""
-			},
-			{
-				"name": "cursor",
-				"check": "agent",
-				"command": "curl -fsSL https://cursor.com/install | bash",
-				"commandWindows": "powershell.exe -Command \"irm https://cursor.com/install.ps1 | iex\""
-			},
-			{
-				"name": "claude",
-				"command": "curl -fsSL https://claude.ai/install.sh | bash",
-				"commandWindows": "powershell.exe -Command \"irm https://claude.ai/install.ps1 | iex\""
-			},
-			{
-				"name": "pi",
-				"command": "setsid -f -w sh -c 'curl -fsSL https://pi.dev/install.sh | sh'"
-			},
-			{
-				"name": "kilo",
-				"command": "curl -fsSL https://kilo.ai/cli/install | bash"
-			},
-			{
-				"name": "hermes",
-				"command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --non-interactive"
-			},
-			{
-				"name": "herdr",
-				"command": "curl -fsSL https://herdr.dev/install.sh | sh"
-			},
-			{
-				"name": "tuios",
-				"command": "curl -fsSL https://raw.githubusercontent.com/Gaurav-Gosain/tuios/main/install.sh | bash"
-			},
-			{
-				"name": "fresh",
-				"command": "curl -fsSL https://raw.githubusercontent.com/sinelaw/fresh/refs/heads/master/scripts/install.sh | sh"
-			}
-		],
-		"winget": [
-			{ "name": "Git.Git", "check": "git" },
-			{ "name": "GoLang.Go", "check": "go" },
-			{ "name": "OpenJS.NodeJS", "check": "node" },
-			{ "name": "DenoLand.Deno", "check": "deno" },
-			{ "name": "JesseDuffield.Lazygit", "check": "lazygit" },
-			{ "name": "Microsoft.VisualStudioCode", "check": "code" },
-			{ "name": "Kubernetes.kubectl", "check": "kubectl" },
-			{ "name": "Helm.Helm", "check": "helm" },
-			{ "name": "JanDeDobbeleer.OhMyPosh", "check": "oh-my-posh" },
-			{ "name": "aristocratos.btop", "check": "btop" },
-			{ "name": "Boyter.scc", "check": "scc" },
-			{ "name": "GitHub.cli", "check": "gh" },
-			{ "name": "astral-sh.uv", "check": "uv" },
-			{ "name": "Microsoft.DotNet.SDK.10", "check": "dotnet" },
-			{ "name": "sharkdp.hyperfine", "check": "hyperfine" },
-			{ "name": "hidetatz.kubecolor", "check": "kubecolor" },
-			{ "name": "stern.stern", "check": "stern" },
-			{ "name": "wagoodman.dive", "check": "dive" },
-			{ "name": "ahmetb.kubectx", "check": "kubectx" },
-			{ "name": "GnuWin32.Tree", "check": "tree" },
-			{ "name": "Microsoft.AzureCLI", "check": "az" },
-			{ "name": "DigitalOcean.doctl", "check": "doctl" },
-			{ "name": "BurntSushi.ripgrep", "check": "rg" },
-			{ "name": "junegunn.fzf", "check": "fzf" },
-			{ "name": "7zip.7zip", "check": "7z" },
-			{ "name": "jqlang.jq", "check": "jq" },
-			{ "name": "Fastfetch-cli.Fastfetch", "check": "fastfetch" },
-			{ "name": "cURL.cURL", "check": "curl" },
-			{ "name": "JernejSimoncic.Wget", "check": "wget" },
-			{ "name": "ezwinports.make", "check": "make" },
-			{ "name": "Casey.Just", "check": "just" },
-			{ "name": "yt-dlp.yt-dlp", "check": "yt-dlp" },
-			{ "name": "RubyInstallerTeam.RubyWithDevKit.3.4", "check": "gem" }
-		]
-	}
+  "git": {
+    "defaultName": "chneau",
+    "defaultEmail": "charles63500@gmail.com"
+  },
+  "templates": {
+    "web": "https://github.com/chneau/bun-orpc-react-template",
+    "web-orpc": "https://github.com/chneau/bun-orpc-react-template",
+    "web-hono": "https://github.com/chneau/bun-hono-react-template",
+    "bun-orpc-react-template": "https://github.com/chneau/bun-orpc-react-template",
+    "bun-hono-react-template": "https://github.com/chneau/bun-hono-react-template"
+  },
+  "dotfiles": {
+    "baseUrl": "https://raw.githubusercontent.com/chneau/dotfiles/HEAD/"
+  },
+  "packages": {
+    "apt": [
+      "git",
+      "gcc",
+      "make",
+      "curl",
+      "wget",
+      "unzip",
+      "zsh",
+      "bash",
+      "tree",
+      "tmux",
+      "btop"
+    ],
+    "brew": [
+      { "name": "aichat" },
+      { "name": "azure-cli", "check": "az" },
+      { "name": "bpytop" },
+      { "name": "btop" },
+      { "name": "dive" },
+      {
+        "name": "dldash/core/docker-color-output",
+        "check": "docker-color-output"
+      },
+      { "name": "docker-compose" },
+      { "name": "doctl" },
+      { "name": "gh" },
+      { "name": "go" },
+      { "name": "graphviz", "check": "dot" },
+      { "name": "helm" },
+      { "name": "hyperfine" },
+      { "name": "kubecolor" },
+      { "name": "kubectx" },
+      { "name": "kubernetes-cli", "check": "kubectl" },
+      { "name": "lazygit" },
+      { "name": "node" },
+      { "name": "openjdk", "check": "javac" },
+      { "name": "pipx" },
+      { "name": "ruff" },
+      { "name": "google-java-format" },
+      { "name": "rubocop" },
+      { "name": "shfmt" },
+      { "name": "sqlfluff" },
+      { "name": "yamlfmt" },
+      { "name": "hashicorp/tap/terraform", "check": "terraform" },
+      { "name": "ruby", "check": "gem" },
+      { "name": "scc" },
+      { "name": "stern" },
+      { "name": "tmux" },
+      { "name": "zsh" }
+    ],
+    "bun": [
+      { "name": "@anthropic-ai/claude-code", "check": "claude" },
+      { "name": "@biomejs/biome", "check": "biome" },
+      { "name": "@github/copilot", "check": "copilot" },
+      { "name": "@getpaseo/cli", "check": "paseo" },
+      { "name": "@google/jules", "check": "jules" },
+      { "name": "@minimax-ai/code", "check": "mcode" },
+      { "name": "@oh-my-pi/pi-coding-agent", "check": "omp" },
+      { "name": "@posthog/cli", "check": "posthog-cli" },
+      { "name": "@qwen-code/qwen-code", "check": "qwen" },
+      { "name": "@vegamo/deepcode-cli", "check": "deepcode" },
+      { "name": "ccusage" },
+      { "name": "cf" },
+      { "name": "cline" },
+      { "name": "command-code" },
+      { "name": "concurrently" },
+      { "name": "depcheck" },
+      { "name": "fkill-cli", "check": "fkill" },
+      { "name": "freebuff" },
+      { "name": "http-server" },
+      { "name": "jsdoc-scribe", "check": "gen-comments" },
+      { "name": "knip" },
+      { "name": "live-server" },
+      { "name": "nodemon" },
+      { "name": "npm-check-updates" },
+      { "name": "npm-check" },
+      { "name": "@opencode/cli", "check": "opencode", "trust": true },
+      { "name": "oxlint" },
+      { "name": "prettier" },
+      { "name": "reasonix" },
+      { "name": "ts-unused-exports" },
+      { "name": "tsx" },
+      { "name": "typesync" },
+      { "name": "ungit" }
+    ],
+    "uv": [
+      { "name": "bpytop" },
+      { "name": "google-colab-cli", "check": "colab" },
+      { "name": "livereload" },
+      { "name": "yt-dlp" }
+    ],
+    "dotnet": [
+      { "name": "CSharpier", "check": "csharpier" },
+      {
+        "name": "CentralisedPackageConverter",
+        "check": "central-pkg-converter"
+      },
+      { "name": "PowerShell", "check": "pwsh" },
+      { "name": "Roslynator.DotNet.Cli", "check": "roslynator" },
+      { "name": "dotnet-ef" },
+      { "name": "dotnet-outdated-tool", "check": "dotnet-outdated" },
+      { "name": "dotnet-serve" },
+      { "name": "dotnet-symbol" }
+    ],
+    "gem": [{ "name": "kamal" }],
+    "custom": [
+      {
+        "name": "uv",
+        "command": "curl -LsSf https://astral.sh/uv/install.sh | sh",
+        "commandWindows": "powershell.exe -Command \"irm https://astral.sh/uv/install.ps1 | iex\""
+      },
+      {
+        "name": "brew",
+        "env": {
+          "CI": "1",
+          "HOME": "/tmp"
+        },
+        "command": "curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash"
+      },
+      {
+        "name": "deno",
+        "command": "curl -fsSL https://deno.land/install.sh | sh",
+        "commandWindows": "powershell.exe -Command \"irm https://deno.land/install.ps1 | iex\""
+      },
+      {
+        "name": "dotnet",
+        "command": "curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0"
+      },
+      {
+        "name": "rtk",
+        "command": "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh",
+        "commandWindows": "powershell.exe -Command \"irm https://raw.githubusercontent.com/rtk-ai/rtk/master/install.ps1 | iex\""
+      },
+      {
+        "name": "agy",
+        "command": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+        "commandWindows": "powershell.exe -Command \"irm https://antigravity.google/cli/install.ps1 | iex\""
+      },
+      {
+        "name": "codex",
+        "command": "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh",
+        "commandWindows": "powershell.exe -Command \"irm https://chatgpt.com/codex/install.ps1 | iex\""
+      },
+      {
+        "name": "cursor",
+        "check": "agent",
+        "command": "curl -fsSL https://cursor.com/install | bash",
+        "commandWindows": "powershell.exe -Command \"irm https://cursor.com/install.ps1 | iex\""
+      },
+      {
+        "name": "claude",
+        "command": "curl -fsSL https://claude.ai/install.sh | bash",
+        "commandWindows": "powershell.exe -Command \"irm https://claude.ai/install.ps1 | iex\""
+      },
+      {
+        "name": "pi",
+        "command": "setsid -f -w sh -c 'curl -fsSL https://pi.dev/install.sh | sh'"
+      },
+      {
+        "name": "kilo",
+        "command": "curl -fsSL https://kilo.ai/cli/install | bash"
+      },
+      {
+        "name": "hermes",
+        "command": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --non-interactive"
+      },
+      {
+        "name": "herdr",
+        "command": "curl -fsSL https://herdr.dev/install.sh | sh"
+      },
+      {
+        "name": "tuios",
+        "command": "curl -fsSL https://raw.githubusercontent.com/Gaurav-Gosain/tuios/main/install.sh | bash"
+      },
+      {
+        "name": "fresh",
+        "command": "curl -fsSL https://raw.githubusercontent.com/sinelaw/fresh/refs/heads/master/scripts/install.sh | sh"
+      }
+    ],
+    "winget": [
+      { "name": "Git.Git", "check": "git" },
+      { "name": "GoLang.Go", "check": "go" },
+      { "name": "OpenJS.NodeJS", "check": "node" },
+      { "name": "DenoLand.Deno", "check": "deno" },
+      { "name": "JesseDuffield.Lazygit", "check": "lazygit" },
+      { "name": "Microsoft.VisualStudioCode", "check": "code" },
+      { "name": "Kubernetes.kubectl", "check": "kubectl" },
+      { "name": "Helm.Helm", "check": "helm" },
+      { "name": "JanDeDobbeleer.OhMyPosh", "check": "oh-my-posh" },
+      { "name": "aristocratos.btop", "check": "btop" },
+      { "name": "Boyter.scc", "check": "scc" },
+      { "name": "GitHub.cli", "check": "gh" },
+      { "name": "astral-sh.uv", "check": "uv" },
+      { "name": "Microsoft.DotNet.SDK.10", "check": "dotnet" },
+      { "name": "sharkdp.hyperfine", "check": "hyperfine" },
+      { "name": "hidetatz.kubecolor", "check": "kubecolor" },
+      { "name": "stern.stern", "check": "stern" },
+      { "name": "wagoodman.dive", "check": "dive" },
+      { "name": "ahmetb.kubectx", "check": "kubectx" },
+      { "name": "GnuWin32.Tree", "check": "tree" },
+      { "name": "Microsoft.AzureCLI", "check": "az" },
+      { "name": "DigitalOcean.doctl", "check": "doctl" },
+      { "name": "BurntSushi.ripgrep", "check": "rg" },
+      { "name": "junegunn.fzf", "check": "fzf" },
+      { "name": "7zip.7zip", "check": "7z" },
+      { "name": "jqlang.jq", "check": "jq" },
+      { "name": "Fastfetch-cli.Fastfetch", "check": "fastfetch" },
+      { "name": "cURL.cURL", "check": "curl" },
+      { "name": "JernejSimoncic.Wget", "check": "wget" },
+      { "name": "ezwinports.make", "check": "make" },
+      { "name": "Casey.Just", "check": "just" },
+      { "name": "yt-dlp.yt-dlp", "check": "yt-dlp" },
+      { "name": "RubyInstallerTeam.RubyWithDevKit.3.4", "check": "gem" }
+    ]
+  }
 }

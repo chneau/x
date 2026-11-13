@@ -9,489 +9,490 @@ const CONFIG_DIR = join(homedir(), ".config", "x");
 const CONFIG_FILE = join(CONFIG_DIR, "cf.json");
 
 type StoredLogin =
-	| {
-		id: string;
-		kind: "token";
-		apiToken: string;
-		verifiedEmail?: string;
-		createdAt: string;
-	}
-	| {
-		id: string;
-		kind: "apiKey";
-		apiEmail: string;
-		apiKey: string;
-		verifiedEmail?: string;
-		createdAt: string;
-	};
+  | {
+      id: string;
+      kind: "token";
+      apiToken: string;
+      verifiedEmail?: string;
+      createdAt: string;
+    }
+  | {
+      id: string;
+      kind: "apiKey";
+      apiEmail: string;
+      apiKey: string;
+      verifiedEmail?: string;
+      createdAt: string;
+    };
 
 interface CfStore {
-	activeId?: string;
-	logins: StoredLogin[];
+  activeId?: string;
+  logins: StoredLogin[];
 }
 
 const readStore = async (): Promise<CfStore> => {
-	try {
-		const parsed = JSON.parse(
-			await readFile(CONFIG_FILE, "utf8"),
-		) as Partial<CfStore>;
-		return {
-			activeId: parsed.activeId,
-			logins: Array.isArray(parsed.logins)
-				? (parsed.logins as StoredLogin[])
-				: [],
-		};
-	} catch {
-		return { logins: [] };
-	}
+  try {
+    const parsed = JSON.parse(
+      await readFile(CONFIG_FILE, "utf8"),
+    ) as Partial<CfStore>;
+    return {
+      activeId: parsed.activeId,
+      logins: Array.isArray(parsed.logins)
+        ? (parsed.logins as StoredLogin[])
+        : [],
+    };
+  } catch {
+    return { logins: [] };
+  }
 };
 
 const writeStore = async (store: CfStore) => {
-	await mkdir(CONFIG_DIR, { recursive: true, mode: 0o700 });
-	await writeFile(CONFIG_FILE, `${JSON.stringify(store, null, 2)}\n`, {
-		mode: 0o600,
-	});
+  await mkdir(CONFIG_DIR, { recursive: true, mode: 0o700 });
+  await writeFile(CONFIG_FILE, `${JSON.stringify(store, null, 2)}\n`, {
+    mode: 0o600,
+  });
 };
 
 const isEmail = (line: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(line);
 
 const masked = (value: string) =>
-	value.length > 8 ? `${value.slice(0, 4)}…${value.slice(-4)}` : "********";
+  value.length > 8 ? `${value.slice(0, 4)}…${value.slice(-4)}` : "********";
 
 const makeClient = (login: StoredLogin): Cloudflare =>
-	login.kind === "token"
-		? new Cloudflare({ apiToken: login.apiToken })
-		: new Cloudflare({ apiKey: login.apiKey, apiEmail: login.apiEmail });
+  login.kind === "token"
+    ? new Cloudflare({ apiToken: login.apiToken })
+    : new Cloudflare({ apiKey: login.apiKey, apiEmail: login.apiEmail });
 
 const loggedInClient = async (): Promise<{
-	client: Cloudflare;
-	login: StoredLogin;
+  client: Cloudflare;
+  login: StoredLogin;
 }> => {
-	const store = await readStore();
-	if (store.logins.length === 0) {
-		die(
-			"❌ No Cloudflare login found. Run `x cf login` first (paste an API token\n   or an <email> + <global api key> pair).",
-		);
-	}
-	const active =
-		(store.activeId && store.logins.find((l) => l.id === store.activeId)) ??
-			store.logins.at(-1);
-	if (!active) {
-		die("❌ Active Cloudflare login no longer exists. Run `x cf login`.");
-	}
-	return { client: makeClient(active), login: active };
+  const store = await readStore();
+  if (store.logins.length === 0) {
+    die(
+      "❌ No Cloudflare login found. Run `x cf login` first (paste an API token\n   or an <email> + <global api key> pair).",
+    );
+  }
+  const active =
+    (store.activeId && store.logins.find((l) => l.id === store.activeId)) ??
+    store.logins.at(-1);
+  if (!active) {
+    die("❌ Active Cloudflare login no longer exists. Run `x cf login`.");
+  }
+  return { client: makeClient(active), login: active };
 };
 
 const describeLogin = (login: StoredLogin): string =>
-	login.kind === "token"
-		? `api-token ${masked(login.apiToken)}`
-		: `global key (${login.apiEmail}) ${masked(login.apiKey)}`;
+  login.kind === "token"
+    ? `api-token ${masked(login.apiToken)}`
+    : `global key (${login.apiEmail}) ${masked(login.apiKey)}`;
 
 const requireLogin = (store: CfStore, id: string): StoredLogin => {
-	const found = store.logins.find((l) => l.id === id);
-	if (!found) {
-		die(`❌ No login with id '${id}'. See \`x cf login list\`.`);
-	}
-	return found;
+  const found = store.logins.find((l) => l.id === id);
+  if (!found) {
+    die(`❌ No login with id '${id}'. See \`x cf login list\`.`);
+  }
+  return found;
 };
 
 const linesOf = (raw: string): string[] =>
-	raw
-		.split("\n")
-		.map((l) => l.trim())
-		.filter(Boolean);
+  raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 
 const tokenInput = (apiToken: string): CredInput => ({
-	kind: "token",
-	apiToken,
-	label: masked(apiToken),
+  kind: "token",
+  apiToken,
+  label: masked(apiToken),
 });
 
 const apiKeyInput = (apiEmail: string, apiKey: string): CredInput => ({
-	kind: "apiKey",
-	apiKey,
-	apiEmail,
-	label: `${apiEmail} / ${masked(apiKey)}`,
+  kind: "apiKey",
+  apiKey,
+  apiEmail,
+  label: `${apiEmail} / ${masked(apiKey)}`,
 });
 
 const parseCredentials = (raw: string): CredInput[] => {
-	const lines = linesOf(raw);
-	if (lines.length === 0) {
-		die("❌ No credentials provided. Paste the API keys into stdin.");
-	}
+  const lines = linesOf(raw);
+  if (lines.length === 0) {
+    die("❌ No credentials provided. Paste the API keys into stdin.");
+  }
 
-	const emails = lines.filter(isEmail);
-	const keys = lines.filter((l) => !isEmail(l));
+  const emails = lines.filter(isEmail);
+  const keys = lines.filter((l) => !isEmail(l));
 
-	if (emails.length > 0) {
-		if (keys.length === 0) {
-			die("❌ Found an email but no matching API key.");
-		}
-		if (emails.length === 1) {
-			const email = emails[0];
-			if (!email) {
-				die("❌ Missing email.");
-			}
-			return keys.map((apiKey) => apiKeyInput(email, apiKey));
-		}
-		return emails.map((apiEmail, i) => {
-			const apiKey = keys[i];
-			if (!apiKey) {
-				die(`❌ Missing global API key for email ${apiEmail}.`);
-			}
-			return apiKeyInput(apiEmail, apiKey);
-		});
-	}
+  if (emails.length > 0) {
+    if (keys.length === 0) {
+      die("❌ Found an email but no matching API key.");
+    }
+    if (emails.length === 1) {
+      const email = emails[0];
+      if (!email) {
+        die("❌ Missing email.");
+      }
+      return keys.map((apiKey) => apiKeyInput(email, apiKey));
+    }
+    return emails.map((apiEmail, i) => {
+      const apiKey = keys[i];
+      if (!apiKey) {
+        die(`❌ Missing global API key for email ${apiEmail}.`);
+      }
+      return apiKeyInput(apiEmail, apiKey);
+    });
+  }
 
-	return keys.map(tokenInput);
+  return keys.map(tokenInput);
 };
 
 type CredInput =
-	| { kind: "apiKey"; apiKey: string; apiEmail: string; label: string }
-	| { kind: "token"; apiToken: string; label: string };
+  | { kind: "apiKey"; apiKey: string; apiEmail: string; label: string }
+  | { kind: "token"; apiToken: string; label: string };
 
 const materializeLogin = (input: CredInput): StoredLogin => {
-	const createdAt = new Date().toISOString();
-	const rand = () => Math.random().toString(36).slice(2, 10);
-	return input.kind === "token"
-		? { id: `t-${rand()}`, kind: "token", apiToken: input.apiToken, createdAt }
-		: {
-			id: `k-${rand()}`,
-			kind: "apiKey",
-			apiKey: input.apiKey,
-			apiEmail: input.apiEmail,
-			createdAt,
-		};
+  const createdAt = new Date().toISOString();
+  const rand = () => Math.random().toString(36).slice(2, 10);
+  return input.kind === "token"
+    ? { id: `t-${rand()}`, kind: "token", apiToken: input.apiToken, createdAt }
+    : {
+        id: `k-${rand()}`,
+        kind: "apiKey",
+        apiKey: input.apiKey,
+        apiEmail: input.apiEmail,
+        createdAt,
+      };
 };
 
 const saveInputs = async (inputs: CredInput[]) => {
-	if (inputs.length === 0) return;
-	const store = await readStore();
-	for (const input of inputs) {
-		const login = materializeLogin(input);
-		store.logins = store.logins.filter((l) => l.id !== login.id);
-		store.logins.push(login);
+  if (inputs.length === 0) return;
+  const store = await readStore();
+  for (const input of inputs) {
+    const login = materializeLogin(input);
+    store.logins = store.logins.filter((l) => l.id !== login.id);
+    store.logins.push(login);
 
-		let verified = "";
-		try {
-			const user = await makeClient(login).user.get();
-			if (user.email) {
-				login.verifiedEmail = user.email;
-				verified = ` (verified: ${user.email})`;
-			}
-		} catch {}
-		console.log(`✅ Saved Cloudflare credentials: ${input.label}${verified}`);
-	}
+    let verified = "";
+    try {
+      const user = await makeClient(login).user.get();
+      if (user.email) {
+        login.verifiedEmail = user.email;
+        verified = ` (verified: ${user.email})`;
+      }
+    } catch {}
+    console.log(`✅ Saved Cloudflare credentials: ${input.label}${verified}`);
+  }
 
-	store.activeId = store.logins.at(-1)?.id;
-	await writeStore(store);
-	console.log(`\nStored in ${CONFIG_FILE}. The newest login is now active.`);
-	console.log(`Try: x cf domains list   |   x cf mailforwarding list`);
+  store.activeId = store.logins.at(-1)?.id;
+  await writeStore(store);
+  console.log(`\nStored in ${CONFIG_FILE}. The newest login is now active.`);
+  console.log(`Try: x cf domains list   |   x cf mailforwarding list`);
 };
 
 const askQuestion = async (
-	rl: ReturnType<typeof createInterface>,
-	query: string,
+  rl: ReturnType<typeof createInterface>,
+  query: string,
 ) => {
-	const answer = await rl.question(query);
-	return answer.trim();
+  const answer = await rl.question(query);
+  return answer.trim();
 };
 
 const interactiveLogin = async () => {
-	console.log(
-		"\nCloudflare login accepts either of these (from " +
-			"https://dash.cloudflare.com/profile/api-tokens):",
-	);
-	console.log(" • an API Token      — a single random string");
-	console.log(
-		" • a Global API Key  — used together with your Cloudflare account email",
-	);
-	console.log();
+  console.log(
+    "\nCloudflare login accepts either of these (from " +
+      "https://dash.cloudflare.com/profile/api-tokens):",
+  );
+  console.log(" • an API Token      — a single random string");
+  console.log(
+    " • a Global API Key  — used together with your Cloudflare account email",
+  );
+  console.log();
 
-	const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
 
-	const chooseScheme = async (): Promise<"apiToken" | "globalKey" | null> => {
-		const first = await askQuestion(
-			rl,
-			"What would you like to use? (1: API Token, 2: Global API Key, or blank / q to quit) ",
-		);
-		const key = first.toLowerCase();
-		if (key === "" || key === "q" || key === "quit") return null;
-		if (key === "1" || key === "token" || key === "t") return "apiToken";
-		if (key === "2" || key === "global" || key === "key" || key === "g") {
-			return "globalKey";
-		}
-		console.log("  (please answer 1 or 2)");
-		return chooseScheme();
-	};
+  const chooseScheme = async (): Promise<"apiToken" | "globalKey" | null> => {
+    const first = await askQuestion(
+      rl,
+      "What would you like to use? (1: API Token, 2: Global API Key, or blank / q to quit) ",
+    );
+    const key = first.toLowerCase();
+    if (key === "" || key === "q" || key === "quit") return null;
+    if (key === "1" || key === "token" || key === "t") return "apiToken";
+    if (key === "2" || key === "global" || key === "key" || key === "g") {
+      return "globalKey";
+    }
+    console.log("  (please answer 1 or 2)");
+    return chooseScheme();
+  };
 
-	const scheme = await chooseScheme();
-	if (!scheme) {
-		rl.close();
-		console.log("Nothing saved.");
-		return;
-	}
+  const scheme = await chooseScheme();
+  if (!scheme) {
+    rl.close();
+    console.log("Nothing saved.");
+    return;
+  }
 
-	const inputs: CredInput[] = [];
-	rl.setPrompt("");
+  const inputs: CredInput[] = [];
+  rl.setPrompt("");
 
-	if (scheme === "apiToken") {
-		for (;;) {
-			const token = await askQuestion(
-				rl,
-				"\nPaste your API Token (or leave blank / 'q' to finish): ",
-			);
-			if (!token || token.toLowerCase() === "q") break;
-			inputs.push(tokenInput(token));
-		}
-	} else {
-		const email = await askQuestion(
-			rl,
-			"\nYour Cloudflare account email (e.g. you@example.com): ",
-		);
-		if (!email) {
-			rl.close();
-			console.log("No email provided — nothing saved.");
-			return;
-		}
-		for (;;) {
-			const key = await askQuestion(
-				rl,
-				`\nPaste a Global API Key for ${email} (blank / 'q' to finish): `,
-			);
-			if (!key || key.toLowerCase() === "q") break;
-			inputs.push(apiKeyInput(email, key));
-		}
-	}
+  if (scheme === "apiToken") {
+    for (;;) {
+      const token = await askQuestion(
+        rl,
+        "\nPaste your API Token (or leave blank / 'q' to finish): ",
+      );
+      if (!token || token.toLowerCase() === "q") break;
+      inputs.push(tokenInput(token));
+    }
+  } else {
+    const email = await askQuestion(
+      rl,
+      "\nYour Cloudflare account email (e.g. you@example.com): ",
+    );
+    if (!email) {
+      rl.close();
+      console.log("No email provided — nothing saved.");
+      return;
+    }
+    for (;;) {
+      const key = await askQuestion(
+        rl,
+        `\nPaste a Global API Key for ${email} (blank / 'q' to finish): `,
+      );
+      if (!key || key.toLowerCase() === "q") break;
+      inputs.push(apiKeyInput(email, key));
+    }
+  }
 
-	rl.close();
+  rl.close();
 
-	if (inputs.length === 0) {
-		console.log("Nothing was entered — no credentials saved.");
-		return;
-	}
-	await saveInputs(inputs);
+  if (inputs.length === 0) {
+    console.log("Nothing was entered — no credentials saved.");
+    return;
+  }
+  await saveInputs(inputs);
 };
 
 export const commandCfLogin = async () => {
-	if (process.stdin.isTTY) {
-		await interactiveLogin();
-		return;
-	}
+  if (process.stdin.isTTY) {
+    await interactiveLogin();
+    return;
+  }
 
-	const raw = await new Promise<string>((resolve) => {
-		let data = "";
-		process.stdin.setEncoding("utf8");
-		process.stdin.on("data", (chunk) => {
-			data += chunk;
-		});
-		process.stdin.on("end", () => resolve(data));
-		process.stdin.resume();
-	});
+  const raw = await new Promise<string>((resolve) => {
+    let data = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => {
+      data += chunk;
+    });
+    process.stdin.on("end", () => resolve(data));
+    process.stdin.resume();
+  });
 
-	const inputs = parseCredentials(raw);
-	if (inputs.length === 0) return;
-	await saveInputs(inputs);
+  const inputs = parseCredentials(raw);
+  if (inputs.length === 0) return;
+  await saveInputs(inputs);
 };
 
 export const commandCfLoginList = async () => {
-	const store = await readStore();
-	if (store.logins.length === 0) {
-		console.log("No Cloudflare logins saved yet. Run `x cf login`.");
-		return;
-	}
-	const activeId = store.activeId ?? store.logins.at(-1)?.id;
-	for (const l of store.logins) {
-		const note = l.verifiedEmail ? ` (${l.verifiedEmail})` : "";
-		console.log(
-			`${l.id === activeId ? "▶" : " "} ${l.id}  ${describeLogin(l)}${note}`,
-		);
-	}
-	console.log(`\nActive login: ${activeId}`);
+  const store = await readStore();
+  if (store.logins.length === 0) {
+    console.log("No Cloudflare logins saved yet. Run `x cf login`.");
+    return;
+  }
+  const activeId = store.activeId ?? store.logins.at(-1)?.id;
+  for (const l of store.logins) {
+    const note = l.verifiedEmail ? ` (${l.verifiedEmail})` : "";
+    console.log(
+      `${l.id === activeId ? "▶" : " "} ${l.id}  ${describeLogin(l)}${note}`,
+    );
+  }
+  console.log(`\nActive login: ${activeId}`);
 };
 
 export const commandCfLoginUse = async (id: string) => {
-	const store = await readStore();
-	const found = requireLogin(store, id);
-	store.activeId = found.id;
-	await writeStore(store);
-	console.log(`✅ Active login is now ${found.id} (${describeLogin(found)}).`);
+  const store = await readStore();
+  const found = requireLogin(store, id);
+  store.activeId = found.id;
+  await writeStore(store);
+  console.log(`✅ Active login is now ${found.id} (${describeLogin(found)}).`);
 };
 
 export const commandCfLoginRemove = async (id: string) => {
-	const store = await readStore();
-	requireLogin(store, id);
-	store.logins = store.logins.filter((l) => l.id !== id);
-	if (store.activeId === id) store.activeId = store.logins.at(-1)?.id;
-	await writeStore(store);
-	await commandCfLoginList();
+  const store = await readStore();
+  requireLogin(store, id);
+  store.logins = store.logins.filter((l) => l.id !== id);
+  if (store.activeId === id) store.activeId = store.logins.at(-1)?.id;
+  await writeStore(store);
+  await commandCfLoginList();
 };
 
 export const commandCfLogout = async () => {
-	const store = await readStore();
-	store.activeId = undefined;
-	await writeStore(store);
-	console.log("✅ Cleared the active login credentials reference.");
+  const store = await readStore();
+  store.activeId = undefined;
+  await writeStore(store);
+  console.log("✅ Cleared the active login credentials reference.");
 };
 
 const listZones = async (client: Cloudflare) => {
-	const out: Array<{ id: string; name: string }> = [];
-	for await (const zone of client.zones.list()) {
-		out.push({ id: zone.id, name: zone.name ?? zone.id });
-	}
-	return out;
+  const out: Array<{ id: string; name: string }> = [];
+  for await (const zone of client.zones.list()) {
+    out.push({ id: zone.id, name: zone.name ?? zone.id });
+  }
+  return out;
 };
 
 const findZone = async (client: Cloudflare, wanted: string) => {
-	const target = wanted.toLowerCase().replace(/^\./, "");
-	const zones = await listZones(client);
-	return zones.find((z) => (z.name ?? "").toLowerCase() === target) ?? null;
+  const target = wanted.toLowerCase().replace(/^\./, "");
+  const zones = await listZones(client);
+  return zones.find((z) => (z.name ?? "").toLowerCase() === target) ?? null;
 };
 
 type CatchAllRule = {
-	id?: string;
-	enabled?: boolean;
-	name?: string;
-	matchers?: { type: "all" }[];
-	actions?: { type: "drop" | "forward" | "worker"; value?: string[] }[];
+  id?: string;
+  enabled?: boolean;
+  name?: string;
+  matchers?: { type: "all" }[];
+  actions?: { type: "drop" | "forward" | "worker"; value?: string[] }[];
 };
 
 const getCatchAll = async (
-	client: Cloudflare,
-	zoneId: string,
+  client: Cloudflare,
+  zoneId: string,
 ): Promise<CatchAllRule | null> => {
-	try {
-		const rule = await client.emailRouting.rules.catchAlls.get({
-			zone_id: zoneId,
-		});
-		return rule as CatchAllRule;
-	} catch (err) {
-		if (err instanceof APIError) return null;
-		throw err;
-	}
+  try {
+    const rule = await client.emailRouting.rules.catchAlls.get({
+      zone_id: zoneId,
+    });
+    return rule as CatchAllRule;
+  } catch (err) {
+    if (err instanceof APIError) return null;
+    throw err;
+  }
 };
 
 export const commandCfDomainsList = async () => {
-	const { client, login } = await loggedInClient();
-	const zonesFound = await listZones(client);
-	console.log(
-		`${zonesFound.length} domain${zonesFound.length === 1 ? "" : "s"} on ${
-			login.verifiedEmail ?? describeLogin(login)
-		}:`,
-	);
-	for (const z of zonesFound) console.log(` • ${z.name}`);
+  const { client, login } = await loggedInClient();
+  const zonesFound = await listZones(client);
+  console.log(
+    `${zonesFound.length} domain${zonesFound.length === 1 ? "" : "s"} on ${
+      login.verifiedEmail ?? describeLogin(login)
+    }:`,
+  );
+  for (const z of zonesFound) console.log(` • ${z.name}`);
 };
 
 const forwardDestination = (rule: CatchAllRule | null): string | null => {
-	if (!rule?.enabled) return null;
-	const forwardActions = rule.actions?.filter(
-		(a) => a.type === "forward" && Array.isArray(a.value),
-	) ?? [];
-	const targets = forwardActions
-		.flatMap((a) => a.value ?? [])
-		.filter(
-			(dest): dest is string => typeof dest === "string" && dest.length > 0,
-		);
-	return targets.length > 0 ? targets.join(", ") : null;
+  if (!rule?.enabled) return null;
+  const forwardActions =
+    rule.actions?.filter(
+      (a) => a.type === "forward" && Array.isArray(a.value),
+    ) ?? [];
+  const targets = forwardActions
+    .flatMap((a) => a.value ?? [])
+    .filter(
+      (dest): dest is string => typeof dest === "string" && dest.length > 0,
+    );
+  return targets.length > 0 ? targets.join(", ") : null;
 };
 
 export const commandCfMailforwardingList = async () => {
-	const { client } = await loggedInClient();
-	const zonesFound = await listZones(client);
-	if (zonesFound.length === 0) {
-		console.log("No domains found for the logged-in account.");
-		return;
-	}
+  const { client } = await loggedInClient();
+  const zonesFound = await listZones(client);
+  if (zonesFound.length === 0) {
+    console.log("No domains found for the logged-in account.");
+    return;
+  }
 
-	const rows = await Promise.all(
-		zonesFound.map(async (zone) => {
-			const rule = await getCatchAll(client, zone.id);
-			return { name: zone.name, dest: forwardDestination(rule) };
-		}),
-	);
+  const rows = await Promise.all(
+    zonesFound.map(async (zone) => {
+      const rule = await getCatchAll(client, zone.id);
+      return { name: zone.name, dest: forwardDestination(rule) };
+    }),
+  );
 
-	const width = Math.max(6, ...rows.map((r) => r.name.length)) + 2;
-	const line = "-".repeat(width + 22);
-	console.log();
-	console.log(`${"DOMAIN".padEnd(width)}DESTINATION`);
-	console.log(line);
-	for (const r of rows) {
-		console.log(`${r.name.padEnd(width)}-> ${r.dest ?? "(none)"}`);
-	}
-	console.log(line);
-	console.log();
+  const width = Math.max(6, ...rows.map((r) => r.name.length)) + 2;
+  const line = "-".repeat(width + 22);
+  console.log();
+  console.log(`${"DOMAIN".padEnd(width)}DESTINATION`);
+  console.log(line);
+  for (const r of rows) {
+    console.log(`${r.name.padEnd(width)}-> ${r.dest ?? "(none)"}`);
+  }
+  console.log(line);
+  console.log();
 };
 
 const ensureEmailRoutingOn = async (client: Cloudflare, zoneId: string) => {
-	let enabled = false;
-	try {
-		const settings = await client.emailRouting.get({ zone_id: zoneId });
-		enabled = settings.enabled === true;
-	} catch {}
-	if (enabled) return;
-	try {
-		await client.emailRouting.enable({ zone_id: zoneId });
-	} catch (err) {
-		die(
-			"❌ Could not enable Email Routing on this domain.",
-			err instanceof Error ? err.message : undefined,
-		);
-	}
+  let enabled = false;
+  try {
+    const settings = await client.emailRouting.get({ zone_id: zoneId });
+    enabled = settings.enabled === true;
+  } catch {}
+  if (enabled) return;
+  try {
+    await client.emailRouting.enable({ zone_id: zoneId });
+  } catch (err) {
+    die(
+      "❌ Could not enable Email Routing on this domain.",
+      err instanceof Error ? err.message : undefined,
+    );
+  }
 };
 
 export const commandCfMailforwardingSet = async (
-	domain: string,
-	destination?: string,
+  domain: string,
+  destination?: string,
 ) => {
-	const { client } = await loggedInClient();
-	const zone = await findZone(client, domain);
-	if (!zone) {
-		die(`❌ Domain '${domain}' not found in the logged-in account.`);
-	}
+  const { client } = await loggedInClient();
+  const zone = await findZone(client, domain);
+  if (!zone) {
+    die(`❌ Domain '${domain}' not found in the logged-in account.`);
+  }
 
-	if (!destination) {
-		const current = await getCatchAll(client, zone.id);
-		const base = {
-			zone_id: zone.id,
-			enabled: false as const,
-			matchers: current?.matchers?.length
-				? current.matchers
-				: [{ type: "all" as const }],
-			source: "api" as const,
-		};
-		try {
-			await client.emailRouting.rules.catchAlls.update({
-				...base,
-				actions: current?.actions ?? [{ type: "forward", value: [] }],
-			});
-			console.log(
-				`✅ Unset mail forwarding for ${zone.name} (catch-all disabled).`,
-			);
-		} catch (err) {
-			die(
-				`❌ Could not unset mail forwarding for ${zone.name}.`,
-				err instanceof Error ? err.message : undefined,
-			);
-		}
-		return;
-	}
+  if (!destination) {
+    const current = await getCatchAll(client, zone.id);
+    const base = {
+      zone_id: zone.id,
+      enabled: false as const,
+      matchers: current?.matchers?.length
+        ? current.matchers
+        : [{ type: "all" as const }],
+      source: "api" as const,
+    };
+    try {
+      await client.emailRouting.rules.catchAlls.update({
+        ...base,
+        actions: current?.actions ?? [{ type: "forward", value: [] }],
+      });
+      console.log(
+        `✅ Unset mail forwarding for ${zone.name} (catch-all disabled).`,
+      );
+    } catch (err) {
+      die(
+        `❌ Could not unset mail forwarding for ${zone.name}.`,
+        err instanceof Error ? err.message : undefined,
+      );
+    }
+    return;
+  }
 
-	try {
-		await ensureEmailRoutingOn(client, zone.id);
-		await client.emailRouting.rules.catchAlls.update({
-			zone_id: zone.id,
-			enabled: true,
-			name: "Catch-all",
-			matchers: [{ type: "all" }],
-			actions: [{ type: "forward", value: [destination] }],
-			source: "api",
-		});
-		console.log(`✅ Mail forward set: ${zone.name} -> ${destination}`);
-	} catch (err) {
-		die(
-			`❌ Could not set mail forwarding for ${zone.name}.\n` +
-				"   Ensure the destination address is verified for Email Routing.",
-			err instanceof Error ? err.message : undefined,
-		);
-	}
+  try {
+    await ensureEmailRoutingOn(client, zone.id);
+    await client.emailRouting.rules.catchAlls.update({
+      zone_id: zone.id,
+      enabled: true,
+      name: "Catch-all",
+      matchers: [{ type: "all" }],
+      actions: [{ type: "forward", value: [destination] }],
+      source: "api",
+    });
+    console.log(`✅ Mail forward set: ${zone.name} -> ${destination}`);
+  } catch (err) {
+    die(
+      `❌ Could not set mail forwarding for ${zone.name}.\n` +
+        "   Ensure the destination address is verified for Email Routing.",
+      err instanceof Error ? err.message : undefined,
+    );
+  }
 };

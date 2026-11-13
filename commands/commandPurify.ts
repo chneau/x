@@ -4,253 +4,247 @@ import { mapConcurrent, walkDirectories } from "../utils/helpers";
 import { $ } from "../utils/verboseShell";
 
 type CommandOptions = {
-	recursive?: number;
-	dryRun?: boolean;
+  recursive?: number;
+  dryRun?: boolean;
 };
 
 export const commandPurify = async (
-	dir = ".",
-	options: CommandOptions = {},
+  dir = ".",
+  options: CommandOptions = {},
 ) => {
-	const cwd = typeof dir === "string" && dir.trim().length > 0 ? dir : ".";
-	const recursive = options.recursive ?? 0;
-	const isDryRun = Boolean(options.dryRun);
-	if (isDryRun) {
-		console.log(
-			"🔍 Running in dry-run mode (no files or scripts will be modified/executed)",
-		);
-	}
-	const directories = await walkDirectories(cwd, recursive);
-	await mapConcurrent(
-		directories,
-		Math.max(cpus().length * 2, 2),
-		(d) => purify(d, isDryRun).catch(console.error),
-	);
+  const cwd = typeof dir === "string" && dir.trim().length > 0 ? dir : ".";
+  const recursive = options.recursive ?? 0;
+  const isDryRun = Boolean(options.dryRun);
+  if (isDryRun) {
+    console.log(
+      "🔍 Running in dry-run mode (no files or scripts will be modified/executed)",
+    );
+  }
+  const directories = await walkDirectories(cwd, recursive);
+  await mapConcurrent(directories, Math.max(cpus().length * 2, 2), (d) =>
+    purify(d, isDryRun).catch(console.error),
+  );
 };
 
 const isCSharpProject = async (dir: string): Promise<boolean> => {
-	try {
-		const files = await readdir(dir, { withFileTypes: true });
-		return files.some(
-			(file) =>
-				file.isFile() &&
-				(file.name.endsWith(".csproj") || file.name.endsWith(".sln")),
-		);
-	} catch {
-		return false;
-	}
+  try {
+    const files = await readdir(dir, { withFileTypes: true });
+    return files.some(
+      (file) =>
+        file.isFile() &&
+        (file.name.endsWith(".csproj") || file.name.endsWith(".sln")),
+    );
+  } catch {
+    return false;
+  }
 };
 
 const purify = async (dir: string, dryRun = false) => {
-	console.log(`🚀 Managing files in ${dir}`);
-	for (const lockfile of ["package-lock.json", "yarn.lock"]) {
-		await removeFileIfExists(dir, lockfile, dryRun).catch(console.error);
-	}
-	const isCSharp = await isCSharpProject(dir);
-	const hasPackageJson = await Bun.file(`${dir}/package.json`).exists();
-	const packageJsonExists = await managePackagejson(
-		dir,
-		isCSharp,
-		dryRun,
-	).catch(console.error);
-	const tsconfigExists = await manageTsconfig(dir, dryRun).catch(console.error);
-	await manageGitignore(dir, hasPackageJson, dryRun).catch(console.error);
-	if (dryRun) {
-		console.log(`🔍 [dry-run] Would run checks/upgrades for ${dir}`);
-		console.log(`🎉 Done previewing files in ${dir}`);
-		return;
-	}
-	if (packageJsonExists) {
-		console.log("🚀 Updating everything!");
-		await $`timeout 20s bun run --cwd=${dir} upgrade`
-			.nothrow()
-			.catch(console.error);
-	}
-	if (tsconfigExists) {
-		console.log("🚀 Checking and linting!");
-		await $`timeout 6s bun run --cwd=${dir} check`
-			.nothrow()
-			.catch(console.error);
-	} else if (isCSharp && packageJsonExists) {
-		console.log("🚀 Checking C# project!");
-		await $`timeout 60s bun run --cwd=${dir} check`
-			.nothrow()
-			.catch(console.error);
-	}
-	console.log("🎉 Done with all files");
+  console.log(`🚀 Managing files in ${dir}`);
+  for (const lockfile of ["package-lock.json", "yarn.lock"]) {
+    await removeFileIfExists(dir, lockfile, dryRun).catch(console.error);
+  }
+  const isCSharp = await isCSharpProject(dir);
+  const hasPackageJson = await Bun.file(`${dir}/package.json`).exists();
+  const packageJsonExists = await managePackagejson(
+    dir,
+    isCSharp,
+    dryRun,
+  ).catch(console.error);
+  const tsconfigExists = await manageTsconfig(dir, dryRun).catch(console.error);
+  await manageGitignore(dir, hasPackageJson, dryRun).catch(console.error);
+  if (dryRun) {
+    console.log(`🔍 [dry-run] Would run checks/upgrades for ${dir}`);
+    console.log(`🎉 Done previewing files in ${dir}`);
+    return;
+  }
+  if (packageJsonExists) {
+    console.log("🚀 Updating everything!");
+    await $`timeout 20s bun run --cwd=${dir} upgrade`
+      .nothrow()
+      .catch(console.error);
+  }
+  if (tsconfigExists) {
+    console.log("🚀 Checking and linting!");
+    await $`timeout 6s bun run --cwd=${dir} check`
+      .nothrow()
+      .catch(console.error);
+  } else if (isCSharp && packageJsonExists) {
+    console.log("🚀 Checking C# project!");
+    await $`timeout 60s bun run --cwd=${dir} check`
+      .nothrow()
+      .catch(console.error);
+  }
+  console.log("🎉 Done with all files");
 };
 
 const removeFileIfExists = async (
-	dir: string,
-	filename: string,
-	dryRun = false,
+  dir: string,
+  filename: string,
+  dryRun = false,
 ): Promise<boolean> => {
-	const path = `${dir}/${filename}`;
-	const file = Bun.file(path);
-	if (!(await file.exists())) return false;
-	if (dryRun) {
-		console.log(`🔍 [dry-run] Would remove ${path}`);
-		return true;
-	}
-	await $`rm -f ${path}`.nothrow();
-	console.log(`✅ Done with ${path}`);
-	return true;
+  const path = `${dir}/${filename}`;
+  const file = Bun.file(path);
+  if (!(await file.exists())) return false;
+  if (dryRun) {
+    console.log(`🔍 [dry-run] Would remove ${path}`);
+    return true;
+  }
+  await $`rm -f ${path}`.nothrow();
+  console.log(`✅ Done with ${path}`);
+  return true;
 };
 
 const manageGitignore = async (
-	dir: string,
-	isBunProject: boolean,
-	dryRun = false,
+  dir: string,
+  isBunProject: boolean,
+  dryRun = false,
 ): Promise<boolean> => {
-	const filename = `${dir}/.gitignore`;
-	const file = Bun.file(filename);
-	if (!(await file.exists())) return false;
-	const gitignore = await file.text();
-	const lines = new Set(
-		gitignore
-			.split("\n")
-			.map((x) => x.trim())
-			.filter(Boolean),
-	);
-	if (lines.size > 10) console.error(`👁️ ${filename} is too long`);
-	if (isBunProject) {
-		lines.add("node_modules");
-	}
-	if (dryRun) {
-		console.log(`🔍 [dry-run] Would update ${filename}`);
-		return true;
-	}
-	await Bun.write(file, `${[...lines].join("\n")}\n`);
-	console.log(`✅ Done with ${filename}`);
-	return true;
+  const filename = `${dir}/.gitignore`;
+  const file = Bun.file(filename);
+  if (!(await file.exists())) return false;
+  const gitignore = await file.text();
+  const lines = new Set(
+    gitignore
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean),
+  );
+  if (lines.size > 10) console.error(`👁️ ${filename} is too long`);
+  if (isBunProject) {
+    lines.add("node_modules");
+  }
+  if (dryRun) {
+    console.log(`🔍 [dry-run] Would update ${filename}`);
+    return true;
+  }
+  await Bun.write(file, `${[...lines].join("\n")}\n`);
+  console.log(`✅ Done with ${filename}`);
+  return true;
 };
 
 const writeManagedJson = async (
-	file: ReturnType<typeof Bun.file>,
-	data: unknown,
-	dryRun: boolean,
+  file: ReturnType<typeof Bun.file>,
+  data: unknown,
+  dryRun: boolean,
 ) => {
-	const filename = file.name ?? "";
-	if (dryRun) {
-		console.log(`🔍 [dry-run] Would update ${filename}`);
-		return;
-	}
-	await Bun.write(file, `${JSON.stringify(data, null, 2)}\n`);
-	await $`biome check --write --unsafe ${filename}`.nothrow();
-	console.log(`✅ Done with ${filename}`);
+  const filename = file.name ?? "";
+  if (dryRun) {
+    console.log(`🔍 [dry-run] Would update ${filename}`);
+    return;
+  }
+  await Bun.write(file, `${JSON.stringify(data, null, 2)}\n`);
+  await $`biome check --write --unsafe ${filename}`.nothrow();
+  console.log(`✅ Done with ${filename}`);
 };
 
 const applyDefaults = (
-	target: Record<string, unknown>,
-	expected: Record<string, unknown>,
-	keep?: (existing: unknown) => boolean,
+  target: Record<string, unknown>,
+  expected: Record<string, unknown>,
+  keep?: (existing: unknown) => boolean,
 ) => {
-	for (const [key, value] of Object.entries(expected)) {
-		if (target[key] === value) continue;
-		if (target[key] != null && keep?.(target[key])) continue;
-		target[key] = value;
-	}
+  for (const [key, value] of Object.entries(expected)) {
+    if (target[key] === value) continue;
+    if (target[key] != null && keep?.(target[key])) continue;
+    target[key] = value;
+  }
 };
 
 type TsConfig = {
-	compilerOptions?: Record<string, unknown>;
-	[key: string]: unknown;
+  compilerOptions?: Record<string, unknown>;
+  [key: string]: unknown;
 };
 
 const manageTsconfig = async (
-	dir: string,
-	dryRun = false,
+  dir: string,
+  dryRun = false,
 ): Promise<boolean> => {
-	const filename = `${dir}/tsconfig.json`;
-	const file = Bun.file(filename);
-	if (!(await file.exists())) return false;
-	const tsconfig = Bun.JSONC.parse(await file.text()) as TsConfig;
-	if (!tsconfig.compilerOptions) return false;
-	const expected = {
-		noUnusedLocals: true,
-		noUnusedParameters: true,
-		noUncheckedIndexedAccess: true,
-		noFallthroughCasesInSwitch: true,
-		noEmit: true,
-		strict: true,
-		skipLibCheck: true,
-		incremental: true,
-		tsBuildInfoFile: "./node_modules/.tmp/tsconfig.tsbuildinfo",
-		resolveJsonModule: true,
-		esModuleInterop: true,
-	};
-	applyDefaults(tsconfig.compilerOptions, expected);
-	await writeManagedJson(file, tsconfig, dryRun);
-	return true;
+  const filename = `${dir}/tsconfig.json`;
+  const file = Bun.file(filename);
+  if (!(await file.exists())) return false;
+  const tsconfig = Bun.JSONC.parse(await file.text()) as TsConfig;
+  if (!tsconfig.compilerOptions) return false;
+  const expected = {
+    noUnusedLocals: true,
+    noUnusedParameters: true,
+    noUncheckedIndexedAccess: true,
+    noFallthroughCasesInSwitch: true,
+    noEmit: true,
+    strict: true,
+    skipLibCheck: true,
+    incremental: true,
+    tsBuildInfoFile: "./node_modules/.tmp/tsconfig.tsbuildinfo",
+    resolveJsonModule: true,
+    esModuleInterop: true,
+  };
+  applyDefaults(tsconfig.compilerOptions, expected);
+  await writeManagedJson(file, tsconfig, dryRun);
+  return true;
 };
 
 type PackageJson = {
-	scripts?: Record<string, string>;
-	prettier?: unknown;
-	dependencies?: unknown;
-	devDependencies?: unknown;
+  scripts?: Record<string, string>;
+  prettier?: unknown;
+  dependencies?: unknown;
+  devDependencies?: unknown;
 };
 
 const managePackagejson = async (
-	dir: string,
-	isCSharp: boolean,
-	dryRun = false,
+  dir: string,
+  isCSharp: boolean,
+  dryRun = false,
 ): Promise<boolean> => {
-	const filename = `${dir}/package.json`;
-	const file = Bun.file(filename);
-	let pkgJson: PackageJson;
-	if (!(await file.exists())) {
-		if (isCSharp) {
-			pkgJson = { scripts: {} };
-		} else {
-			return false;
-		}
-	} else {
-		pkgJson = (await file.json()) as PackageJson;
-		pkgJson.scripts ??= {};
-	}
-	if (!isCSharp) {
-		const hasDependencies = pkgJson.dependencies || pkgJson.devDependencies;
-		if (!hasDependencies) return false;
-	}
-	const expected = isCSharp
-		? {
-			check:
-				"bun run --sequential --no-exit-on-error check:deno check:biome check:dotnet check:csharpier",
-			"check:deno": "deno fmt --use-tabs --quiet",
-			"check:biome": "biome format --write .",
-			"check:dotnet":
-				"dotnet format --severity info --no-restore --exclude-diagnostics IDE0130 CA1869",
-			"check:csharpier": "dotnet csharpier format .",
-			upgrade: "dotnet tool update --all; dotnet outdated --upgrade",
-			"upgrade-minor": "bun run upgrade --version-lock=Minor",
-			"upgrade-major": "bun run upgrade --version-lock=Major",
-			all: "bun run upgrade; bun run check",
-		}
-		: {
-			upgrade: "bun update --latest",
-			check:
-				"bun run --sequential --no-exit-on-error check:clean check:deno check:oxlint check:biome check:export lint",
-			"check:clean": "rm -rf dist out build",
-			"check:deno": "deno fmt --use-tabs --quiet",
-			"check:oxlint":
-				"oxlint --fix-dangerously --fix-suggestions --fix --quiet",
-			"check:biome":
-				"timeout 3s biome check --write --unsafe --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
-			"check:export": "ts-unused-exports tsconfig.json",
-			lint: "tsc --noEmit",
-			all: "bun run --sequential --no-exit-on-error upgrade check",
-		};
-	applyDefaults(pkgJson.scripts ?? {}, expected, (existing) => {
-		const script = typeof existing === "string"
-			? existing
-			: JSON.stringify(existing);
-		return (
-			script.includes("bun") &&
-			(script.includes("--filter") || script.includes("--cwd"))
-		);
-	});
-	pkgJson.prettier = undefined;
-	await writeManagedJson(file, pkgJson, dryRun);
-	return true;
+  const filename = `${dir}/package.json`;
+  const file = Bun.file(filename);
+  let pkgJson: PackageJson;
+  if (!(await file.exists())) {
+    if (isCSharp) {
+      pkgJson = { scripts: {} };
+    } else {
+      return false;
+    }
+  } else {
+    pkgJson = (await file.json()) as PackageJson;
+    pkgJson.scripts ??= {};
+  }
+  if (!isCSharp) {
+    const hasDependencies = pkgJson.dependencies || pkgJson.devDependencies;
+    if (!hasDependencies) return false;
+  }
+  const expected = isCSharp
+    ? {
+        check:
+          "bun run --sequential --no-exit-on-error check:deno check:biome check:dotnet check:csharpier",
+        "check:deno": "deno fmt --use-tabs --quiet",
+        "check:biome": "biome format --write .",
+        "check:dotnet":
+          "dotnet format --severity info --no-restore --exclude-diagnostics IDE0130 CA1869",
+        "check:csharpier": "dotnet csharpier format .",
+        upgrade: "dotnet tool update --all; dotnet outdated --upgrade",
+        "upgrade-minor": "bun run upgrade --version-lock=Minor",
+        "upgrade-major": "bun run upgrade --version-lock=Major",
+        all: "bun run upgrade; bun run check",
+      }
+    : {
+        upgrade: "bun update --latest",
+        check:
+          "bun run --sequential --no-exit-on-error check:clean check:fmt check:lint check:export lint",
+        "check:clean": "rm -rf dist out build",
+        "check:fmt": "bun fmt --no-script",
+        "check:lint": "bun lint --no-script",
+        "check:export": "bun x fallow dead-code --unused-exports",
+        lint: "bun check --no-script",
+        all: "bun run --sequential --no-exit-on-error upgrade check",
+      };
+  applyDefaults(pkgJson.scripts ?? {}, expected, (existing) => {
+    const script =
+      typeof existing === "string" ? existing : JSON.stringify(existing);
+    return (
+      script.includes("bun") &&
+      (script.includes("--filter") || script.includes("--cwd"))
+    );
+  });
+  pkgJson.prettier = undefined;
+  await writeManagedJson(file, pkgJson, dryRun);
+  return true;
 };

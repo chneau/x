@@ -1,23 +1,23 @@
 #!/usr/bin/env bun
 import {
-	type Command,
-	InvalidArgumentError,
-	program,
+  type Command,
+  InvalidArgumentError,
+  program,
 } from "@commander-js/extra-typings";
 import {
-	commandCfDomainsList,
-	commandCfLogin,
-	commandCfLoginList,
-	commandCfLoginRemove,
-	commandCfLoginUse,
-	commandCfLogout,
-	commandCfMailforwardingList,
-	commandCfMailforwardingSet,
+  commandCfDomainsList,
+  commandCfLogin,
+  commandCfLoginList,
+  commandCfLoginRemove,
+  commandCfLoginUse,
+  commandCfLogout,
+  commandCfMailforwardingList,
+  commandCfMailforwardingSet,
 } from "./commands/commandCf";
 import {
-	commandCleanShortcuts,
-	commandDeck,
-	commandDeckDisk,
+  commandCleanShortcuts,
+  commandDeck,
+  commandDeckDisk,
 } from "./commands/commandDeck";
 import { commandDeploy } from "./commands/commandDeploy";
 import { commandDisk } from "./commands/commandDisk";
@@ -40,332 +40,332 @@ const version = await getCurrentVersion();
 program.name("x").description("chneau's utility CLI").version(version);
 
 const intOption =
-	(message: string, min: number, max = Number.MAX_SAFE_INTEGER) =>
-	(value: string) => {
-		const parsed = Number.parseInt(value, 10);
-		if (Number.isNaN(parsed) || parsed < min || parsed > max) {
-			throw new InvalidArgumentError(message);
-		}
-		return parsed;
-	};
+  (message: string, min: number, max = Number.MAX_SAFE_INTEGER) =>
+  (value: string) => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed < min || parsed > max) {
+      throw new InvalidArgumentError(message);
+    }
+    return parsed;
+  };
 
 const nonNegativeInt = intOption(
-	"Recursion depth must be a non-negative integer",
-	0,
+  "Recursion depth must be a non-negative integer",
+  0,
 );
 const positiveInt = (field: string) =>
-	intOption(`${field} must be a positive integer`, 1);
+  intOption(`${field} must be a positive integer`, 1);
 const purifyLevel = intOption(
-	"Recursion level must be an integer between 0 and 4",
-	0,
-	4,
+  "Recursion level must be an integer between 0 and 4",
+  0,
+  4,
 );
 
 const addPrsOptions = (cmd: Command) =>
-	cmd
-		.option(
-			"-o, --owner <owner>",
-			"GitHub owner / user (defaults to current gh user)",
-		)
-		.option(
-			"-c, --concurrency <number>",
-			"Number of concurrent workers",
-			positiveInt("Concurrency"),
-		)
-		.option(
-			"-d, --dry-run",
-			"Preview PR actions without merging or closing",
-			false,
-		);
+  cmd
+    .option(
+      "-o, --owner <owner>",
+      "GitHub owner / user (defaults to current gh user)",
+    )
+    .option(
+      "-c, --concurrency <number>",
+      "Number of concurrent workers",
+      positiveInt("Concurrency"),
+    )
+    .option(
+      "-d, --dry-run",
+      "Preview PR actions without merging or closing",
+      false,
+    );
 
 const addDiskOptions = (cmd: Command) =>
-	cmd
-		.option(
-			"-c, --clean",
-			"Automatically clean reclaimable caches and temporary files",
-			false,
-		)
-		.option(
-			"-d, --dry-run",
-			"Preview space that will be reclaimed without deleting",
-			false,
-		)
-		.option(
-			"-t, --top <number>",
-			"Number of largest files to display in inspection mode",
-			positiveInt("Top count"),
-			15,
-		);
+  cmd
+    .option(
+      "-c, --clean",
+      "Automatically clean reclaimable caches and temporary files",
+      false,
+    )
+    .option(
+      "-d, --dry-run",
+      "Preview space that will be reclaimed without deleting",
+      false,
+    )
+    .option(
+      "-t, --top <number>",
+      "Number of largest files to display in inspection mode",
+      positiveInt("Top count"),
+      15,
+    );
 
 program
-	.command("gitclean")
-	.description(
-		"Prune, repack, fetch prune, and clean git repositories in parallel",
-	)
-	.argument("[dir]", "Directory to search for git repositories", ".")
-	.option(
-		"-r, --recursive <number>",
-		"Recursion depth limit",
-		nonNegativeInt,
-		1,
-	)
-	.option(
-		"-c, --concurrency <number>",
-		"Number of concurrent workers",
-		positiveInt("Concurrency"),
-		10,
-	)
-	.option(
-		"-d, --dry-run",
-		"Preview clean operations without deleting files or repacking",
-		false,
-	)
-	.action(commandGitclean);
+  .command("gitclean")
+  .description(
+    "Prune, repack, fetch prune, and clean git repositories in parallel",
+  )
+  .argument("[dir]", "Directory to search for git repositories", ".")
+  .option(
+    "-r, --recursive <number>",
+    "Recursion depth limit",
+    nonNegativeInt,
+    1,
+  )
+  .option(
+    "-c, --concurrency <number>",
+    "Number of concurrent workers",
+    positiveInt("Concurrency"),
+    10,
+  )
+  .option(
+    "-d, --dry-run",
+    "Preview clean operations without deleting files or repacking",
+    false,
+  )
+  .action(commandGitclean);
 
 program
-	.command("purify")
-	.description(
-		"Sanitize & modernize project configuration (package.json, tsconfig, gitignore)",
-	)
-	.argument("[dir]", "Directory to manage", ".")
-	.option("-r, --recursive <number>", "Recursion level (0-4)", purifyLevel, 0)
-	.option(
-		"-d, --dry-run",
-		"Preview changes without modifying files or running commands",
-		false,
-	)
-	.action(commandPurify);
+  .command("purify")
+  .description(
+    "Sanitize & modernize project configuration (package.json, tsconfig, gitignore)",
+  )
+  .argument("[dir]", "Directory to manage", ".")
+  .option("-r, --recursive <number>", "Recursion level (0-4)", purifyLevel, 0)
+  .option(
+    "-d, --dry-run",
+    "Preview changes without modifying files or running commands",
+    false,
+  )
+  .action(commandPurify);
 
 program
-	.command("fmt")
-	.alias("format")
-	.description(
-		"Format code across all supported languages (Deno, Biome, Go, C#)",
-	)
-	.option(
-		"-c, --check",
-		"Verify formatting without writing changes (exit 1 if unformatted)",
-		false,
-	)
-	.action(commandFmt);
+  .command("fmt")
+  .alias("format")
+  .description(
+    "Format code across all supported languages (Deno, Biome, Go, C#)",
+  )
+  .option(
+    "-c, --check",
+    "Verify formatting without writing changes (exit 1 if unformatted)",
+    false,
+  )
+  .action(commandFmt);
 
 const prs = addPrsOptions(
-	program
-		.command("prs")
-		.description(
-			"Manage GitHub pull requests (merge/close bot & dependency PRs)",
-		),
+  program
+    .command("prs")
+    .description(
+      "Manage GitHub pull requests (merge/close bot & dependency PRs)",
+    ),
 );
 prs.action(commandPrs);
 
 addPrsOptions(
-	prs
-		.command("clean")
-		.description("Clean and merge/close open Renovate and Dependabot PRs"),
+  prs
+    .command("clean")
+    .description("Clean and merge/close open Renovate and Dependabot PRs"),
 ).action(commandPrs);
 
 const addHostOption = (cmd: Command) =>
-	cmd.option("-H, --host <host>", "SSH host name", "steamdeck");
+  cmd.option("-H, --host <host>", "SSH host name", "steamdeck");
 
 const addSudoOption = (cmd: Command) =>
-	cmd.option("-s, --sudo-password <password>", "Sudo password for Steam Deck");
+  cmd.option("-s, --sudo-password <password>", "Sudo password for Steam Deck");
 
 const deck = addSudoOption(
-	addHostOption(
-		program.command("deck").description("Manage, clean, and update Steam Deck"),
-	),
+  addHostOption(
+    program.command("deck").description("Manage, clean, and update Steam Deck"),
+  ),
 ).action(commandDeck);
 
 addHostOption(
-	deck
-		.command("shortcuts")
-		.description("Clean broken non-Steam shortcuts from shortcuts.vdf"),
+  deck
+    .command("shortcuts")
+    .description("Clean broken non-Steam shortcuts from shortcuts.vdf"),
 )
-	.option("-p, --shortcuts-path <path>", "Custom shortcuts.vdf path")
-	.option("-d, --dry-run", "Preview broken shortcuts without deleting")
-	.action(commandCleanShortcuts);
+  .option("-p, --shortcuts-path <path>", "Custom shortcuts.vdf path")
+  .option("-d, --dry-run", "Preview broken shortcuts without deleting")
+  .action(commandCleanShortcuts);
 
 addHostOption(
-	deck
-		.command("disk")
-		.description("Inspect disk space usage and categories on Steam Deck"),
+  deck
+    .command("disk")
+    .description("Inspect disk space usage and categories on Steam Deck"),
 ).action(commandDeckDisk);
 
 addSudoOption(
-	addHostOption(
-		deck
-			.command("update")
-			.description("Update Discover flatpaks, SteamOS, and Decky Loader"),
-	),
+  addHostOption(
+    deck
+      .command("update")
+      .description("Update Discover flatpaks, SteamOS, and Decky Loader"),
+  ),
 )
-	.option("--no-flatpaks", "Skip Flatpak/Discover updates")
-	.option("--no-os", "Skip SteamOS update")
-	.option("--no-games", "Skip Steam game/runtime updates check")
-	.option("--no-decky", "Skip Decky Loader update")
-	.action(commandDeck);
+  .option("--no-flatpaks", "Skip Flatpak/Discover updates")
+  .option("--no-os", "Skip SteamOS update")
+  .option("--no-games", "Skip Steam game/runtime updates check")
+  .option("--no-decky", "Skip Decky Loader update")
+  .action(commandDeck);
 
 program
-	.command("deploy")
-	.description("Deploy CDK8s Kubernetes manifests to cluster")
-	.option(
-		"-d, --dry-run",
-		"Synthesize manifests without building Docker images or applying to Kubernetes",
-		false,
-	)
-	.option(
-		"-p, --print-yaml",
-		"Print synthesized YAML manifests to stdout",
-		false,
-	)
-	.argument("[files...]", "Deploy JSON file(s) and/or service name filter(s)")
-	.action(commandDeploy);
+  .command("deploy")
+  .description("Deploy CDK8s Kubernetes manifests to cluster")
+  .option(
+    "-d, --dry-run",
+    "Synthesize manifests without building Docker images or applying to Kubernetes",
+    false,
+  )
+  .option(
+    "-p, --print-yaml",
+    "Print synthesized YAML manifests to stdout",
+    false,
+  )
+  .argument("[files...]", "Deploy JSON file(s) and/or service name filter(s)")
+  .action(commandDeploy);
 
 program
-	.command("helm")
-	.description("Manage and upgrade Helm charts in current kubernetes context")
-	.argument("[releases...]", "Specific release names to check or upgrade")
-	.option("-u, --upgrade", "Upgrade the releases if dry runs pass")
-	.option("-a, --all", "Check or upgrade all releases")
-	.action(commandHelm);
+  .command("helm")
+  .description("Manage and upgrade Helm charts in current kubernetes context")
+  .argument("[releases...]", "Specific release names to check or upgrade")
+  .option("-u, --upgrade", "Upgrade the releases if dry runs pass")
+  .option("-a, --all", "Check or upgrade all releases")
+  .action(commandHelm);
 
 program
-	.command("kclean")
-	.description(
-		"Clean zero-replica ReplicaSets and failed/succeeded Pods in the current context (or all contexts)",
-	)
-	.option(
-		"-A, --all-namespaces",
-		"Clean across all namespaces instead of the current one",
-		false,
-	)
-	.option(
-		"-C, --all-contexts",
-		"Clean across all kubectl contexts instead of just the current one",
-		false,
-	)
-	.option(
-		"-y, --yes",
-		"Actually delete (runs in dry-run mode by default)",
-		false,
-	)
-	.action(commandKclean);
+  .command("kclean")
+  .description(
+    "Clean zero-replica ReplicaSets and failed/succeeded Pods in the current context (or all contexts)",
+  )
+  .option(
+    "-A, --all-namespaces",
+    "Clean across all namespaces instead of the current one",
+    false,
+  )
+  .option(
+    "-C, --all-contexts",
+    "Clean across all kubectl contexts instead of just the current one",
+    false,
+  )
+  .option(
+    "-y, --yes",
+    "Actually delete (runs in dry-run mode by default)",
+    false,
+  )
+  .action(commandKclean);
 
 program
-	.command("upgrade")
-	.description("Upgrade x CLI to the latest version")
-	.action(commandUpgrade);
+  .command("upgrade")
+  .description("Upgrade x CLI to the latest version")
+  .action(commandUpgrade);
 
 addDiskOptions(
-	program
-		.command("disk")
-		.description("Analyze disk space usage and clean caches in home directory"),
+  program
+    .command("disk")
+    .description("Analyze disk space usage and clean caches in home directory"),
 ).action(commandDisk);
 
 addDiskOptions(
-	program
-		.command("disk-windows")
-		.description(
-			"Analyze disk space usage and clean caches in Windows (native or via WSL)",
-		),
+  program
+    .command("disk-windows")
+    .description(
+      "Analyze disk space usage and clean caches in Windows (native or via WSL)",
+    ),
 ).action(commandDiskWindows);
 
 program
-	.command("doctor")
-	.description(
-		"Diagnose and repair development environment tools & git configs",
-	)
-	.option("-e, --email <email>", "Git email", config.git.defaultEmail)
-	.option("-n, --name <name>", "Git name", config.git.defaultName)
-	.option("--no-updates", "Skip system updates")
-	.action(commandDoctor);
+  .command("doctor")
+  .description(
+    "Diagnose and repair development environment tools & git configs",
+  )
+  .option("-e, --email <email>", "Git email", config.git.defaultEmail)
+  .option("-n, --name <name>", "Git name", config.git.defaultName)
+  .option("--no-updates", "Skip system updates")
+  .action(commandDoctor);
 
 program
-	.command("new")
-	.description("Scaffold and initialize a new project")
-	.argument("[dir]", "Target directory for the new project", ".")
-	.option("-t, --template <template-name>", "Template name or git repository")
-	.option("-l, --list-templates", "List available templates and exit", false)
-	.option(
-		"-f, --force",
-		"Force creation even if target directory is not empty",
-		false,
-	)
-	.action(commandNew);
+  .command("new")
+  .description("Scaffold and initialize a new project")
+  .argument("[dir]", "Target directory for the new project", ".")
+  .option("-t, --template <template-name>", "Template name or git repository")
+  .option("-l, --list-templates", "List available templates and exit", false)
+  .option(
+    "-f, --force",
+    "Force creation even if target directory is not empty",
+    false,
+  )
+  .action(commandNew);
 
 program
-	.command("pyup")
-	.description(
-		"Make Python files uv scripts with Python 3.14 and latest dependencies",
-	)
-	.argument("[dir]", "Directory to scan for Python files", ".")
-	.option("-d, --dry-run", "Preview changes without writing", false)
-	.option("--check", "Exit non-zero if any file needs updating", false)
-	.action(commandPyup);
+  .command("pyup")
+  .description(
+    "Make Python files uv scripts with Python 3.14 and latest dependencies",
+  )
+  .argument("[dir]", "Directory to scan for Python files", ".")
+  .option("-d, --dry-run", "Preview changes without writing", false)
+  .option("--check", "Exit non-zero if any file needs updating", false)
+  .action(commandPyup);
 
 const cf = program
-	.command("cf")
-	.description("Manage a Cloudflare account (login, domains, mail forwarding)");
+  .command("cf")
+  .description("Manage a Cloudflare account (login, domains, mail forwarding)");
 
 const cfLogin = cf
-	.command("login")
-	.description(
-		"Authenticate to Cloudflare — pick an API Token, or the email + Global API key.\n" +
-			"Guided prompts in a terminal; piped secrets are auto-guessed.",
-	)
-	.action(commandCfLogin);
+  .command("login")
+  .description(
+    "Authenticate to Cloudflare — pick an API Token, or the email + Global API key.\n" +
+      "Guided prompts in a terminal; piped secrets are auto-guessed.",
+  )
+  .action(commandCfLogin);
 
 cfLogin
-	.command("list")
-	.description("List saved Cloudflare logins (marking the active one)")
-	.action(commandCfLoginList);
+  .command("list")
+  .description("List saved Cloudflare logins (marking the active one)")
+  .action(commandCfLoginList);
 
 cfLogin
-	.command("use")
-	.description("Switch which saved login is active")
-	.argument("<id>", "Login id from `x cf login list`")
-	.action(commandCfLoginUse);
+  .command("use")
+  .description("Switch which saved login is active")
+  .argument("<id>", "Login id from `x cf login list`")
+  .action(commandCfLoginUse);
 
 cfLogin
-	.command("remove")
-	.description("Delete a saved login")
-	.argument("<id>", "Login id from `x cf login list`")
-	.action(commandCfLoginRemove);
+  .command("remove")
+  .description("Delete a saved login")
+  .argument("<id>", "Login id from `x cf login list`")
+  .action(commandCfLoginRemove);
 
 cf.command("logout")
-	.description("Clear the active Cloudflare login")
-	.action(commandCfLogout);
+  .description("Clear the active Cloudflare login")
+  .action(commandCfLogout);
 
 const cfDomains = cf
-	.command("domains")
-	.description("Domains (zones) on the logged-in Cloudflare account");
+  .command("domains")
+  .description("Domains (zones) on the logged-in Cloudflare account");
 
 cfDomains
-	.command("list")
-	.description("List all domains associated with the logged-in account")
-	.action(commandCfDomainsList);
+  .command("list")
+  .description("List all domains associated with the logged-in account")
+  .action(commandCfDomainsList);
 
 const cfMailforwarding = cf
-	.command("mailforwarding")
-	.description("Manage the catch-all mail forwarding rule of your domains");
+  .command("mailforwarding")
+  .description("Manage the catch-all mail forwarding rule of your domains");
 
 cfMailforwarding
-	.command("list")
-	.description(
-		"List each domain's mail forwarding target as <domain> -> <destination>",
-	)
-	.action(commandCfMailforwardingList);
+  .command("list")
+  .description(
+    "List each domain's mail forwarding target as <domain> -> <destination>",
+  )
+  .action(commandCfMailforwardingList);
 
 cfMailforwarding
-	.command("set")
-	.description(
-		"Set (or, without a destination, unset) a domain's mail forwarding. " +
-			"Needs the destination to be a verified Email Routing address.",
-	)
-	.argument("<domain>", "Domain name, e.g. neau.pro")
-	.argument(
-		"[destination]",
-		"Destination email to forward to; omit to unset the rule",
-	)
-	.action(commandCfMailforwardingSet);
+  .command("set")
+  .description(
+    "Set (or, without a destination, unset) a domain's mail forwarding. " +
+      "Needs the destination to be a verified Email Routing address.",
+  )
+  .argument("<domain>", "Domain name, e.g. neau.pro")
+  .argument(
+    "[destination]",
+    "Destination email to forward to; omit to unset the rule",
+  )
+  .action(commandCfMailforwardingSet);
 
 program.parse();

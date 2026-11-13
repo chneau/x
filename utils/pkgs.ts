@@ -3,111 +3,104 @@ import { commandExists } from "./helpers";
 import { $ } from "./verboseShell";
 
 type PkgType =
-	| "apt"
-	| "brew"
-	| "bun"
-	| "custom"
-	| "winget"
-	| "uv"
-	| "dotnet"
-	| "gem";
+  "apt" | "brew" | "bun" | "custom" | "winget" | "uv" | "dotnet" | "gem";
 
 export type Pkg = {
-	name: string;
-	type: PkgType;
-	check: () => Promise<boolean>;
-	install: () => Promise<unknown>;
-	trust?: boolean;
+  name: string;
+  type: PkgType;
+  check: () => Promise<boolean>;
+  install: () => Promise<unknown>;
+  trust?: boolean;
 };
 
 type InstallResult = {
-	label: string;
-	names: string[];
-	ok: boolean;
-	failures: Record<string, string>;
+  label: string;
+  names: string[];
+  ok: boolean;
+  failures: Record<string, string>;
 };
 
 type ConfigPkg = { name: string; check?: string; trust?: boolean };
 
 const createPkg = (
-	name: string,
-	type: PkgType,
-	install: () => Promise<unknown>,
-	checkName?: string,
-	trust?: boolean,
+  name: string,
+  type: PkgType,
+  install: () => Promise<unknown>,
+  checkName?: string,
+  trust?: boolean,
 ): Pkg => ({
-	name,
-	type,
-	check: () => commandExists(checkName ?? name),
-	install,
-	trust,
+  name,
+  type,
+  check: () => commandExists(checkName ?? name),
+  install,
+  trust,
 });
 
 const installers: Record<
-	Exclude<PkgType, "custom" | "winget">,
-	{
-		strategy: "batch" | "sequential";
-		label: string;
-		run: (names: string | string[]) => Promise<unknown>;
-	}
+  Exclude<PkgType, "custom" | "winget">,
+  {
+    strategy: "batch" | "sequential";
+    label: string;
+    run: (names: string | string[]) => Promise<unknown>;
+  }
 > = {
-	apt: {
-		strategy: "batch",
-		label: "apt",
-		run: (names) => $`sudo apt install -y ${names}`,
-	},
-	brew: {
-		strategy: "batch",
-		label: "brew",
-		run: (names) => $`brew install ${names}`,
-	},
-	bun: {
-		strategy: "batch",
-		label: "bun",
-		run: (names) => $`bun install --force --global ${names}`,
-	},
-	uv: {
-		strategy: "sequential",
-		label: "uv tool",
-		run: (names) => $`uv tool install --force ${names}`.nothrow(),
-	},
-	dotnet: {
-		strategy: "sequential",
-		label: "dotnet tool",
-		run: (names) =>
-			$`dotnet tool install --global ${names} || dotnet tool update --global ${names}`
-				.nothrow(),
-	},
-	gem: {
-		strategy: "sequential",
-		label: "gem",
-		run: async (names) => {
-			const brewGlibc = "/home/linuxbrew/.linuxbrew/opt/glibc/lib";
-			const hasBrewGlibc = process.platform !== "win32" &&
-				(await Bun.file(`${brewGlibc}/libc.so.6`).exists());
-			if (hasBrewGlibc) {
-				return $`gem install ${names} -- --with-ldflags=-Wl,-rpath,${brewGlibc} -L${brewGlibc}`;
-			}
-			return $`gem install ${names}`;
-		},
-	},
+  apt: {
+    strategy: "batch",
+    label: "apt",
+    run: (names) => $`sudo apt install -y ${names}`,
+  },
+  brew: {
+    strategy: "batch",
+    label: "brew",
+    run: (names) => $`brew install ${names}`,
+  },
+  bun: {
+    strategy: "batch",
+    label: "bun",
+    run: (names) => $`bun install --force --global ${names}`,
+  },
+  uv: {
+    strategy: "sequential",
+    label: "uv tool",
+    run: (names) => $`uv tool install --force ${names}`.nothrow(),
+  },
+  dotnet: {
+    strategy: "sequential",
+    label: "dotnet tool",
+    run: (names) =>
+      $`dotnet tool install --global ${names} || dotnet tool update --global ${names}`.nothrow(),
+  },
+  gem: {
+    strategy: "sequential",
+    label: "gem",
+    run: async (names) => {
+      const brewGlibc = "/home/linuxbrew/.linuxbrew/opt/glibc/lib";
+      const hasBrewGlibc =
+        process.platform !== "win32" &&
+        (await Bun.file(`${brewGlibc}/libc.so.6`).exists());
+      if (hasBrewGlibc) {
+        return $`gem install ${names} -- --with-ldflags=-Wl,-rpath,${brewGlibc} -L${brewGlibc}`;
+      }
+      return $`gem install ${names}`;
+    },
+  },
 };
 
 const makePkgs = (
-	type: keyof typeof installers,
-	list: readonly (ConfigPkg | string)[],
+  type: keyof typeof installers,
+  list: readonly (ConfigPkg | string)[],
 ): Pkg[] =>
-	list.map((pkg) => {
-		const name = typeof pkg === "string" ? pkg : pkg.name;
-		const trust = typeof pkg === "string" ? undefined : pkg.trust;
-		return createPkg(
-			name,
-			type,
-			() => installers[type].run(name),
-			typeof pkg === "string" ? undefined : pkg.check,
-			trust,
-		);
-	});
+  list.map((pkg) => {
+    const name = typeof pkg === "string" ? pkg : pkg.name;
+    const trust = typeof pkg === "string" ? undefined : pkg.trust;
+    return createPkg(
+      name,
+      type,
+      () => installers[type].run(name),
+      typeof pkg === "string" ? undefined : pkg.check,
+      trust,
+    );
+  });
 
 const aptPkgs = makePkgs("apt", config.packages.apt);
 
@@ -122,146 +115,146 @@ export const dotnetPkgs = makePkgs("dotnet", config.packages.dotnet ?? []);
 export const gemPkgs = makePkgs("gem", config.packages.gem ?? []);
 
 const customPkgs: Pkg[] = config.packages.custom.map((pkg) =>
-	createPkg(
-		pkg.name,
-		"custom",
-		() => {
-			let s = $`bash -c ${pkg.command}`;
-			if ("env" in pkg && pkg.env) {
-				s = s.env({ ...Bun.env, ...pkg.env });
-			}
-			return s;
-		},
-		"check" in pkg ? (pkg.check as string) : undefined,
-	)
+  createPkg(
+    pkg.name,
+    "custom",
+    () => {
+      let s = $`bash -c ${pkg.command}`;
+      if ("env" in pkg && pkg.env) {
+        s = s.env({ ...Bun.env, ...pkg.env });
+      }
+      return s;
+    },
+    "check" in pkg ? (pkg.check as string) : undefined,
+  ),
 );
 
 export const pkgs: Pkg[] = [
-	...aptPkgs,
-	...customPkgs,
-	...brewPkgs,
-	...bunPkgs,
-	...uvPkgs,
-	...dotnetPkgs,
-	...gemPkgs,
+  ...aptPkgs,
+  ...customPkgs,
+  ...brewPkgs,
+  ...bunPkgs,
+  ...uvPkgs,
+  ...dotnetPkgs,
+  ...gemPkgs,
 ];
 
 export const findMissing = async (list: readonly Pkg[]): Promise<Pkg[]> => {
-	const results = await Promise.all(
-		list.map(async (pkg) => ({ pkg, exists: await pkg.check() })),
-	);
-	return results.filter((r) => !r.exists).map((r) => r.pkg);
+  const results = await Promise.all(
+    list.map(async (pkg) => ({ pkg, exists: await pkg.check() })),
+  );
+  return results.filter((r) => !r.exists).map((r) => r.pkg);
 };
 
 const logBatchStart = (label: string, names: string[]) =>
-	console.log(`🕒 Installing ${label} packages: ${names.join(", ")}...`);
+  console.log(`🕒 Installing ${label} packages: ${names.join(", ")}...`);
 
 const logBatchDone = (label: string, result: InstallResult) => {
-	if (result.ok) {
-		console.log(`✅ Installed ${label} packages: ${result.names.join(", ")}`);
-		return;
-	}
-	console.log(
-		`❌ Failed to install some ${label} packages: ${result.names.join(", ")}`,
-	);
-	for (const [name, error] of Object.entries(result.failures)) {
-		console.error(`   ${name}: ${error}`);
-	}
+  if (result.ok) {
+    console.log(`✅ Installed ${label} packages: ${result.names.join(", ")}`);
+    return;
+  }
+  console.log(
+    `❌ Failed to install some ${label} packages: ${result.names.join(", ")}`,
+  );
+  for (const [name, error] of Object.entries(result.failures)) {
+    console.error(`   ${name}: ${error}`);
+  }
 };
 
 const installOne = async (pkg: Pkg): Promise<string | undefined> => {
-	try {
-		await pkg.install();
-		return undefined;
-	} catch (error) {
-		return error instanceof Error ? error.message : String(error);
-	}
+  try {
+    await pkg.install();
+    return undefined;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
 };
 
 const installPkgs = async (
-	type: keyof typeof installers,
-	toInstall: readonly Pkg[],
+  type: keyof typeof installers,
+  toInstall: readonly Pkg[],
 ): Promise<InstallResult> => {
-	const tool = installers[type];
-	const names = toInstall.map((p) => p.name);
-	if (names.length === 0) {
-		return { label: tool.label, names, ok: true, failures: {} };
-	}
-	logBatchStart(tool.label, names);
-	const failures: Record<string, string> = {};
-	if (tool.strategy === "batch") {
-		try {
-			if (type === "bun") {
-				const trusted = toInstall.filter((p) => p.trust).map((p) => p.name);
-				const untrusted = toInstall.filter((p) => !p.trust).map((p) => p.name);
-				if (trusted.length > 0) {
-					await $`bun install --force --trust --global ${trusted}`;
-				}
-				if (untrusted.length > 0) {
-					await $`bun install --force --global ${untrusted}`;
-				}
-			} else {
-				await tool.run(names);
-			}
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error);
-			for (const name of names) failures[name] = message;
-		}
-	} else {
-		for (const pkg of toInstall) {
-			const error = await installOne(pkg);
-			if (error) failures[pkg.name] = error;
-		}
-	}
-	const result: InstallResult = {
-		label: tool.label,
-		names,
-		ok: Object.keys(failures).length === 0,
-		failures,
-	};
-	logBatchDone(tool.label, result);
-	return result;
+  const tool = installers[type];
+  const names = toInstall.map((p) => p.name);
+  if (names.length === 0) {
+    return { label: tool.label, names, ok: true, failures: {} };
+  }
+  logBatchStart(tool.label, names);
+  const failures: Record<string, string> = {};
+  if (tool.strategy === "batch") {
+    try {
+      if (type === "bun") {
+        const trusted = toInstall.filter((p) => p.trust).map((p) => p.name);
+        const untrusted = toInstall.filter((p) => !p.trust).map((p) => p.name);
+        if (trusted.length > 0) {
+          await $`bun install --force --trust --global ${trusted}`;
+        }
+        if (untrusted.length > 0) {
+          await $`bun install --force --global ${untrusted}`;
+        }
+      } else {
+        await tool.run(names);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      for (const name of names) failures[name] = message;
+    }
+  } else {
+    for (const pkg of toInstall) {
+      const error = await installOne(pkg);
+      if (error) failures[pkg.name] = error;
+    }
+  }
+  const result: InstallResult = {
+    label: tool.label,
+    names,
+    ok: Object.keys(failures).length === 0,
+    failures,
+  };
+  logBatchDone(tool.label, result);
+  return result;
 };
 
 const installCustomPkgs = async (
-	toInstall: readonly Pkg[],
+  toInstall: readonly Pkg[],
 ): Promise<InstallResult> => {
-	const label = "custom";
-	const names = toInstall.map((p) => p.name);
-	if (names.length === 0) {
-		return { label, names, ok: true, failures: {} };
-	}
-	const failures: Record<string, string> = {};
-	for (const pkg of toInstall) {
-		console.log(`🕒 Installing custom package ${pkg.name}...`);
-		const error = await installOne(pkg);
-		if (error) failures[pkg.name] = error;
-		else console.log(`✅ Installed ${pkg.name}`);
-	}
-	return {
-		label,
-		names,
-		ok: Object.keys(failures).length === 0,
-		failures,
-	};
+  const label = "custom";
+  const names = toInstall.map((p) => p.name);
+  if (names.length === 0) {
+    return { label, names, ok: true, failures: {} };
+  }
+  const failures: Record<string, string> = {};
+  for (const pkg of toInstall) {
+    console.log(`🕒 Installing custom package ${pkg.name}...`);
+    const error = await installOne(pkg);
+    if (error) failures[pkg.name] = error;
+    else console.log(`✅ Installed ${pkg.name}`);
+  }
+  return {
+    label,
+    names,
+    ok: Object.keys(failures).length === 0,
+    failures,
+  };
 };
 
 export const installPkgsGrouped = async (
-	toInstall: readonly Pkg[],
+  toInstall: readonly Pkg[],
 ): Promise<InstallResult[]> => {
-	const byType = new Map<PkgType, Pkg[]>();
-	for (const pkg of toInstall) {
-		const group = byType.get(pkg.type) ?? [];
-		group.push(pkg);
-		byType.set(pkg.type, group);
-	}
-	const results: InstallResult[] = [];
-	for (const [type, group] of byType) {
-		if (type === "custom" || type === "winget") {
-			results.push(await installCustomPkgs(group));
-		} else {
-			results.push(await installPkgs(type, group));
-		}
-	}
-	return results;
+  const byType = new Map<PkgType, Pkg[]>();
+  for (const pkg of toInstall) {
+    const group = byType.get(pkg.type) ?? [];
+    group.push(pkg);
+    byType.set(pkg.type, group);
+  }
+  const results: InstallResult[] = [];
+  for (const [type, group] of byType) {
+    if (type === "custom" || type === "winget") {
+      results.push(await installCustomPkgs(group));
+    } else {
+      results.push(await installPkgs(type, group));
+    }
+  }
+  return results;
 };

@@ -1,28 +1,27 @@
 {
-	"scripts": {
-		"start": "bun --watch index.ts",
-		"deploy": "bun _gen && bun _deploy.ts && x upgrade",
-		"upgrade": "bun update --latest",
-		"check": "bun run --sequential --no-exit-on-error check:clean check:deno check:oxlint check:biome check:export lint",
-		"check:deno": "deno fmt --use-tabs --quiet",
-		"check:oxlint": "oxlint --fix-dangerously --fix-suggestions --fix --quiet",
-		"check:biome": "timeout 3s biome check --write --unsafe .",
-		"check:export": "ts-unused-exports tsconfig.json",
-		"lint": "tsc --noEmit",
-		"all": "bun run --sequential --no-exit-on-error upgrade check",
-		"check:clean": "rm -rf dist out build"
-	},
-	"dependencies": {
-		"@commander-js/extra-typings": "^15.1.0",
-		"cdk8s": "^2.70.123",
-		"cdk8s-plus-34": "^2.0.66",
-		"cloudflare": "^7.3.0",
-		"commander": "^15.1.0",
-		"zod": "^4.6.7"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.6.7",
-		"@types/bun": "^1.4.4",
-		"typescript": "^7.0.2"
-	}
+  "scripts": {
+    "start": "bun --watch index.ts",
+    "deploy": "bun _gen && bun _deploy.ts && x upgrade",
+    "upgrade": "bun update --latest",
+    "check": "bun run --sequential --no-exit-on-error check:clean check:fmt check:lint check:export lint",
+    "check:fmt": "bun fmt --no-script",
+    "check:lint": "bun lint --no-script",
+    "check:export": "bun x fallow dead-code --unused-exports",
+    "lint": "bun check --no-script",
+    "all": "bun run --sequential --no-exit-on-error upgrade check",
+    "check:clean": "rm -rf dist out build"
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "^15.1.0",
+    "cdk8s": "^2.70.123",
+    "cdk8s-plus-34": "^2.0.66",
+    "cloudflare": "^7.3.0",
+    "commander": "^15.1.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.7",
+    "@types/bun": "^1.4.4",
+    "typescript": "^7.0.2"
+  }
 }

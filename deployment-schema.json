@@ -1,266 +1,266 @@
 {
-	"$schema": "http://json-schema.org/draft-07/schema#",
-	"type": "object",
-	"properties": {
-		"$schema": {
-			"type": "string"
-		},
-		"registries": {
-			"default": {},
-			"type": "object",
-			"propertyNames": {
-				"type": "string"
-			},
-			"additionalProperties": {
-				"type": "object",
-				"properties": {
-					"hostname": {
-						"type": "string"
-					},
-					"username": {
-						"type": ["string", "null"]
-					},
-					"password": {
-						"type": ["string", "null"]
-					}
-				},
-				"required": ["hostname"]
-			}
-		},
-		"images": {
-			"type": "object",
-			"propertyNames": {
-				"type": "string"
-			},
-			"additionalProperties": {
-				"type": "object",
-				"properties": {
-					"registry": {
-						"type": "string"
-					},
-					"dockerfile": {
-						"default": "Dockerfile",
-						"type": "string"
-					},
-					"target": {
-						"type": "string"
-					},
-					"buildArgs": {
-						"default": {},
-						"type": "object",
-						"propertyNames": {
-							"type": "string"
-						},
-						"additionalProperties": {
-							"type": "string"
-						}
-					},
-					"context": {
-						"default": ".",
-						"type": "string"
-					},
-					"repository": {
-						"type": "string"
-					},
-					"imageName": {
-						"type": "string"
-					},
-					"tag": {
-						"default": "latest",
-						"type": "string"
-					}
-				},
-				"required": ["registry", "repository", "imageName"]
-			}
-		},
-		"services": {
-			"type": "object",
-			"propertyNames": {
-				"type": "string"
-			},
-			"additionalProperties": {
-				"anyOf": [
-					{
-						"type": "object",
-						"properties": {
-							"image": {
-								"type": "string"
-							},
-							"replicas": {
-								"default": 1,
-								"type": "number"
-							},
-							"file": {
-								"default": "kubeconfig",
-								"type": "string"
-							},
-							"context": {
-								"type": "string"
-							},
-							"namespace": {
-								"type": "string"
-							},
-							"port": {
-								"default": 3000,
-								"type": "number",
-								"minimum": 1,
-								"maximum": 65535
-							},
-							"env": {
-								"default": {},
-								"type": "object",
-								"propertyNames": {
-									"type": "string"
-								},
-								"additionalProperties": {
-									"type": "string"
-								}
-							},
-							"readOnlyRootFilesystem": {
-								"default": false,
-								"type": "boolean"
-							},
-							"runAsUser": {
-								"type": "number"
-							},
-							"runAsGroup": {
-								"type": "number"
-							},
-							"runAsNonRoot": {
-								"type": "boolean"
-							},
-							"allowPrivilegeEscalation": {
-								"type": "boolean"
-							},
-							"privileged": {
-								"type": "boolean"
-							},
-							"cpuRequest": {
-								"type": "string"
-							},
-							"cpuLimit": {
-								"type": "string"
-							},
-							"memoryRequest": {
-								"type": "string"
-							},
-							"memoryLimit": {
-								"type": "string"
-							},
-							"startupProbePeriodSeconds": {
-								"type": "number",
-								"exclusiveMinimum": 0
-							},
-							"startupProbeFailureThreshold": {
-								"type": "number",
-								"exclusiveMinimum": 0
-							},
-							"endpoints": {
-								"default": [],
-								"type": "array",
-								"items": {
-									"type": "string",
-									"pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-								}
-							},
-							"ingress": {
-								"default": "nginx",
-								"type": "string",
-								"enum": ["nginx", "traefik"]
-							}
-						},
-						"required": ["image", "context", "namespace"]
-					},
-					{
-						"type": "object",
-						"properties": {
-							"image": {
-								"type": "string"
-							},
-							"replicas": {
-								"type": "number"
-							},
-							"file": {
-								"type": "string"
-							},
-							"context": {
-								"type": "string"
-							},
-							"namespace": {
-								"type": "string"
-							},
-							"port": {
-								"type": "number",
-								"minimum": 1,
-								"maximum": 65535
-							},
-							"env": {
-								"type": "object",
-								"propertyNames": {
-									"type": "string"
-								},
-								"additionalProperties": {
-									"type": "string"
-								}
-							},
-							"readOnlyRootFilesystem": {
-								"type": "boolean"
-							},
-							"runAsUser": {
-								"type": "number"
-							},
-							"runAsGroup": {
-								"type": "number"
-							},
-							"runAsNonRoot": {
-								"type": "boolean"
-							},
-							"allowPrivilegeEscalation": {
-								"type": "boolean"
-							},
-							"privileged": {
-								"type": "boolean"
-							},
-							"cpuRequest": {
-								"type": "string"
-							},
-							"cpuLimit": {
-								"type": "string"
-							},
-							"memoryRequest": {
-								"type": "string"
-							},
-							"memoryLimit": {
-								"type": "string"
-							},
-							"startupProbePeriodSeconds": {
-								"type": "number",
-								"exclusiveMinimum": 0
-							},
-							"startupProbeFailureThreshold": {
-								"type": "number",
-								"exclusiveMinimum": 0
-							},
-							"endpoints": {
-								"type": "array",
-								"items": {
-									"type": "string",
-									"pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-								}
-							},
-							"ingress": {
-								"type": "string",
-								"enum": ["nginx", "traefik"]
-							},
-							"extends": {
-								"type": "string"
-							}
-						},
-						"required": ["extends"]
-					}
-				]
-			}
-		}
-	},
-	"required": ["images", "services"]
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "registries": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "hostname": {
+            "type": "string"
+          },
+          "username": {
+            "type": ["string", "null"]
+          },
+          "password": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["hostname"]
+      }
+    },
+    "images": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "registry": {
+            "type": "string"
+          },
+          "dockerfile": {
+            "default": "Dockerfile",
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "buildArgs": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "context": {
+            "default": ".",
+            "type": "string"
+          },
+          "repository": {
+            "type": "string"
+          },
+          "imageName": {
+            "type": "string"
+          },
+          "tag": {
+            "default": "latest",
+            "type": "string"
+          }
+        },
+        "required": ["registry", "repository", "imageName"]
+      }
+    },
+    "services": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "image": {
+                "type": "string"
+              },
+              "replicas": {
+                "default": 1,
+                "type": "number"
+              },
+              "file": {
+                "default": "kubeconfig",
+                "type": "string"
+              },
+              "context": {
+                "type": "string"
+              },
+              "namespace": {
+                "type": "string"
+              },
+              "port": {
+                "default": 3000,
+                "type": "number",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "env": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "readOnlyRootFilesystem": {
+                "default": false,
+                "type": "boolean"
+              },
+              "runAsUser": {
+                "type": "number"
+              },
+              "runAsGroup": {
+                "type": "number"
+              },
+              "runAsNonRoot": {
+                "type": "boolean"
+              },
+              "allowPrivilegeEscalation": {
+                "type": "boolean"
+              },
+              "privileged": {
+                "type": "boolean"
+              },
+              "cpuRequest": {
+                "type": "string"
+              },
+              "cpuLimit": {
+                "type": "string"
+              },
+              "memoryRequest": {
+                "type": "string"
+              },
+              "memoryLimit": {
+                "type": "string"
+              },
+              "startupProbePeriodSeconds": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "startupProbeFailureThreshold": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "endpoints": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+                }
+              },
+              "ingress": {
+                "default": "nginx",
+                "type": "string",
+                "enum": ["nginx", "traefik"]
+              }
+            },
+            "required": ["image", "context", "namespace"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "image": {
+                "type": "string"
+              },
+              "replicas": {
+                "type": "number"
+              },
+              "file": {
+                "type": "string"
+              },
+              "context": {
+                "type": "string"
+              },
+              "namespace": {
+                "type": "string"
+              },
+              "port": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "env": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "readOnlyRootFilesystem": {
+                "type": "boolean"
+              },
+              "runAsUser": {
+                "type": "number"
+              },
+              "runAsGroup": {
+                "type": "number"
+              },
+              "runAsNonRoot": {
+                "type": "boolean"
+              },
+              "allowPrivilegeEscalation": {
+                "type": "boolean"
+              },
+              "privileged": {
+                "type": "boolean"
+              },
+              "cpuRequest": {
+                "type": "string"
+              },
+              "cpuLimit": {
+                "type": "string"
+              },
+              "memoryRequest": {
+                "type": "string"
+              },
+              "memoryLimit": {
+                "type": "string"
+              },
+              "startupProbePeriodSeconds": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "startupProbeFailureThreshold": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "endpoints": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+                }
+              },
+              "ingress": {
+                "type": "string",
+                "enum": ["nginx", "traefik"]
+              },
+              "extends": {
+                "type": "string"
+              }
+            },
+            "required": ["extends"]
+          }
+        ]
+      }
+    }
+  },
+  "required": ["images", "services"]
 }
