@@ -1,12 +1,32 @@
-import z from "zod";
 import { $ } from "./verboseShell";
 
-export const optionsSchema = z.object({
-  email: z.email(),
-  name: z.string().min(1),
-  updates: z.boolean(),
-});
-export type DoctorOptions = z.infer<typeof optionsSchema>;
+export type DoctorOptions = {
+  email: string;
+  name: string;
+  updates: boolean;
+};
+
+export const optionsSchema = {
+  parse: (val: unknown): DoctorOptions => {
+    if (!val || typeof val !== "object") {
+      throw new Error("Invalid options: expected object");
+    }
+    const obj = val as Record<string, unknown>;
+    if (
+      typeof obj.email !== "string" ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(obj.email)
+    ) {
+      throw new Error("Invalid email");
+    }
+    if (typeof obj.name !== "string" || obj.name.length < 1) {
+      throw new Error("Invalid name: expected non-empty string");
+    }
+    if (typeof obj.updates !== "boolean") {
+      throw new Error("Invalid updates: expected boolean");
+    }
+    return { email: obj.email, name: obj.name, updates: obj.updates };
+  },
+};
 
 const checkGitConfig = async (key: string, expected: string) => {
   const current = (await $`git config --global ${key}`.nothrow().text()).trim();

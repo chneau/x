@@ -1,92 +1,188 @@
 import { readdir } from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
-import { z } from "zod";
 import { createDeployment } from "../utils/cdk8s";
 import { c, envSubst } from "../utils/helpers";
 import { $, Redacted } from "../utils/verboseShell";
 
-const registrySchema = z.object({
-  hostname: z.string(),
-  username: z.string().nullish(),
-  password: z.string().nullish(),
-});
+export type DeployRegistry = {
+  hostname: string;
+  username?: string | null;
+  password?: string | null;
+};
 
-export type DeployRegistry = z.infer<typeof registrySchema>;
+export type DeployImage = {
+  registry: string;
+  dockerfile: string;
+  target?: string;
+  buildArgs: Record<string, string>;
+  context: string;
+  repository: string;
+  imageName: string;
+  tag: string;
+};
 
-const imageSchema = z.object({
-  registry: z.string(),
-  dockerfile: z.string().default("Dockerfile"),
-  target: z.string().optional(),
-  buildArgs: z.record(z.string(), z.string()).default({}),
-  context: z.string().default("."),
-  repository: z.string(),
-  imageName: z.string(),
-  tag: z.string().default("latest"),
-});
+export type NormalDeployService = {
+  image: string;
+  replicas: number;
+  file: string;
+  context: string;
+  namespace: string;
+  port: number;
+  env: Record<string, string>;
+  readOnlyRootFilesystem: boolean;
+  runAsUser?: number;
+  runAsGroup?: number;
+  runAsNonRoot?: boolean;
+  allowPrivilegeEscalation?: boolean;
+  privileged?: boolean;
+  cpuRequest?: string;
+  cpuLimit?: string;
+  memoryRequest?: string;
+  memoryLimit?: string;
+  startupProbePeriodSeconds?: number;
+  startupProbeFailureThreshold?: number;
+  endpoints: string[];
+  ingress: "nginx" | "traefik";
+};
 
-export type DeployImage = z.infer<typeof imageSchema>;
+type ExtendsDeployService = Partial<NormalDeployService> & {
+  extends: string;
+};
 
-const serviceBase = z.object({
-  image: z.string(),
-  replicas: z.number(),
-  file: z.string(),
-  context: z.string(),
-  namespace: z.string(),
-  port: z.number().min(1).max(65535),
-  env: z.record(z.string(), z.string()),
-  readOnlyRootFilesystem: z.boolean(),
-  runAsUser: z.number().optional(),
-  runAsGroup: z.number().optional(),
-  runAsNonRoot: z.boolean().optional(),
-  allowPrivilegeEscalation: z.boolean().optional(),
-  privileged: z.boolean().optional(),
-  cpuRequest: z.string().optional(),
-  cpuLimit: z.string().optional(),
-  memoryRequest: z.string().optional(),
-  memoryLimit: z.string().optional(),
-  startupProbePeriodSeconds: z.number().positive().optional(),
-  startupProbeFailureThreshold: z.number().positive().optional(),
-  endpoints: z.array(z.string().regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)),
-  ingress: z.enum(["nginx", "traefik"]).optional(),
-});
+type DeployService = NormalDeployService | ExtendsDeployService;
 
-const normalServiceSchema = serviceBase.extend({
-  replicas: serviceBase.shape.replicas.default(1),
-  file: serviceBase.shape.file.default("kubeconfig"),
-  port: serviceBase.shape.port.default(3000),
-  env: serviceBase.shape.env.default({}),
-  readOnlyRootFilesystem:
-    serviceBase.shape.readOnlyRootFilesystem.default(false),
-  endpoints: serviceBase.shape.endpoints.default([]),
-  ingress: serviceBase.shape.ingress.default("nginx"),
-});
+type Deploy = {
+  $schema?: string;
+  registries: Record<string, DeployRegistry>;
+  images: Record<string, DeployImage>;
+  services: Record<string, DeployService>;
+};
 
-export type NormalDeployService = z.infer<typeof normalServiceSchema>;
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
 
-const extendsServiceSchema = serviceBase.partial().extend({
-  extends: z.string(),
-});
+const reqStr = (v: unknown, name: string): string => {
+  if (typeof v !== "string") throw new Error(`${name} must be a string`);
+  return v;
+};
 
-type ExtendsDeployService = z.infer<typeof extendsServiceSchema>;
+const optStr = (v: unknown, name: string): string | undefined => {
+  if (v === undefined) return undefined;
+  return reqStr(v, name);
+};
 
-const serviceSchema = normalServiceSchema.or(extendsServiceSchema);
+const strRecord = (v: unknown, name: string): Record<string, string> => {
+  if (v === undefined) return {};
+  if (!isRecord(v)) throw new Error(`${name} must be an object`);
+  const out: Record<string, string> = {};
+  for (const [k, val] of Object.entries(v)) {
+    out[k] = reqStr(val, `${name}.${k}`);
+  }
+  return out;
+};
 
-type DeployService = z.infer<typeof serviceSchema>;
+const endpointRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-export const deploySchema = z.object({
-  $schema: z.string().optional(),
-  registries: z.record(z.string(), registrySchema).default({}),
-  images: z.record(z.string(), imageSchema),
-  services: z.record(z.string(), serviceSchema),
-});
+const parseDeploy = (raw: unknown): Deploy => {
+  if (!isRecord(raw)) throw new Error("Deploy config must be an object");
+  const registriesRaw = raw.registries ?? {};
+  if (!isRecord(registriesRaw)) {
+    throw new Error("registries must be an object");
+  }
+  const registries: Record<string, DeployRegistry> = {};
+  for (const [k, v] of Object.entries(registriesRaw)) {
+    if (!isRecord(v)) throw new Error(`registries.${k} must be an object`);
+    registries[k] = {
+      hostname: reqStr(v.hostname, `registries.${k}.hostname`),
+      username:
+        v.username === null || v.username === undefined
+          ? v.username
+          : reqStr(v.username, `registries.${k}.username`),
+      password:
+        v.password === null || v.password === undefined
+          ? v.password
+          : reqStr(v.password, `registries.${k}.password`),
+    };
+  }
 
-type Deploy = z.infer<typeof deploySchema>;
+  if (!isRecord(raw.images)) throw new Error("images must be an object");
+  const images: Record<string, DeployImage> = {};
+  for (const [k, v] of Object.entries(raw.images)) {
+    if (!isRecord(v)) throw new Error(`images.${k} must be an object`);
+    images[k] = {
+      registry: reqStr(v.registry, `images.${k}.registry`),
+      dockerfile:
+        optStr(v.dockerfile, `images.${k}.dockerfile`) ?? "Dockerfile",
+      target: optStr(v.target, `images.${k}.target`),
+      buildArgs: strRecord(v.buildArgs, `images.${k}.buildArgs`),
+      context: optStr(v.context, `images.${k}.context`) ?? ".",
+      repository: reqStr(v.repository, `images.${k}.repository`),
+      imageName: reqStr(v.imageName, `images.${k}.imageName`),
+      tag: optStr(v.tag, `images.${k}.tag`) ?? "latest",
+    };
+  }
+
+  if (!isRecord(raw.services)) throw new Error("services must be an object");
+  const services: Record<string, DeployService> = {};
+  for (const [k, v] of Object.entries(raw.services)) {
+    if (!isRecord(v)) throw new Error(`services.${k} must be an object`);
+    if (typeof v.extends === "string") {
+      services[k] = v as ExtendsDeployService;
+      continue;
+    }
+    const port = v.port === undefined ? 3000 : v.port;
+    if (typeof port !== "number" || port < 1 || port > 65535) {
+      throw new Error(`services.${k}.port must be 1..65535`);
+    }
+    const endpointsRaw = v.endpoints ?? [];
+    if (!Array.isArray(endpointsRaw)) {
+      throw new Error(`services.${k}.endpoints must be an array`);
+    }
+    const endpoints = endpointsRaw.map((e, i) => {
+      const s = reqStr(e, `services.${k}.endpoints[${i}]`);
+      if (!endpointRegex.test(s)) {
+        throw new Error(`services.${k}.endpoints[${i}] is invalid: ${s}`);
+      }
+      return s;
+    });
+    const ingress = v.ingress ?? "nginx";
+    if (ingress !== "nginx" && ingress !== "traefik") {
+      throw new Error(`services.${k}.ingress must be nginx or traefik`);
+    }
+    services[k] = {
+      ...(v as Partial<NormalDeployService>),
+      image: reqStr(v.image, `services.${k}.image`),
+      replicas: typeof v.replicas === "number" ? v.replicas : 1,
+      file: optStr(v.file, `services.${k}.file`) ?? "kubeconfig",
+      context: reqStr(v.context, `services.${k}.context`),
+      namespace: reqStr(v.namespace, `services.${k}.namespace`),
+      port,
+      env: strRecord(v.env, `services.${k}.env`),
+      readOnlyRootFilesystem:
+        typeof v.readOnlyRootFilesystem === "boolean"
+          ? v.readOnlyRootFilesystem
+          : false,
+      endpoints,
+      ingress,
+    };
+  }
+
+  return {
+    $schema: optStr(raw.$schema, "$schema"),
+    registries,
+    images,
+    services,
+  };
+};
 
 const loginPromises = new Map<string, Promise<void>>();
 
 const isDockerLoggedIn = async (hostname: string) => {
-  const configPath = path.join(os.homedir(), ".docker", "config.json");
+  const configPath = path.join(
+    Bun.env.HOME ?? Bun.env.USERPROFILE ?? "",
+    ".docker",
+    "config.json",
+  );
   try {
     const config = await Bun.file(configPath).json();
     const normalized = hostname === "docker.io" ? "index.docker.io" : hostname;
@@ -127,20 +223,14 @@ export const commandDeploy = async (
     if (!rawStr) continue;
     let parsed: Deploy;
     try {
-      parsed = await deploySchema.parseAsync(JSON.parse(envSubst(rawStr)));
+      parsed = parseDeploy(JSON.parse(envSubst(rawStr)));
     } catch (error) {
       if (isTargettingJsonFiles) {
         invalidCount += 1;
         console.error(
           `${c.red}❌ Invalid deploy config '${jsonFile}'${c.reset}`,
         );
-        console.error(
-          error instanceof z.ZodError
-            ? z.prettifyError(error)
-            : error instanceof Error
-              ? error.message
-              : String(error),
-        );
+        console.error(error instanceof Error ? error.message : String(error));
       }
       continue;
     }
@@ -179,7 +269,7 @@ export const commandDeploy = async (
 
 const createTemplateDeploy = async () => {
   console.log("🕒 Creating .deploy.json template...");
-  const template = deploySchema.parse({
+  const template = parseDeploy({
     $schema:
       "https://raw.githubusercontent.com/chneau/x/refs/heads/master/deployment-schema.json",
     registries: {

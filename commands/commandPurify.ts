@@ -1,5 +1,4 @@
 import { readdir } from "node:fs/promises";
-import { cpus } from "node:os";
 import { mapConcurrent, walkDirectories } from "../utils/helpers";
 import { $ } from "../utils/verboseShell";
 
@@ -21,8 +20,10 @@ export const commandPurify = async (
     );
   }
   const directories = await walkDirectories(cwd, recursive);
-  await mapConcurrent(directories, Math.max(cpus().length * 2, 2), (d) =>
-    purify(d, isDryRun).catch(console.error),
+  await mapConcurrent(
+    directories,
+    Math.max(navigator.hardwareConcurrency * 2, 2),
+    (d) => purify(d, isDryRun).catch(console.error),
   );
 };
 

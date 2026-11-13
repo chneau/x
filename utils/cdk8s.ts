@@ -1,108 +1,11 @@
-import { App, Chart, Duration, Size } from "cdk8s";
-import {
-  Cpu,
-  Deployment,
-  EnvValue,
-  Ingress,
-  IngressBackend,
-  type ISecret,
-  Namespace,
-  Probe,
-  Secret,
-  type Service,
-} from "cdk8s-plus-34";
 import type {
   DeployImage,
   DeployRegistry,
   NormalDeployService,
 } from "../commands/commandDeploy";
 
-const parseCpu = (value: string): Cpu => {
-  if (value.endsWith("m")) {
-    return Cpu.millis(Number.parseInt(value.slice(0, -1), 10));
-  }
-  return Cpu.units(Number.parseFloat(value));
-};
-
-const parseSize = (value: string): Size => {
-  const match = value.match(/^(\d+)([a-zA-Z]*)$/);
-  if (!match || match[1] === undefined || match[2] === undefined) {
-    throw new Error(`Invalid size: ${value}`);
-  }
-  const amount = Number.parseInt(match[1], 10);
-  const unit = match[2];
-  switch (unit) {
-    case "Ki":
-      return Size.kibibytes(amount);
-    case "Mi":
-      return Size.mebibytes(amount);
-    case "Gi":
-      return Size.gibibytes(amount);
-    case "Ti":
-      return Size.tebibytes(amount);
-    case "Pi":
-      return Size.pebibyte(amount);
-    default:
-      return Size.mebibytes(amount);
-  }
-};
-
-const createDockerConfigJson = (
-  chart: Chart,
-  registryHost: string,
-  registryUsername: string,
-  registryPassword: string,
-) => {
-  const auths = {
-    [registryHost]: {
-      username: registryUsername,
-      password: registryPassword,
-      auth: btoa(`${registryUsername}:${registryPassword}`),
-    },
-  };
-  const jsonString = JSON.stringify({ auths }, null, 2);
-  return new Secret(chart, "docker-secret", {
-    stringData: {
-      ".dockerconfigjson": jsonString,
-    },
-    type: "kubernetes.io/dockerconfigjson",
-  });
-};
-
-const envVarToCDK8S = (
-  envVars: Record<string, string>,
-): Record<string, EnvValue> =>
-  Object.fromEntries(
-    Object.entries(envVars).map(([key, value]) => [
-      key,
-      EnvValue.fromValue(value),
-    ]),
-  );
-
-const createIngresses = (chart: Chart, service: Service, hosts: string[]) => {
-  for (const host of hosts) {
-    const sanitizedHost = host.replaceAll(/[.:/]/g, "-");
-    const ingress = new Ingress(chart, sanitizedHost, { className: "nginx" });
-    ingress.addRules({
-      backend: IngressBackend.fromService(service),
-      host: host,
-      path: "/",
-    });
-    ingress.addTls([
-      {
-        hosts: [host],
-        secret: { name: sanitizedHost } as ISecret,
-      },
-    ]);
-    ingress.metadata.addAnnotation(
-      "cert-manager.io/cluster-issuer",
-      "letsencrypt",
-    );
-  }
-};
-
 const createTraefikIngressRoutesYaml = (
-  service: Service,
+  serviceName: string,
   hosts: string[],
   namespace: string,
   port: number,
@@ -121,7 +24,7 @@ spec:
     - match: Host(\`${host}\`)
       kind: Rule
       services:
-        - name: ${service.name}
+        - name: ${serviceName}
           port: ${port}
   tls:
     certResolver: le`;
@@ -137,6 +40,7 @@ type createDeploymentProps = {
   service: NormalDeployService;
   ingress: string;
 };
+
 export const createDeployment = async ({
   serviceAlias,
   registry,
@@ -144,81 +48,165 @@ export const createDeployment = async ({
   service,
   ingress,
 }: createDeploymentProps) => {
-  const app = new App({ outputFileExtension: ".yml" });
-
-  const chart = new Chart(app, service.namespace, {
-    namespace: service.namespace,
-    disableResourceNameHashes: true,
-  });
-
-  new Namespace(chart, service.namespace);
-
-  const deployment = new Deployment(chart, `d-${serviceAlias}`, {
-    replicas: service.replicas,
-    metadata: { name: image.imageName },
-    terminationGracePeriod: Duration.seconds(0),
-    dockerRegistryAuth:
-      registry.username && registry.password
-        ? createDockerConfigJson(
-            chart,
-            registry.hostname,
-            registry.username,
-            registry.password,
-          )
-        : undefined,
-  });
-
-  const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
-
-  deployment.addContainer({
-    name: image.imageName,
-    image: imageFullName,
-    portNumber: service.port,
-    envVariables: envVarToCDK8S({
-      ...service.env,
-      DEPLOYMENT_DATE: new Date().toISOString(),
-    }),
-    resources: {
-      cpu: {
-        request: service.cpuRequest ? parseCpu(service.cpuRequest) : undefined,
-        limit: service.cpuLimit ? parseCpu(service.cpuLimit) : undefined,
-      },
-      memory: {
-        request: service.memoryRequest
-          ? parseSize(service.memoryRequest)
-          : undefined,
-        limit: service.memoryLimit ? parseSize(service.memoryLimit) : undefined,
-      },
+  const docs: unknown[] = [
+    {
+      apiVersion: "v1",
+      kind: "Namespace",
+      metadata: { name: service.namespace },
     },
-    securityContext: {
-      readOnlyRootFilesystem: service.readOnlyRootFilesystem,
-      user: service.runAsUser,
-      group: service.runAsGroup,
-      ensureNonRoot: service.runAsNonRoot,
-      allowPrivilegeEscalation: service.allowPrivilegeEscalation,
-      privileged: service.privileged,
-    },
-    startup: Probe.fromTcpSocket({
-      periodSeconds: Duration.seconds(service.startupProbePeriodSeconds ?? 1),
-      failureThreshold: service.startupProbeFailureThreshold ?? 30,
-    }),
-  });
-  const _service = deployment.exposeViaService({ name: image.imageName });
+  ];
 
-  if (ingress !== "traefik") {
-    createIngresses(chart, _service, service.endpoints);
+  const secretName = `${service.namespace}-docker-secret`;
+  const hasAuth = Boolean(registry.username && registry.password);
+  if (hasAuth && registry.username && registry.password) {
+    const auths = {
+      [registry.hostname]: {
+        username: registry.username,
+        password: registry.password,
+        auth: btoa(`${registry.username}:${registry.password}`),
+      },
+    };
+    docs.push({
+      apiVersion: "v1",
+      kind: "Secret",
+      metadata: { name: secretName, namespace: service.namespace },
+      type: "kubernetes.io/dockerconfigjson",
+      stringData: { ".dockerconfigjson": JSON.stringify({ auths }, null, 2) },
+    });
   }
 
-  let yaml = app.synthYaml();
-  if (ingress === "traefik") {
+  const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
+  const labels = { app: `d-${serviceAlias}` };
+  const env = Object.entries({
+    ...service.env,
+    DEPLOYMENT_DATE: new Date().toISOString(),
+  }).map(([name, value]) => ({ name, value }));
+
+  const requests: Record<string, string> = {};
+  const limits: Record<string, string> = {};
+  if (service.cpuRequest) requests.cpu = service.cpuRequest;
+  if (service.memoryRequest) requests.memory = service.memoryRequest;
+  if (service.cpuLimit) limits.cpu = service.cpuLimit;
+  if (service.memoryLimit) limits.memory = service.memoryLimit;
+
+  const securityContext: Record<string, unknown> = {
+    readOnlyRootFilesystem: service.readOnlyRootFilesystem,
+  };
+  if (service.runAsUser !== undefined) {
+    securityContext.runAsUser = service.runAsUser;
+  }
+  if (service.runAsGroup !== undefined) {
+    securityContext.runAsGroup = service.runAsGroup;
+  }
+  if (service.runAsNonRoot !== undefined) {
+    securityContext.runAsNonRoot = service.runAsNonRoot;
+  }
+  if (service.allowPrivilegeEscalation !== undefined) {
+    securityContext.allowPrivilegeEscalation = service.allowPrivilegeEscalation;
+  }
+  if (service.privileged !== undefined) {
+    securityContext.privileged = service.privileged;
+  }
+
+  docs.push({
+    apiVersion: "apps/v1",
+    kind: "Deployment",
+    metadata: { name: image.imageName, namespace: service.namespace },
+    spec: {
+      replicas: service.replicas,
+      selector: { matchLabels: labels },
+      template: {
+        metadata: { labels },
+        spec: {
+          terminationGracePeriodSeconds: 0,
+          ...(hasAuth ? { imagePullSecrets: [{ name: secretName }] } : {}),
+          containers: [
+            {
+              name: image.imageName,
+              image: imageFullName,
+              ports: [{ containerPort: service.port }],
+              env,
+              ...(Object.keys(requests).length > 0 ||
+              Object.keys(limits).length > 0
+                ? {
+                    resources: {
+                      ...(Object.keys(requests).length > 0 ? { requests } : {}),
+                      ...(Object.keys(limits).length > 0 ? { limits } : {}),
+                    },
+                  }
+                : {}),
+              securityContext,
+              startupProbe: {
+                tcpSocket: { port: service.port },
+                periodSeconds: service.startupProbePeriodSeconds ?? 1,
+                failureThreshold: service.startupProbeFailureThreshold ?? 30,
+              },
+            },
+          ],
+        },
+      },
+    },
+  });
+
+  docs.push({
+    apiVersion: "v1",
+    kind: "Service",
+    metadata: { name: image.imageName, namespace: service.namespace },
+    spec: {
+      selector: labels,
+      ports: [{ port: service.port, targetPort: service.port }],
+    },
+  });
+
+  if (ingress !== "traefik") {
+    for (const host of service.endpoints) {
+      const sanitizedHost = host.replaceAll(/[.:/]/g, "-");
+      docs.push({
+        apiVersion: "networking.k8s.io/v1",
+        kind: "Ingress",
+        metadata: {
+          name: sanitizedHost,
+          namespace: service.namespace,
+          annotations: {
+            "cert-manager.io/cluster-issuer": "letsencrypt",
+          },
+        },
+        spec: {
+          ingressClassName: "nginx",
+          tls: [{ hosts: [host], secretName: sanitizedHost }],
+          rules: [
+            {
+              host,
+              http: {
+                paths: [
+                  {
+                    path: "/",
+                    pathType: "Prefix",
+                    backend: {
+                      service: {
+                        name: image.imageName,
+                        port: { number: service.port },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+    }
+  }
+
+  let out = docs.map((d) => JSON.stringify(d, null, 2)).join("\n---\n");
+  if (ingress === "traefik" && service.endpoints.length > 0) {
     const traefikYaml = createTraefikIngressRoutesYaml(
-      _service,
+      image.imageName,
       service.endpoints,
       service.namespace,
       service.port,
     );
-    yaml = `${yaml}\n---\n${traefikYaml}`;
+    out = `${out}\n---\n${traefikYaml}`;
   }
-
-  return yaml;
+  return out;
 };

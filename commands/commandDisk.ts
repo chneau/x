@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import {
   analyzeDisk,
   type CleanupTarget,
@@ -92,7 +91,7 @@ const runCleanupCommands = async (dryRun: boolean) => {
 };
 
 const commandDiskUnix = async (options: DiskOptions) => {
-  const home = Bun.env.HOME || homedir();
+  const home = Bun.env.HOME || Bun.env.USERPROFILE || "~";
   const topCount = options.top || 15;
   const dryRun = Boolean(options.dryRun);
   const shouldClean = options.clean || options.dryRun;

@@ -1,5 +1,4 @@
 import { readdir } from "node:fs/promises";
-import { cpus } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { mapConcurrent } from "../utils/helpers";
 
@@ -385,7 +384,7 @@ export const commandPyup = async (
   }
 
   const local = localModuleNames(files);
-  const concurrency = Math.max(cpus().length * 2, 2);
+  const concurrency = Math.max(navigator.hardwareConcurrency * 2, 2);
 
   const scanned = await mapConcurrent(
     files,

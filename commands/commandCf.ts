@@ -1,11 +1,54 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
-import Cloudflare, { APIError } from "cloudflare";
+class CfApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+type CfClient = {
+  request: <T>(method: string, path: string, body?: unknown) => Promise<T>;
+};
+
+const cfFetch = async <T>(
+  headers: Record<string, string>,
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<T> => {
+  const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
+    method,
+    headers: {
+      ...headers,
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const data = (await res.json()) as {
+    success?: boolean;
+    errors?: { message?: string }[];
+    result?: T;
+  };
+  if (!res.ok || data.success === false) {
+    const msg =
+      data.errors
+        ?.map((e) => e.message)
+        .filter(Boolean)
+        .join("; ") || res.statusText;
+    throw new CfApiError(res.status, msg);
+  }
+  return data.result as T;
+};
 import { die } from "../utils/helpers";
 
-const CONFIG_DIR = join(homedir(), ".config", "x");
+const CONFIG_DIR = join(
+  Bun.env.HOME ?? Bun.env.USERPROFILE ?? "",
+  ".config",
+  "x",
+);
 const CONFIG_FILE = join(CONFIG_DIR, "cf.json");
 
 type StoredLogin =
@@ -33,7 +76,7 @@ interface CfStore {
 const readStore = async (): Promise<CfStore> => {
   try {
     const parsed = JSON.parse(
-      await readFile(CONFIG_FILE, "utf8"),
+      await Bun.file(CONFIG_FILE).text(),
     ) as Partial<CfStore>;
     return {
       activeId: parsed.activeId,
@@ -48,7 +91,7 @@ const readStore = async (): Promise<CfStore> => {
 
 const writeStore = async (store: CfStore) => {
   await mkdir(CONFIG_DIR, { recursive: true, mode: 0o700 });
-  await writeFile(CONFIG_FILE, `${JSON.stringify(store, null, 2)}\n`, {
+  await Bun.write(CONFIG_FILE, `${JSON.stringify(store, null, 2)}\n`, {
     mode: 0o600,
   });
 };
@@ -58,13 +101,19 @@ const isEmail = (line: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(line);
 const masked = (value: string) =>
   value.length > 8 ? `${value.slice(0, 4)}…${value.slice(-4)}` : "********";
 
-const makeClient = (login: StoredLogin): Cloudflare =>
-  login.kind === "token"
-    ? new Cloudflare({ apiToken: login.apiToken })
-    : new Cloudflare({ apiKey: login.apiKey, apiEmail: login.apiEmail });
+const makeClient = (login: StoredLogin): CfClient => {
+  const headers: Record<string, string> =
+    login.kind === "token"
+      ? { Authorization: `Bearer ${login.apiToken}` }
+      : { "X-Auth-Key": login.apiKey, "X-Auth-Email": login.apiEmail };
+  return {
+    request: <T>(method: string, path: string, body?: unknown) =>
+      cfFetch<T>(headers, method, path, body),
+  };
+};
 
 const loggedInClient = async (): Promise<{
-  client: Cloudflare;
+  client: CfClient;
   login: StoredLogin;
 }> => {
   const store = await readStore();
@@ -174,7 +223,10 @@ const saveInputs = async (inputs: CredInput[]) => {
 
     let verified = "";
     try {
-      const user = await makeClient(login).user.get();
+      const user = await makeClient(login).request<{ email?: string }>(
+        "GET",
+        "/user",
+      );
       if (user.email) {
         login.verifiedEmail = user.email;
         verified = ` (verified: ${user.email})`;
@@ -334,15 +386,15 @@ export const commandCfLogout = async () => {
   console.log("✅ Cleared the active login credentials reference.");
 };
 
-const listZones = async (client: Cloudflare) => {
-  const out: Array<{ id: string; name: string }> = [];
-  for await (const zone of client.zones.list()) {
-    out.push({ id: zone.id, name: zone.name ?? zone.id });
-  }
-  return out;
+const listZones = async (client: CfClient) => {
+  const zones = await client.request<Array<{ id: string; name?: string }>>(
+    "GET",
+    "/zones?per_page=50",
+  );
+  return zones.map((zone) => ({ id: zone.id, name: zone.name ?? zone.id }));
 };
 
-const findZone = async (client: Cloudflare, wanted: string) => {
+const findZone = async (client: CfClient, wanted: string) => {
   const target = wanted.toLowerCase().replace(/^\./, "");
   const zones = await listZones(client);
   return zones.find((z) => (z.name ?? "").toLowerCase() === target) ?? null;
@@ -357,16 +409,16 @@ type CatchAllRule = {
 };
 
 const getCatchAll = async (
-  client: Cloudflare,
+  client: CfClient,
   zoneId: string,
 ): Promise<CatchAllRule | null> => {
   try {
-    const rule = await client.emailRouting.rules.catchAlls.get({
-      zone_id: zoneId,
-    });
-    return rule as CatchAllRule;
+    return await client.request<CatchAllRule>(
+      "GET",
+      `/zones/${zoneId}/email/routing/rules/catch_all`,
+    );
   } catch (err) {
-    if (err instanceof APIError) return null;
+    if (err instanceof CfApiError) return null;
     throw err;
   }
 };
@@ -423,15 +475,18 @@ export const commandCfMailforwardingList = async () => {
   console.log();
 };
 
-const ensureEmailRoutingOn = async (client: Cloudflare, zoneId: string) => {
+const ensureEmailRoutingOn = async (client: CfClient, zoneId: string) => {
   let enabled = false;
   try {
-    const settings = await client.emailRouting.get({ zone_id: zoneId });
+    const settings = await client.request<{ enabled?: boolean }>(
+      "GET",
+      `/zones/${zoneId}/email/routing`,
+    );
     enabled = settings.enabled === true;
   } catch {}
   if (enabled) return;
   try {
-    await client.emailRouting.enable({ zone_id: zoneId });
+    await client.request("POST", `/zones/${zoneId}/email/routing/enable`);
   } catch (err) {
     die(
       "❌ Could not enable Email Routing on this domain.",
@@ -453,7 +508,6 @@ export const commandCfMailforwardingSet = async (
   if (!destination) {
     const current = await getCatchAll(client, zone.id);
     const base = {
-      zone_id: zone.id,
       enabled: false as const,
       matchers: current?.matchers?.length
         ? current.matchers
@@ -461,10 +515,14 @@ export const commandCfMailforwardingSet = async (
       source: "api" as const,
     };
     try {
-      await client.emailRouting.rules.catchAlls.update({
-        ...base,
-        actions: current?.actions ?? [{ type: "forward", value: [] }],
-      });
+      await client.request(
+        "PUT",
+        `/zones/${zone.id}/email/routing/rules/catch_all`,
+        {
+          ...base,
+          actions: current?.actions ?? [{ type: "forward", value: [] }],
+        },
+      );
       console.log(
         `✅ Unset mail forwarding for ${zone.name} (catch-all disabled).`,
       );
@@ -479,14 +537,17 @@ export const commandCfMailforwardingSet = async (
 
   try {
     await ensureEmailRoutingOn(client, zone.id);
-    await client.emailRouting.rules.catchAlls.update({
-      zone_id: zone.id,
-      enabled: true,
-      name: "Catch-all",
-      matchers: [{ type: "all" }],
-      actions: [{ type: "forward", value: [destination] }],
-      source: "api",
-    });
+    await client.request(
+      "PUT",
+      `/zones/${zone.id}/email/routing/rules/catch_all`,
+      {
+        enabled: true,
+        name: "Catch-all",
+        matchers: [{ type: "all" }],
+        actions: [{ type: "forward", value: [destination] }],
+        source: "api",
+      },
+    );
     console.log(`✅ Mail forward set: ${zone.name} -> ${destination}`);
   } catch (err) {
     die(
