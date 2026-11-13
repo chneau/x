@@ -13,16 +13,16 @@
 		"check:clean": "rm -rf dist out build"
 	},
 	"dependencies": {
-		"@commander-js/extra-typings": "^15.0.0",
-		"cdk8s": "^2.70.111",
+		"@commander-js/extra-typings": "^15.1.0",
+		"cdk8s": "^2.70.123",
 		"cdk8s-plus-34": "^2.0.66",
 		"cloudflare": "^7.3.0",
-		"commander": "^15.0.0",
+		"commander": "^15.1.0",
 		"zod": "^4.6.7"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.15",
-		"@types/bun": "^1.4.3",
+		"@biomejs/biome": "^2.6.7",
+		"@types/bun": "^1.4.4",
 		"typescript": "^7.0.2"
 	}
 }

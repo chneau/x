@@ -157,18 +157,18 @@ export const createDeployment = async ({
 		replicas: service.replicas,
 		metadata: { name: image.imageName },
 		terminationGracePeriod: Duration.seconds(0),
-		dockerRegistryAuth:
-			registry.username && registry.password
-				? createDockerConfigJson(
-						chart,
-						registry.hostname,
-						registry.username,
-						registry.password,
-					)
-				: undefined,
+		dockerRegistryAuth: registry.username && registry.password
+			? createDockerConfigJson(
+				chart,
+				registry.hostname,
+				registry.username,
+				registry.password,
+			)
+			: undefined,
 	});
 
-	const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
+	const imageFullName =
+		`${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
 
 	deployment.addContainer({
 		name: image.imageName,

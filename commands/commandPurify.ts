@@ -21,8 +21,10 @@ export const commandPurify = async (
 		);
 	}
 	const directories = await walkDirectories(cwd, recursive);
-	await mapConcurrent(directories, Math.max(cpus().length * 2, 2), (d) =>
-		purify(d, isDryRun).catch(console.error),
+	await mapConcurrent(
+		directories,
+		Math.max(cpus().length * 2, 2),
+		(d) => purify(d, isDryRun).catch(console.error),
 	);
 };
 
@@ -213,35 +215,36 @@ const managePackagejson = async (
 	}
 	const expected = isCSharp
 		? {
-				check:
-					"bun run --sequential --no-exit-on-error check:deno check:biome check:dotnet check:csharpier",
-				"check:deno": "deno fmt --use-tabs --quiet",
-				"check:biome": "biome format --write .",
-				"check:dotnet":
-					"dotnet format --severity info --no-restore --exclude-diagnostics IDE0130 CA1869",
-				"check:csharpier": "dotnet csharpier format .",
-				upgrade: "dotnet tool update --all; dotnet outdated --upgrade",
-				"upgrade-minor": "bun run upgrade --version-lock=Minor",
-				"upgrade-major": "bun run upgrade --version-lock=Major",
-				all: "bun run upgrade; bun run check",
-			}
+			check:
+				"bun run --sequential --no-exit-on-error check:deno check:biome check:dotnet check:csharpier",
+			"check:deno": "deno fmt --use-tabs --quiet",
+			"check:biome": "biome format --write .",
+			"check:dotnet":
+				"dotnet format --severity info --no-restore --exclude-diagnostics IDE0130 CA1869",
+			"check:csharpier": "dotnet csharpier format .",
+			upgrade: "dotnet tool update --all; dotnet outdated --upgrade",
+			"upgrade-minor": "bun run upgrade --version-lock=Minor",
+			"upgrade-major": "bun run upgrade --version-lock=Major",
+			all: "bun run upgrade; bun run check",
+		}
 		: {
-				upgrade: "bun update --latest",
-				check:
-					"bun run --sequential --no-exit-on-error check:clean check:deno check:oxlint check:biome check:export lint",
-				"check:clean": "rm -rf dist out build",
-				"check:deno": "deno fmt --use-tabs --quiet",
-				"check:oxlint":
-					"oxlint --fix-dangerously --fix-suggestions --fix --quiet",
-				"check:biome":
-					"timeout 3s biome check --write --unsafe --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
-				"check:export": "ts-unused-exports tsconfig.json",
-				lint: "tsc --noEmit",
-				all: "bun run --sequential --no-exit-on-error upgrade check",
-			};
+			upgrade: "bun update --latest",
+			check:
+				"bun run --sequential --no-exit-on-error check:clean check:deno check:oxlint check:biome check:export lint",
+			"check:clean": "rm -rf dist out build",
+			"check:deno": "deno fmt --use-tabs --quiet",
+			"check:oxlint":
+				"oxlint --fix-dangerously --fix-suggestions --fix --quiet",
+			"check:biome":
+				"timeout 3s biome check --write --unsafe --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
+			"check:export": "ts-unused-exports tsconfig.json",
+			lint: "tsc --noEmit",
+			all: "bun run --sequential --no-exit-on-error upgrade check",
+		};
 	applyDefaults(pkgJson.scripts ?? {}, expected, (existing) => {
-		const script =
-			typeof existing === "string" ? existing : JSON.stringify(existing);
+		const script = typeof existing === "string"
+			? existing
+			: JSON.stringify(existing);
 		return (
 			script.includes("bun") &&
 			(script.includes("--filter") || script.includes("--cwd"))

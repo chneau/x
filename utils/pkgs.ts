@@ -75,15 +75,15 @@ const installers: Record<
 		strategy: "sequential",
 		label: "dotnet tool",
 		run: (names) =>
-			$`dotnet tool install --global ${names} || dotnet tool update --global ${names}`.nothrow(),
+			$`dotnet tool install --global ${names} || dotnet tool update --global ${names}`
+				.nothrow(),
 	},
 	gem: {
 		strategy: "sequential",
 		label: "gem",
 		run: async (names) => {
 			const brewGlibc = "/home/linuxbrew/.linuxbrew/opt/glibc/lib";
-			const hasBrewGlibc =
-				process.platform !== "win32" &&
+			const hasBrewGlibc = process.platform !== "win32" &&
 				(await Bun.file(`${brewGlibc}/libc.so.6`).exists());
 			if (hasBrewGlibc) {
 				return $`gem install ${names} -- --with-ldflags=-Wl,-rpath,${brewGlibc} -L${brewGlibc}`;
@@ -133,7 +133,7 @@ const customPkgs: Pkg[] = config.packages.custom.map((pkg) =>
 			return s;
 		},
 		"check" in pkg ? (pkg.check as string) : undefined,
-	),
+	)
 );
 
 export const pkgs: Pkg[] = [

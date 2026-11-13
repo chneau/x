@@ -25,10 +25,12 @@ const listTemplates = () => {
 			.map((name) => `${c.cyan}${name}${c.reset}`)
 			.join(", ");
 		console.log(
-			` ${c.green}•${c.reset} ${pad(
-				aliases,
-				width,
-			)}  ${c.gray}${repo}${c.reset}`,
+			` ${c.green}•${c.reset} ${
+				pad(
+					aliases,
+					width,
+				)
+			}  ${c.gray}${repo}${c.reset}`,
 		);
 	}
 	console.log(
@@ -65,8 +67,7 @@ export const commandNew = async (
 
 	const { template } = options;
 	if (template && !(template in config.templates)) {
-		const isGitSpecifier =
-			template.includes("/") ||
+		const isGitSpecifier = template.includes("/") ||
 			template.includes(":") ||
 			template.startsWith("git@") ||
 			template.startsWith("http");
@@ -89,8 +90,7 @@ export const commandNew = async (
 				.quiet()
 				.nothrow();
 			if (degitRes.exitCode !== 0) {
-				const errText =
-					degitRes.stderr.toString().trim() ||
+				const errText = degitRes.stderr.toString().trim() ||
 					degitRes.stdout.toString().trim();
 				console.error(
 					`${c.red}❌ Failed to fetch template from '${repoUrl}'${c.reset}`,

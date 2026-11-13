@@ -81,9 +81,12 @@ const sshWriteFile = async (
 	remotePath: string,
 	content: Uint8Array,
 ) =>
-	await $`echo -n ${Buffer.from(content).toString(
-		"base64",
-	)} | base64 -d | ssh ${SSH_OPTS} ${host} ${`cp ${remotePath} ${remotePath}.bak && cat > ${remotePath}`}`.nothrow();
+	await $`echo -n ${
+		Buffer.from(content).toString(
+			"base64",
+		)
+	} | base64 -d | ssh ${SSH_OPTS} ${host} ${`cp ${remotePath} ${remotePath}.bak && cat > ${remotePath}`}`
+		.nothrow();
 
 type VDFEntry = {
 	index: string;
@@ -214,8 +217,8 @@ export const commandCleanShortcuts = async (options: CleanShortcutsOptions) => {
 
 	await ensureSsh(host);
 
-	const shortcutsPath =
-		options.shortcutsPath || (await findShortcutsPath(host));
+	const shortcutsPath = options.shortcutsPath ||
+		(await findShortcutsPath(host));
 	if (!shortcutsPath) {
 		die(
 			"❌ Could not locate shortcuts.vdf on the Steam Deck.",

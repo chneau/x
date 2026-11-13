@@ -10,20 +10,20 @@ const CONFIG_FILE = join(CONFIG_DIR, "cf.json");
 
 type StoredLogin =
 	| {
-			id: string;
-			kind: "token";
-			apiToken: string;
-			verifiedEmail?: string;
-			createdAt: string;
-	  }
+		id: string;
+		kind: "token";
+		apiToken: string;
+		verifiedEmail?: string;
+		createdAt: string;
+	}
 	| {
-			id: string;
-			kind: "apiKey";
-			apiEmail: string;
-			apiKey: string;
-			verifiedEmail?: string;
-			createdAt: string;
-	  };
+		id: string;
+		kind: "apiKey";
+		apiEmail: string;
+		apiKey: string;
+		verifiedEmail?: string;
+		createdAt: string;
+	};
 
 interface CfStore {
 	activeId?: string;
@@ -75,7 +75,7 @@ const loggedInClient = async (): Promise<{
 	}
 	const active =
 		(store.activeId && store.logins.find((l) => l.id === store.activeId)) ??
-		store.logins.at(-1);
+			store.logins.at(-1);
 	if (!active) {
 		die("❌ Active Cloudflare login no longer exists. Run `x cf login`.");
 	}
@@ -156,12 +156,12 @@ const materializeLogin = (input: CredInput): StoredLogin => {
 	return input.kind === "token"
 		? { id: `t-${rand()}`, kind: "token", apiToken: input.apiToken, createdAt }
 		: {
-				id: `k-${rand()}`,
-				kind: "apiKey",
-				apiKey: input.apiKey,
-				apiEmail: input.apiEmail,
-				createdAt,
-			};
+			id: `k-${rand()}`,
+			kind: "apiKey",
+			apiKey: input.apiKey,
+			apiEmail: input.apiEmail,
+			createdAt,
+		};
 };
 
 const saveInputs = async (inputs: CredInput[]) => {
@@ -384,10 +384,9 @@ export const commandCfDomainsList = async () => {
 
 const forwardDestination = (rule: CatchAllRule | null): string | null => {
 	if (!rule?.enabled) return null;
-	const forwardActions =
-		rule.actions?.filter(
-			(a) => a.type === "forward" && Array.isArray(a.value),
-		) ?? [];
+	const forwardActions = rule.actions?.filter(
+		(a) => a.type === "forward" && Array.isArray(a.value),
+	) ?? [];
 	const targets = forwardActions
 		.flatMap((a) => a.value ?? [])
 		.filter(

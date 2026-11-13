@@ -51,9 +51,11 @@ const doctorGlobalIgnore = async () => {
 
 	if (missing.length > 0) {
 		console.log(
-			`🕒 Adding ${missing.length} entries to global gitignore: ${missing.join(
-				", ",
-			)}`,
+			`🕒 Adding ${missing.length} entries to global gitignore: ${
+				missing.join(
+					", ",
+				)
+			}`,
 		);
 		const prefix = existing === "" ? "" : `${existing}\n`;
 		await Bun.write(path, `${prefix}${missing.join("\n")}\n`);
@@ -153,8 +155,10 @@ export const doctorInotify = async () => {
 		if (watchesNum < 524288 || instancesNum < 524288) {
 			console.log("❌ inotify limits are below recommended values (524288)");
 			console.log("🕒 Updating inotify limits in /etc/sysctl.conf...");
-			await $`grep -Fxq "fs.inotify.max_user_watches=524288" /etc/sysctl.conf || echo "fs.inotify.max_user_watches=524288" | sudo tee -a /etc/sysctl.conf`.nothrow();
-			await $`grep -Fxq "fs.inotify.max_user_instances=524288" /etc/sysctl.conf || echo "fs.inotify.max_user_instances=524288" | sudo tee -a /etc/sysctl.conf`.nothrow();
+			await $`grep -Fxq "fs.inotify.max_user_watches=524288" /etc/sysctl.conf || echo "fs.inotify.max_user_watches=524288" | sudo tee -a /etc/sysctl.conf`
+				.nothrow();
+			await $`grep -Fxq "fs.inotify.max_user_instances=524288" /etc/sysctl.conf || echo "fs.inotify.max_user_instances=524288" | sudo tee -a /etc/sysctl.conf`
+				.nothrow();
 			await $`sudo sysctl -p`.nothrow();
 			console.log("✅ inotify limits updated");
 		} else {

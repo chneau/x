@@ -20,7 +20,8 @@ const formatters: {
 			"*.css",
 			"*.md",
 		],
-		cmd: "deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
+		cmd:
+			"deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
 		checkCmd:
 			"deno fmt --check --use-tabs --quiet && oxlint --quiet && biome check .",
 	},
@@ -110,8 +111,9 @@ export const commandFmt = async (options: FmtOptions = {}) => {
 		const fileCount = found.trim().split("\n").filter(Boolean).length;
 		executedCount++;
 
-		const cmdToRun =
-			isCheck && formatter.checkCmd ? formatter.checkCmd : formatter.cmd;
+		const cmdToRun = isCheck && formatter.checkCmd
+			? formatter.checkCmd
+			: formatter.cmd;
 		console.log(
 			`→ fmt: ${formatter.name} (${c.cyan}${fileCount}${c.reset} file(s) matched)`,
 		);

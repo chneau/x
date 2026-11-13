@@ -14,7 +14,7 @@ const wingetIt = (id: string, cmd?: string): WinPkg => ({
 });
 
 const wingetPkgs: WinPkg[] = config.packages.winget.map((pkg) =>
-	wingetIt(pkg.name, "check" in pkg ? pkg.check : undefined),
+	wingetIt(pkg.name, "check" in pkg ? pkg.check : undefined)
 );
 
 type CustomConfig = {
@@ -25,7 +25,7 @@ type CustomConfig = {
 
 const customWindowsPkgs: WinPkg[] = (config.packages.custom as CustomConfig[])
 	.filter((pkg): pkg is CustomConfig & { commandWindows: string } =>
-		Boolean(pkg.commandWindows),
+		Boolean(pkg.commandWindows)
 	)
 	.map((pkg) => ({
 		name: pkg.name,

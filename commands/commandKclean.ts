@@ -131,23 +131,22 @@ const deleteObjects = async (
 	const contextArgs = context ? ["--context", context] : [];
 
 	const operations = [...byNs.entries()].map(
-		([namespace, objects]) =>
-			async () => {
-				const names = objects.map((o) => o.name);
-				try {
-					if (namespace) {
-						await $`kubectl ${contextArgs} delete ${entry.kind} ${names} -n ${namespace}`;
-					} else {
-						await $`kubectl ${contextArgs} delete ${entry.kind} ${names}`;
-					}
-				} catch {
-					console.error(
-						`${c.red}❌ Failed to delete ${entry.kind} in namespace '${
-							namespace || "(default)"
-						}'.${c.reset}`,
-					);
+		([namespace, objects]) => async () => {
+			const names = objects.map((o) => o.name);
+			try {
+				if (namespace) {
+					await $`kubectl ${contextArgs} delete ${entry.kind} ${names} -n ${namespace}`;
+				} else {
+					await $`kubectl ${contextArgs} delete ${entry.kind} ${names}`;
 				}
-			},
+			} catch {
+				console.error(
+					`${c.red}❌ Failed to delete ${entry.kind} in namespace '${
+						namespace || "(default)"
+					}'.${c.reset}`,
+				);
+			}
+		},
 	);
 
 	await mapConcurrent(operations, 4, (fn) => fn());

@@ -56,8 +56,9 @@ const normalServiceSchema = serviceBase.extend({
 	file: serviceBase.shape.file.default("kubeconfig"),
 	port: serviceBase.shape.port.default(3000),
 	env: serviceBase.shape.env.default({}),
-	readOnlyRootFilesystem:
-		serviceBase.shape.readOnlyRootFilesystem.default(false),
+	readOnlyRootFilesystem: serviceBase.shape.readOnlyRootFilesystem.default(
+		false,
+	),
 	endpoints: serviceBase.shape.endpoints.default([]),
 	ingress: serviceBase.shape.ingress.default("nginx"),
 });
@@ -138,8 +139,8 @@ export const commandDeploy = async (
 					error instanceof z.ZodError
 						? z.prettifyError(error)
 						: error instanceof Error
-							? error.message
-							: String(error),
+						? error.message
+						: String(error),
 				);
 			}
 			continue;
@@ -230,9 +231,11 @@ const extendsServiceToNormal = (
 ): NormalDeployService => {
 	if (visited.includes(service.extends)) {
 		throw new Error(
-			`Circular dependency detected: ${visited.join(
-				" -> ",
-			)} -> ${service.extends}`,
+			`Circular dependency detected: ${
+				visited.join(
+					" -> ",
+				)
+			} -> ${service.extends}`,
 		);
 	}
 	const nextVisited = [...visited, service.extends];
@@ -242,10 +245,9 @@ const extendsServiceToNormal = (
 		throw new Error(`Service ${service.extends} not found`);
 	}
 
-	const targetService =
-		"extends" in targetServiceRaw
-			? extendsServiceToNormal(targetServiceRaw, services, nextVisited)
-			: structuredClone(targetServiceRaw);
+	const targetService = "extends" in targetServiceRaw
+		? extendsServiceToNormal(targetServiceRaw, services, nextVisited)
+		: structuredClone(targetServiceRaw);
 
 	for (const [key, value] of Object.entries(service)) {
 		if (key === "extends") continue;
@@ -298,10 +300,9 @@ const deploy = async ({
 }: DeployParams) => {
 	for (const [serviceAlias, _service] of Object.entries(config.services)) {
 		console.log(`🕒 Deploying ${serviceAlias}...`);
-		const service =
-			"extends" in _service
-				? extendsServiceToNormal(_service, allServices)
-				: _service;
+		const service = "extends" in _service
+			? extendsServiceToNormal(_service, allServices)
+			: _service;
 		const image = config.images[service.image];
 		if (!image) {
 			console.error(`❌ Image ${service.image} not found`);
@@ -313,7 +314,8 @@ const deploy = async ({
 			continue;
 		}
 
-		const imageFullName = `${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
+		const imageFullName =
+			`${registry.hostname}/${image.repository}/${image.imageName}:${image.tag}`;
 
 		if (!dryRun) {
 			if (registry.username && registry.password) {
@@ -330,9 +332,10 @@ const deploy = async ({
 			const targetArg = image.target ? [`--target=${image.target}`] : [];
 			const buildContext = path.resolve(cwd, image.context);
 			const dockerfilePath = path.resolve(cwd, image.dockerfile);
-			await $`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`.cwd(
-				buildContext,
-			);
+			await $`docker build --pull --push --tag=${imageFullName} ${targetArg} --file=${dockerfilePath} ${buildArgs} .`
+				.cwd(
+					buildContext,
+				);
 			console.log(`... ✅ Built ${imageFullName}`);
 		}
 
@@ -360,9 +363,10 @@ const deploy = async ({
 			...Bun.env,
 			KUBECONFIG: path.join(cwd, service.file),
 		};
-		await $`echo ${deploymentYaml} | kubectl --context=${service.context} apply --filename=-`.env(
-			kubeEnv,
-		);
+		await $`echo ${deploymentYaml} | kubectl --context=${service.context} apply --filename=-`
+			.env(
+				kubeEnv,
+			);
 		console.log(`... ✅ Deployed ${serviceAlias}`);
 	}
 };

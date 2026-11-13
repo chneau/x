@@ -186,7 +186,8 @@ export const sharedCleanupTargets: SharedTarget[] = [
 		name: "Winget Package Cache",
 		windows: {
 			base: "localappdata",
-			path: "Packages/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe/LocalState/DiagOutputDir",
+			path:
+				"Packages/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe/LocalState/DiagOutputDir",
 		},
 		description: "Winget diagnostic logs and package outputs",
 	},
@@ -234,9 +235,11 @@ export const cleanupTargets = async <T extends CleanupTarget>(
 		if (bytes <= 0) continue;
 		totalBytes += bytes;
 		console.log(
-			`  • ${target.name.padEnd(26)} [${formatBytes(bytes).padEnd(
-				8,
-			)}]: ${target.path}`,
+			`  • ${target.name.padEnd(26)} [${
+				formatBytes(bytes).padEnd(
+					8,
+				)
+			}]: ${target.path}`,
 		);
 		if (!dryRun) await remove(target);
 	}
@@ -283,7 +286,8 @@ export const analyzeDisk = async (
 
 	console.log(`\n=== 3. Top Hidden/Config Dirs in ${root} ===`);
 	const hiddenArgs = extraDirs.map((_, i) => `"$${i + 2}"`).join(" ");
-	const duHiddenScript = `du -hd 1 "$1"/.* ${hiddenArgs} 2>/dev/null | sort -h | tail -n 15`;
+	const duHiddenScript =
+		`du -hd 1 "$1"/.* ${hiddenArgs} 2>/dev/null | sort -h | tail -n 15`;
 	const duHiddenOut = await $`bash -c ${duHiddenScript} _ ${root} ${extraDirs}`
 		.quiet()
 		.nothrow()
@@ -291,7 +295,8 @@ export const analyzeDisk = async (
 	console.log(duHiddenOut.trim() || "None");
 
 	console.log(`\n=== 4. Top ${topCount} Largest Files (>50M) in ${root} ===`);
-	const findScript = `find "$1" -xdev -type f -size +50M -exec ls -lh {} + 2>/dev/null | awk '{ print $5, $9 }' | sort -hr | head -n ${topCount}`;
+	const findScript =
+		`find "$1" -xdev -type f -size +50M -exec ls -lh {} + 2>/dev/null | awk '{ print $5, $9 }' | sort -hr | head -n ${topCount}`;
 	const filesOut = await $`bash -c ${findScript} _ ${root}`
 		.quiet()
 		.nothrow()

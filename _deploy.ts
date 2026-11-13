@@ -19,8 +19,8 @@ await Bun.write(
 	JSON.stringify({ name: "@chneau/x", version, bin: "./x.js" }),
 );
 const publish = await $`bun publish`.cwd("dist").nothrow();
-const publishError =
-	publish.stderr.toString().trim() || publish.stdout.toString().trim();
+const publishError = publish.stderr.toString().trim() ||
+	publish.stdout.toString().trim();
 await $`rm -rf dist`;
 if (publish.exitCode !== 0) {
 	throw new Error(

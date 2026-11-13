@@ -31,7 +31,7 @@ const findGitRepos = async (
 	}
 	const results = await Promise.all(
 		(await subdirectories(dir)).map((subdir) =>
-			findGitRepos(subdir, currentDepth + 1, maxDepth),
+			findGitRepos(subdir, currentDepth + 1, maxDepth)
 		),
 	);
 	return results.flat();

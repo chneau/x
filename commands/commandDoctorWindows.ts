@@ -1,7 +1,7 @@
 import {
-	type DoctorOptions,
 	doctorGitconfig,
 	doctorGithub,
+	type DoctorOptions,
 	doctorSsh,
 	logDoctorStart,
 } from "../utils/doctorCommon";
@@ -11,7 +11,8 @@ import { windowsPackages } from "../utils/windowsPkgs";
 
 const doctorUpdateSystem = async () => {
 	console.log("🕒 Updating system (winget upgrade --all)...");
-	await $`winget upgrade --all --accept-package-agreements --accept-source-agreements`.nothrow();
+	await $`winget upgrade --all --accept-package-agreements --accept-source-agreements`
+		.nothrow();
 
 	console.log("🕒 Updating Bun...");
 	await $`bun upgrade`.nothrow();

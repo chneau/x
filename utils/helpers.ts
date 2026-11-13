@@ -21,10 +21,12 @@ export const canSudo = async () =>
 	(await $`sudo -n true`.quiet().nothrow()).exitCode === 0;
 
 export const getCurrentVersion = async () => {
-	for (const path of [
-		join(import.meta.dir, "package.json"),
-		join(import.meta.dir, "..", "package.json"),
-	]) {
+	for (
+		const path of [
+			join(import.meta.dir, "package.json"),
+			join(import.meta.dir, "..", "package.json"),
+		]
+	) {
 		const version = await Bun.file(path)
 			.json()
 			.then((x) => (x.version as string) ?? null)
@@ -41,8 +43,9 @@ export const fetchLatestVersion = async (): Promise<string | null> =>
 		.catch(() => null);
 
 export const envSubst = (str: string) =>
-	str.replace(/\${(.*?)}/g, (_, key) =>
-		JSON.stringify(Bun.env[key] ?? "").slice(1, -1),
+	str.replace(
+		/\${(.*?)}/g,
+		(_, key) => JSON.stringify(Bun.env[key] ?? "").slice(1, -1),
 	);
 
 export const formatBytes = (bytes: number): string => {

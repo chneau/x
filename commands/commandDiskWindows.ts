@@ -4,8 +4,8 @@ import { join } from "node:path";
 import {
 	analyzeDisk,
 	cleanupTargets,
-	type DiskOptions,
 	dirSizeBytes,
+	type DiskOptions,
 	logCleanupStep,
 	logCleanupSummary,
 	sharedCleanupTargets,
@@ -61,8 +61,8 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
 
 	if (process.platform === "win32") {
 		const userProfile = Bun.env.USERPROFILE || "C:\\Users\\Default";
-		const localAppData =
-			Bun.env.LOCALAPPDATA || `${userProfile}\\AppData\\Local`;
+		const localAppData = Bun.env.LOCALAPPDATA ||
+			`${userProfile}\\AppData\\Local`;
 		const appData = Bun.env.APPDATA || `${userProfile}\\AppData\\Roaming`;
 		const temp = Bun.env.TEMP || `${localAppData}\\Temp`;
 		return {
@@ -118,10 +118,9 @@ const resolveWindowsDirs = async (): Promise<WindowsDirs | null> => {
 				);
 
 			const currentLinuxUser = Bun.env.USER || userInfo().username;
-			const matchedUser =
-				userCandidates.find(
-					(u) => u.toLowerCase() === currentLinuxUser.toLowerCase(),
-				) ||
+			const matchedUser = userCandidates.find(
+				(u) => u.toLowerCase() === currentLinuxUser.toLowerCase(),
+			) ||
 				userCandidates[0] ||
 				currentLinuxUser;
 
@@ -158,14 +157,13 @@ export const commandDiskWindows = async (options: DiskOptions) => {
 	const dryRun = Boolean(options.dryRun);
 
 	const getFullPath = (base: WindowsBase, relativePath: string): string => {
-		const baseDir =
-			base === "userprofile"
-				? userProfile
-				: base === "localappdata"
-					? localAppData
-					: base === "appdata"
-						? appData
-						: temp;
+		const baseDir = base === "userprofile"
+			? userProfile
+			: base === "localappdata"
+			? localAppData
+			: base === "appdata"
+			? appData
+			: temp;
 		return relativePath ? join(baseDir, relativePath) : baseDir;
 	};
 
@@ -195,23 +193,26 @@ export const commandDiskWindows = async (options: DiskOptions) => {
 				),
 				description: t.description,
 			}));
-		const totalBytes = await cleanupTargets(targets, dryRun, (target) =>
-			target.base === "temp"
-				? $`find ${target.path} -mindepth 1 -maxdepth 2 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow()
-				: rm(target.path, { recursive: true, force: true }).catch(() => {}),
+		const totalBytes = await cleanupTargets(
+			targets,
+			dryRun,
+			(target) =>
+				target.base === "temp"
+					? $`find ${target.path} -mindepth 1 -maxdepth 2 -mtime +2 -exec rm -rf {} + 2>/dev/null`
+						.nothrow()
+					: rm(target.path, { recursive: true, force: true }).catch(() => {}),
 		);
 
 		const goCache = join(localAppData, "go-build");
 		const goModCache = join(userProfile, "go/pkg/mod");
-		const goBytes =
-			((await Bun.file(goCache)
+		const goBytes = ((await Bun.file(goCache)
 				.exists()
 				.catch(() => false))
-				? await dirSizeBytes(goCache)
-				: 0) +
+			? await dirSizeBytes(goCache)
+			: 0) +
 			((await Bun.file(goModCache)
-				.exists()
-				.catch(() => false))
+					.exists()
+					.catch(() => false))
 				? await dirSizeBytes(goModCache)
 				: 0);
 		if (goBytes > 0) {
@@ -228,7 +229,8 @@ export const commandDiskWindows = async (options: DiskOptions) => {
 				"Clear-RecycleBin",
 				dryRun,
 				() =>
-					$`powershell.exe -NoProfile -NonInteractive -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"`.nothrow(),
+					$`powershell.exe -NoProfile -NonInteractive -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"`
+						.nothrow(),
 			);
 		}
 

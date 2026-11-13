@@ -3,8 +3,8 @@ import {
 	analyzeDisk,
 	type CleanupTarget,
 	cleanupTargets,
-	type DiskOptions,
 	dirSizeBytes,
+	type DiskOptions,
 	logCleanupStep,
 	logCleanupSummary,
 	unixCleanupTargets,
@@ -72,7 +72,8 @@ const cleanupCommands: CleanupCommand[] = [
 		size: () => dirSizeBytes("/tmp"),
 		minBytes: 1024 * 1024 * 50,
 		run: () =>
-			$`find /tmp -mindepth 1 -maxdepth 1 -mtime +2 -exec rm -rf {} + 2>/dev/null`.nothrow(),
+			$`find /tmp -mindepth 1 -maxdepth 1 -mtime +2 -exec rm -rf {} + 2>/dev/null`
+				.nothrow(),
 	},
 ];
 
@@ -106,8 +107,10 @@ const commandDiskUnix = async (options: DiskOptions) => {
 
 		console.log("\n=== Target Cleanup Directories ===");
 		const targets: CleanupTarget[] = unixCleanupTargets(home);
-		const totalFoundBytes = await cleanupTargets(targets, dryRun, (target) =>
-			$`rm -rf ${target.path}`.nothrow(),
+		const totalFoundBytes = await cleanupTargets(
+			targets,
+			dryRun,
+			(target) => $`rm -rf ${target.path}`.nothrow(),
 		);
 
 		await runCleanupCommands(dryRun);

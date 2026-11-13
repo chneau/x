@@ -1,9 +1,9 @@
 import config from "../config.json";
 import {
-	type DoctorOptions,
 	doctorGitconfig,
 	doctorGithub,
 	doctorInotify,
+	type DoctorOptions,
 	doctorSsh,
 	doctorSshPermissions,
 	logDoctorStart,
@@ -138,11 +138,11 @@ const updateSteps: UpdateStep[] = [
 			const gems = config.packages.gem?.map((p) => p.name) ?? [];
 			if (gems.length > 0) {
 				const brewGlibc = "/home/linuxbrew/.linuxbrew/opt/glibc/lib";
-				const hasBrewGlibc =
-					process.platform !== "win32" &&
+				const hasBrewGlibc = process.platform !== "win32" &&
 					(await Bun.file(`${brewGlibc}/libc.so.6`).exists());
 				if (hasBrewGlibc) {
-					await $`gem update ${gems} -- --with-ldflags=-Wl,-rpath,${brewGlibc} -L${brewGlibc}`.nothrow();
+					await $`gem update ${gems} -- --with-ldflags=-Wl,-rpath,${brewGlibc} -L${brewGlibc}`
+						.nothrow();
 				} else {
 					await $`gem update ${gems}`.nothrow();
 				}

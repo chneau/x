@@ -339,9 +339,11 @@ const latestVersion = async (
 
 const buildBlock = (deps: string[]): string => {
 	const depsToml = deps.length
-		? `# dependencies = [\n${deps
+		? `# dependencies = [\n${
+			deps
 				.map((dep) => `#   ${JSON.stringify(dep)},`)
-				.join("\n")}\n# ]`
+				.join("\n")
+		}\n# ]`
 		: "# dependencies = []";
 	return `# /// script\n# requires-python = "${REQUIRES_PYTHON}"\n${depsToml}\n# ///\n`;
 };

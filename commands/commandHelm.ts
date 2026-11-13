@@ -101,9 +101,11 @@ export const commandHelm = async (
 		);
 		if (releases.length === 0) {
 			console.log(
-				`ℹ️  No matching releases found for filter: ${releasesFilter.join(
-					", ",
-				)}`,
+				`ℹ️  No matching releases found for filter: ${
+					releasesFilter.join(
+						", ",
+					)
+				}`,
 			);
 			return;
 		}
@@ -179,8 +181,8 @@ export const commandHelm = async (
 			return true;
 		}
 		row[key] = "error";
-		row[errorKey[key]] =
-			res.stderr.toString().trim() || res.stdout.toString().trim();
+		row[errorKey[key]] = res.stderr.toString().trim() ||
+			res.stdout.toString().trim();
 		return false;
 	};
 
@@ -192,11 +194,10 @@ export const commandHelm = async (
 				.text()
 				.catch(() => "[]");
 			const searchResults: HelmSearchItem[] = JSON.parse(searchOut);
-			const matched =
-				searchResults.find(
-					(item) =>
-						item.name === baseChart || item.name.endsWith(`/${baseChart}`),
-				) ?? searchResults[0];
+			const matched = searchResults.find(
+				(item) =>
+					item.name === baseChart || item.name.endsWith(`/${baseChart}`),
+			) ?? searchResults[0];
 
 			if (matched) {
 				row.targetChart = matched.name;
@@ -234,15 +235,14 @@ export const commandHelm = async (
 		} else if (row.upgradeStatus === "skipped") {
 			upgradeDisplay = `${c.gray}⏭️  Skipped${c.reset}`;
 		} else {
-			const canUpgrade =
-				row.clientDryRun === "success" && row.serverDryRun === "success";
+			const canUpgrade = row.clientDryRun === "success" &&
+				row.serverDryRun === "success";
 			upgradeDisplay = canUpgrade
 				? `${c.green}Ready${c.reset}`
 				: `${c.red}Dry run failed${c.reset}`;
 		}
 
-		const targetDisplay =
-			row.targetChart +
+		const targetDisplay = row.targetChart +
 			(row.targetVersion && row.targetVersion !== "..."
 				? ` (${row.targetVersion})`
 				: "");
