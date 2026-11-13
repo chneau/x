@@ -224,6 +224,7 @@
 			{ "name": "cURL.cURL", "check": "curl" },
 			{ "name": "JernejSimoncic.Wget", "check": "wget" },
 			{ "name": "ezwinports.make", "check": "make" },
+			{ "name": "Casey.Just", "check": "just" },
 			{ "name": "yt-dlp.yt-dlp", "check": "yt-dlp" },
 			{ "name": "RubyInstallerTeam.RubyWithDevKit.3.4", "check": "gem" }
 		]
