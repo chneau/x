@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { type ParseArgsConfig, parseArgs } from "node:util";
+import { commandBootstrap } from "./commands/commandBootstrap";
 import {
   commandCfDomainsList,
   commandCfLogin,
@@ -50,6 +51,7 @@ Commands:
   doctor                  Diagnose and repair dev environment & git configs
   new [dir]               Scaffold and initialize a new project
   pyup [dir]              Make Python files uv scripts with Python 3.14
+  bootstrap               Clone/pull chneau/dotfiles and run bootstrap
   cf <subcommand>         Manage Cloudflare (login, logout, domains, mailforwarding)`;
 
 const main = async () => {
@@ -292,6 +294,9 @@ const main = async () => {
       });
       break;
     }
+    case "bootstrap":
+      await commandBootstrap();
+      break;
     case "cf": {
       const [sub, sub2, ...subRest] = rest;
       if (sub === "login") {
