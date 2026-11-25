@@ -8,7 +8,7 @@ const formatters: {
   checkCmd?: string;
 }[] = [
   {
-    name: "Deno/Oxlint/Biome (TS/JS/JSON/MD)",
+    name: "Bun (TS/JS/JSON/MD/CSS)",
     files: [
       "*.ts",
       "*.tsx",
@@ -20,9 +20,8 @@ const formatters: {
       "*.css",
       "*.md",
     ],
-    cmd: "deno fmt --use-tabs --quiet; oxlint --fix-dangerously --quiet; biome check --write --unsafe .",
-    checkCmd:
-      "deno fmt --check --use-tabs --quiet && oxlint --quiet && biome check .",
+    cmd: "bun fmt --no-script; bun lint --fix --no-script",
+    checkCmd: "bun fmt --check --no-script && bun lint --no-script",
   },
   {
     name: "Go (go fmt)",

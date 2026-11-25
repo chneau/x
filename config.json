@@ -66,7 +66,6 @@
     ],
     "bun": [
       { "name": "@anthropic-ai/claude-code", "check": "claude" },
-      { "name": "@biomejs/biome", "check": "biome" },
       { "name": "@github/copilot", "check": "copilot" },
       { "name": "@getpaseo/cli", "check": "paseo" },
       { "name": "@google/jules", "check": "jules" },
@@ -91,7 +90,6 @@
       { "name": "npm-check-updates" },
       { "name": "npm-check" },
       { "name": "@opencode/cli", "check": "opencode", "trust": true },
-      { "name": "oxlint" },
       { "name": "prettier" },
       { "name": "reasonix" },
       { "name": "ts-unused-exports" },
@@ -132,11 +130,6 @@
           "HOME": "/tmp"
         },
         "command": "curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash"
-      },
-      {
-        "name": "deno",
-        "command": "curl -fsSL https://deno.land/install.sh | sh",
-        "commandWindows": "powershell.exe -Command \"irm https://deno.land/install.ps1 | iex\""
       },
       {
         "name": "dotnet",
@@ -197,7 +190,6 @@
       { "name": "Git.Git", "check": "git" },
       { "name": "GoLang.Go", "check": "go" },
       { "name": "OpenJS.NodeJS", "check": "node" },
-      { "name": "DenoLand.Deno", "check": "deno" },
       { "name": "JesseDuffield.Lazygit", "check": "lazygit" },
       { "name": "Microsoft.VisualStudioCode", "check": "code" },
       { "name": "Kubernetes.kubectl", "check": "kubectl" },

@@ -135,7 +135,7 @@ const writeManagedJson = async (
     return;
   }
   await Bun.write(file, `${JSON.stringify(data, null, 2)}\n`);
-  await $`biome check --write --unsafe ${filename}`.nothrow();
+  await $`bun fmt --no-script ${filename}`.nothrow();
   console.log(`✅ Done with ${filename}`);
 };
 
@@ -215,9 +215,8 @@ const managePackagejson = async (
   const expected = isCSharp
     ? {
         check:
-          "bun run --sequential --no-exit-on-error check:deno check:biome check:dotnet check:csharpier",
-        "check:deno": "deno fmt --use-tabs --quiet",
-        "check:biome": "biome format --write .",
+          "bun run --sequential --no-exit-on-error check:bun check:dotnet check:csharpier",
+        "check:bun": "bun fmt --no-script",
         "check:dotnet":
           "dotnet format --severity info --no-restore --exclude-diagnostics IDE0130 CA1869",
         "check:csharpier": "dotnet csharpier format .",

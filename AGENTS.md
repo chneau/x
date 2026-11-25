@@ -28,8 +28,8 @@ section and is enforced in review.
   `README.md` to this repository.
 - **ALLOWED** comments are only toolchain-consumed directives that cannot be
   expressed otherwise: `@ts-expect-error` / `@ts-ignore` / `@ts-nocheck`,
-  `eslint-disable*` / `biome-ignore` / `oxlint-disable`, `# noqa` /
-  `# type: ignore`, PEP 723 `# /// script` blocks, shellcheck directives,
+  `eslint-disable*` / `# noqa` / `# type: ignore`, PEP 723 `# /// script` blocks,
+  shellcheck directives,
   Dockerfile `# syntax=` / `# escape=`, shebangs. Keep them minimal and delete
   any that no longer bite — prefer rewriting the code over suppressing a rule.
 
@@ -103,7 +103,7 @@ Zod (v4): **FORBIDDEN** `z.string().uuid()`, `z.string().url()`,
 - **FORBIDDEN**: `npm`, `npx`, `yarn`, `pnpm`. Never invoke them or recommend
   them to the user.
 - **REQUIRED**: `bun` and `bun x` (`bun run check`, `bun install`, `bun add`,
-  `bun x <tool>`, `bun --watch`), with `deno fmt` for formatting.
+  `bun x <tool>`, `bun --watch`), with `bun fmt` for formatting.
 - **Exception**: `x pyup` targets `uv` for the Python scripts it rewrites — that
   is the tool's own domain, not a general package-manager exception.
 
@@ -118,23 +118,18 @@ auto-fixes. Accept the formatter output: include it in your commit, never
 your own preference. Target exit `0` with no errors and no warnings.
 
 ```bash
-bun run check      # check:clean, deno fmt, oxlint, biome, ts-unused-exports, tsc
-bun run lint       # tsc --noEmit only
+bun run check      # check:clean, bun fmt, bun lint, fallow dead-code, bun check
+bun run lint       # bun check --no-script (type check)
 bun run all        # upgrade (bun update --latest) then check
 ```
 
-- Indentation is **tabs**; `deno fmt --use-tabs` and biome both enforce it.
-- The `biome check --write --unsafe` step runs under `timeout 3s`: a fired
-  timeout kills biome mid-rewrite and leaves the file it was writing truncated.
-  If files look truncated after a run, that is why — re-run on an idle machine.
-- `oxlint --fix-dangerously` deletes whole declarations, not just comments, and
-  takes its ignore set from the repository-root `.gitignore`: a partial checkout
-  that lacks that file can have `node_modules` rewritten. Review its output, and
-  never run it outside the repository root.
+- Indentation comes from `bun fmt` (Prettier-compatible, 2 spaces unless
+  `bunfig.toml` overrides).
+- `bun lint --fix` applies only safe fixes; `bun fmt` rewrites files in place.
 - `--no-exit-on-error` in the `check` script means "keep going after a failing
   step", **not** "hide it": a failed step still makes `bun run check` exit `1`.
   Read the exit code and the output.
-- Neither `tsc`, `biome` nor `oxlint` replaces reading the code. A stale read —
+- Neither `bun check` nor `bun lint` replaces reading the code. A stale read —
   a value read outside where it is refreshed — type-checks, lints and formats
   cleanly while being plainly broken at runtime.
 - There is no test runner in this repository. Run the command you touched

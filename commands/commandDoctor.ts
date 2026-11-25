@@ -103,11 +103,6 @@ const updateSteps: UpdateStep[] = [
     },
   },
   {
-    label: "deno",
-    check: "deno",
-    run: () => $`deno upgrade`.nothrow(),
-  },
-  {
     label: "rust toolchain",
     check: "rustup",
     run: () => $`rustup update`.nothrow(),
